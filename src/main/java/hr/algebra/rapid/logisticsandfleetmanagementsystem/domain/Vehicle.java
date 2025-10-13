@@ -32,7 +32,7 @@ public class Vehicle {
     private BigDecimal loadCapacityKg;
 
     // Veza na korisnika/vozača. Pretpostavljam da je ApplicationUser vaš entitet (UserInfo)
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "current_driver_id", unique = true)
     private UserInfo currentDriver;
 }

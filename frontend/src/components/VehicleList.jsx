@@ -127,7 +127,8 @@ const VehicleList = () => {
 
                                         <td>{v.loadCapacityKg}</td>
                                         <td>
-                                            {v.currentDriver ? v.currentDriver.username : <span className="text-danger">Nije dodijeljen</span>}
+                                            {v.currentDriver
+                                                ? `${v.currentDriver.firstName} ${v.currentDriver.lastName}`  : <span className="text-danger">Nije dodijeljen</span>}
                                         </td>
 
                                         {/* GUMBI: Korištenje outline-warning i outline-danger */}
