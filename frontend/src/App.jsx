@@ -9,7 +9,14 @@ import Login from './components/Login.jsx';
 import Home from './components/Home.jsx';
 import NotFound from './components/NotFound.jsx';
 import EditVehicle from './components/EditVehicle.jsx';
-
+import AssignmentList from './components/AssignmentList.jsx';
+import AssignmentForm from './components/AssignmentForm.jsx';
+import ShipmentList from './components/ShipmentList.jsx';
+import ShipmentForm from './components/ShipmentForm.jsx';
+import AddShipment from './components/AddShipment.jsx';
+import EditAssignment from './components/EditAssignment.jsx';
+import EditShipment from './components/EditShipment.jsx';
+import AddAssignment from "./components/AddAssignment.jsx";
 const AppNavbar = () => {
     const isAuthenticated = !!localStorage.getItem('accessToken');
     const navigate = useNavigate();
@@ -34,7 +41,11 @@ const AppNavbar = () => {
                     <Nav className="me-auto">
                         <Nav.Link as={Link} to="/">Početna</Nav.Link>
                         {isAuthenticated && (
-                            <Nav.Link as={Link} to="/vehicles">Vozila</Nav.Link>
+                            <>
+                                <Nav.Link as={Link} to="/vehicles">Vozila</Nav.Link>
+                                <Nav.Link as={Link} to="/shipments">Pošiljke</Nav.Link>
+                                <Nav.Link as={Link} to="/assignments">Dodjele</Nav.Link>
+                            </>
                         )}
                     </Nav>
 
@@ -80,6 +91,16 @@ function App() {
                         <Route path="*" element={<NotFound />} />
                         <Route path="/vehicles/add" element={<AddVehicle />} />
                         <Route path="/vehicles/edit/:id" element={<EditVehicle />} />
+                        <Route path="/assignments" element={<AssignmentList />} />
+                        <Route path="/assignments/new" element={<AssignmentForm />} />
+                        <Route path="/assignments/edit/:id" element={<AssignmentForm />} />
+                        <Route path="/shipments" element={<ShipmentList />} />
+                        <Route path="/shipments/new" element={<ShipmentForm />} />
+                        <Route path="/shipments/edit/:id" element={<ShipmentForm />} />
+                        <Route path="/shipments/add" element={<AddShipment />} />
+                        <Route path="/assignments/edit/:id" element={<EditAssignment />}/>
+                        <Route path="/assignments/add/:id" element={<AddAssignment />}/>
+                        <Route path="/shipments/edit/:id" element={<EditShipment />}/>
                     </Routes>
                 </Container>
             </div>

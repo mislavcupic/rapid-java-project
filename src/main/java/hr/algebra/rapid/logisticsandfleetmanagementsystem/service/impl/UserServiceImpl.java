@@ -21,17 +21,13 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    // ⭐ Ispravljen povratni tip na List<UserInfo>
+
     @Override
     public List<UserInfo> findAll() {
         return userRepository.findAll();
     }
 
-    // ✅ Implementacija za findDrivers s ispravnim tipom
-    @Override
-    public List<UserInfo> findDrivers() {
-        return userRepository.findByRoles_Name("ROLE_DRIVER");
-    }
+
 
     // Dodana implementacija za findById
     @Override

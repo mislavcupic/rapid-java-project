@@ -1,28 +1,30 @@
-// frontend/src/components/VehicleList.jsx
+// frontend/src/components/ShipmentList.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchVehicles, deleteVehicle } from '../services/VehicleApi';
+import { fetchShipments, deleteShipment } from '../services/ShipmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const VehicleList = () => {
-    const [vehicles, setVehicles] = useState([]);
+const ShipmentList = () => {
+    const [shipments, setShipments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isAuthenticated] = useState(!!localStorage.getItem('accessToken'));
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [vehicleToDelete, setVehicleToDelete] = useState(null);
+    const [shipmentToDelete, setShipmentToDelete] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation();
+    const message = location.state?.message;
 
-    const loadVehicles = useCallback(async () => {
+    const loadShipments = useCallback(async () => {
         if (!isAuthenticated) {
             setLoading(false);
             return;
         }
         try {
-            const data = await fetchVehicles();
-            setVehicles(data);
+            const data = await fetchShipments();
+            setShipments(data);
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -32,35 +34,41 @@ const VehicleList = () => {
     }, [isAuthenticated]);
 
     useEffect(() => {
-        loadVehicles();
-    }, [loadVehicles]);
+        loadShipments();
+        if (message) {
+            window.history.replaceState({}, document.title);
+        }
+    }, [loadShipments, message]);
 
-    const handleDeleteClick = (vehicle) => {
-        setVehicleToDelete(vehicle);
+    const handleDeleteClick = (shipment) => {
+        setShipmentToDelete(shipment);
         setShowDeleteModal(true);
     };
 
     const confirmDelete = async () => {
-        if (!vehicleToDelete) return;
+        if (!shipmentToDelete) return;
         setShowDeleteModal(false);
         try {
             setLoading(true);
-            await deleteVehicle(vehicleToDelete.id);
-            await loadVehicles();
-            setVehicleToDelete(null);
+            await deleteShipment(shipmentToDelete.id);
+            await loadShipments();
+            navigate('/shipments', { state: { message: `Pošiljka ${shipmentToDelete.trackingNumber} uspješno obrisana.` } });
+            setShipmentToDelete(null);
         } catch (err) {
-            setError(`Greška pri brisanju: ${err.message}`);
+            setError(`Greška pri brisanju: ${err.message}. Pošiljka se ne smije brisati ako je dodijeljena (SCHEDULED) ili u tranzitu!`);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleAddVehicle = () => {
-        navigate('/vehicles/add');
+    const handleAddShipment = () => {
+        navigate('/shipments/new');
     };
 
     if (!isAuthenticated) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
-                Molimo, prijavite se za pristup listi vozila.
+                Molimo, prijavite se za pristup listi pošiljki.
             </Alert>
         );
     }
@@ -68,8 +76,8 @@ const VehicleList = () => {
     if (loading) {
         return (
             <div className="text-center py-5">
-                <Spinner animation="border" variant="info" role="status" />
-                <p className="text-muted mt-2">Učitavanje vozila...</p>
+                <Spinner animation="border" variant="primary" role="status" />
+                <p className="text-muted mt-2">Učitavanje pošiljki...</p>
             </div>
         );
     }
@@ -84,22 +92,23 @@ const VehicleList = () => {
 
     return (
         <>
-            <Card className="shadow-lg border-info border-top-0 border-5">
-                {/* ZAGLAVLJE: Korištenje bg-info akcenta */}
-                <Card.Header className="d-flex justify-content-between align-items-center bg-info text-white">
-                    <h1 className="h4 mb-0 font-monospace">Popis Vozila</h1>
+            <Card className="shadow-lg border-primary border-top-0 border-5">
+                <Card.Header className="d-flex justify-content-between align-items-center bg-primary text-white">
+                    <h1 className="h4 mb-0 font-monospace">Popis Pošiljki (Shipments)</h1>
                     <Button
-                        variant="light" // Neutralni gumb
-                        onClick={handleAddVehicle}
-                        className="font-monospace fw-bold text-info" // Tekst u boji akcenta
+                        variant="light"
+                        onClick={handleAddShipment}
+                        className="font-monospace fw-bold text-primary"
                     >
-                        <i className="bi bi-plus-circle me-1"></i> Dodaj Novo Vozilo
+                        <i className="bi bi-plus-circle me-1"></i> Kreiraj Novu Pošiljku
                     </Button>
                 </Card.Header>
                 <Card.Body>
-                    {vehicles.length === 0 ? (
+                    {message && <Alert variant="success" className="font-monospace">{message}</Alert>}
+
+                    {shipments.length === 0 ? (
                         <Alert variant="info" className="text-center font-monospace">
-                            Nema registriranih vozila.
+                            Nema registriranih pošiljki.
                         </Alert>
                     ) : (
                         <div className="table-responsive">
@@ -107,38 +116,31 @@ const VehicleList = () => {
                                 <thead className="table-dark">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Registracija</th>
-                                    <th>Marka / Model</th> {/* Ispravljeno poravnanje */}
-                                    <th>Godina</th>
-                                    <th>Kapacitet (kg)</th>
-                                    <th>Vozač</th>
+                                    <th>Tracking No.</th>
+                                    <th>Status</th>
+                                    <th>Polazište</th>
+                                    <th>Odredište</th>
+                                    <th>Opis</th>
                                     <th className="text-nowrap">Akcije</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {vehicles.map((v) => (
-                                    <tr key={v.id}>
-                                        <td>{v.id}</td>
-                                        <td>{v.licensePlate}</td>
-                                        <td className="text-start">{`${v.make} ${v.model}`}</td>
+                                {shipments.map((s) => (
+                                    <tr key={s.id}>
+                                        <td>{s.id}</td>
+                                        <td>**{s.trackingNumber}**</td>
+                                        <td>{s.status}</td>
+                                        <td>{s.originAddress}</td>
+                                        <td>{s.destinationAddress}</td>
+                                        <td>{s.description || 'N/A'}</td>
 
-                                        {/* Ispravak DTO polja: Podržava modelYear (novi unos) i year (fallback) */}
-                                        <td>{v.modelYear || v.year}</td>
-
-                                        <td>{v.loadCapacityKg}</td>
-                                        <td>
-                                            {v.currentDriver
-                                                ? `${v.currentDriver.fullName}`  : <span className="text-danger">Nije dodijeljen</span>}
-                                        </td>
-
-                                        {/* GUMBI: Korištenje outline-warning i outline-danger */}
                                         <td className="text-center text-nowrap">
                                             <div className="d-flex justify-content-center">
                                                 <Button
-                                                    variant="outline-warning"
+                                                    variant="outline-primary"
                                                     size="sm"
                                                     className="me-2 font-monospace fw-bold"
-                                                    onClick={() => navigate(`/vehicles/edit/${v.id}`)}
+                                                    onClick={() => navigate(`/shipments/edit/${s.id}`)}
                                                 >
                                                     Uredi
                                                 </Button>
@@ -146,7 +148,7 @@ const VehicleList = () => {
                                                     variant="outline-danger"
                                                     size="sm"
                                                     className="font-monospace fw-bold"
-                                                    onClick={() => handleDeleteClick(v)}
+                                                    onClick={() => handleDeleteClick(s)}
                                                 >
                                                     Izbriši
                                                 </Button>
@@ -161,14 +163,14 @@ const VehicleList = () => {
                 </Card.Body>
             </Card>
 
-            {/* MODAL (footer gumbi ostaju klasični za akciju brisanja) */}
+            {/* MODAL ZA BRISANJE */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
-                    Jeste li sigurni da želite izbrisati vozilo s registracijom **{vehicleToDelete?.licensePlate}**?
-                    Ova akcija je nepovratna.
+                    Jeste li sigurni da želite izbrisati pošiljku **{shipmentToDelete?.trackingNumber}**?
+                    Brisanje je moguće samo ako je pošiljka u statusu **PENDING**.
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="font-monospace">
@@ -183,4 +185,4 @@ const VehicleList = () => {
     );
 };
 
-export default VehicleList;
+export default ShipmentList;

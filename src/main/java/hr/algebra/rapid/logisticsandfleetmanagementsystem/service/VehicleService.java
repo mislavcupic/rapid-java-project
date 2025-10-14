@@ -8,35 +8,30 @@ import java.util.List;
 import java.util.Optional;
 
 public interface VehicleService {
+
+    // Pomoćna metoda za mapiranje (korisna u impl klasi)
     VehicleResponse mapToResponse(Vehicle vehicle);
-    /**
-     * Dohvaća sva vozila.
-     *
-     * @return Lista svih vozila.
+
+    /** Dohvaća sva vozila. */
+    // Promijenio sam naziv u findAllVehicles radi bolje jasnoće
+    List<VehicleResponse> findAllVehicles();
+
+    /** Pronalazi vozilo po ID-u. */
+    // Promijenio sam naziv u findVehicleById radi bolje jasnoće
+    Optional<VehicleResponse> findVehicleById(Long id);
+
+    /** Kreira novo vozilo na temelju DTO-a.
+     * Vraća VehicleResponse DTO.
      */
-    List<VehicleResponse> findAll();
+    // ✅ KRITIČNA PROMJENA: Vraća VehicleResponse DTO
+    VehicleResponse createVehicle(VehicleRequest request);
 
-    /**
-     * Pronalazi vozilo po ID-u.
-     *
-     * @param id ID vozila.
-     * @return Optional<Vehicle> ako je pronađeno.
+    /** Ažurira vozilo na temelju DTO-a.
+     * Vraća VehicleResponse DTO.
      */
-    Optional<VehicleResponse> findById(Long id);
+    // ✅ KRITIČNA PROMJENA: Vraća VehicleResponse DTO
+    VehicleResponse updateVehicle(Long id, VehicleRequest vehicleDetails);
 
-    /**
-     * Kreira novo vozilo na temelju DTO-a.
-     * @param request DTO sa podacima o vozilu.
-     * @return Kreirano vozilo.
-     */
-    Vehicle createVehicle(VehicleRequest request);
-
-
-    Vehicle updateVehicle(Long id, VehicleRequest vehicleDetails);
-
-
+    /** Briše vozilo. */
     void deleteVehicle(Long id);
-
 }
-
-

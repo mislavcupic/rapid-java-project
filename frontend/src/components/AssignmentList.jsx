@@ -1,28 +1,30 @@
-// frontend/src/components/VehicleList.jsx
+// frontend/src/components/AssignmentList.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchVehicles, deleteVehicle } from '../services/VehicleApi';
+import { fetchAssignments, deleteAssignment } from '../services/AssignmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const VehicleList = () => {
-    const [vehicles, setVehicles] = useState([]);
+const AssignmentList = () => {
+    const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isAuthenticated] = useState(!!localStorage.getItem('accessToken'));
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [vehicleToDelete, setVehicleToDelete] = useState(null);
+    const [assignmentToDelete, setAssignmentToDelete] = useState(null);
 
     const navigate = useNavigate();
+    const location = useLocation();
+    const message = location.state?.message; // Za Success poruku nakon Create/Update
 
-    const loadVehicles = useCallback(async () => {
+    const loadAssignments = useCallback(async () => {
         if (!isAuthenticated) {
             setLoading(false);
             return;
         }
         try {
-            const data = await fetchVehicles();
-            setVehicles(data);
+            const data = await fetchAssignments();
+            setAssignments(data);
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -32,35 +34,43 @@ const VehicleList = () => {
     }, [isAuthenticated]);
 
     useEffect(() => {
-        loadVehicles();
-    }, [loadVehicles]);
+        loadAssignments();
+        // Očisti poruku nakon što se prikaže
+        if (message) {
+            window.history.replaceState({}, document.title);
+        }
+    }, [loadAssignments, message]);
 
-    const handleDeleteClick = (vehicle) => {
-        setVehicleToDelete(vehicle);
+    const handleDeleteClick = (assignment) => {
+        setAssignmentToDelete(assignment);
         setShowDeleteModal(true);
     };
 
     const confirmDelete = async () => {
-        if (!vehicleToDelete) return;
+        if (!assignmentToDelete) return;
         setShowDeleteModal(false);
         try {
             setLoading(true);
-            await deleteVehicle(vehicleToDelete.id);
-            await loadVehicles();
-            setVehicleToDelete(null);
+            await deleteAssignment(assignmentToDelete.id);
+            // Osvježi listu
+            await loadAssignments();
+            navigate('/assignments', { state: { message: `Dodjela ID ${assignmentToDelete.id} uspješno obrisana.` } });
+            setAssignmentToDelete(null);
         } catch (err) {
             setError(`Greška pri brisanju: ${err.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleAddVehicle = () => {
-        navigate('/vehicles/add');
+    const handleAddAssignment = () => {
+        navigate('/assignments/new');
     };
 
     if (!isAuthenticated) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
-                Molimo, prijavite se za pristup listi vozila.
+                Molimo, prijavite se za pristup listi dodjela.
             </Alert>
         );
     }
@@ -69,7 +79,7 @@ const VehicleList = () => {
         return (
             <div className="text-center py-5">
                 <Spinner animation="border" variant="info" role="status" />
-                <p className="text-muted mt-2">Učitavanje vozila...</p>
+                <p className="text-muted mt-2">Učitavanje dodjela...</p>
             </div>
         );
     }
@@ -84,22 +94,23 @@ const VehicleList = () => {
 
     return (
         <>
-            <Card className="shadow-lg border-info border-top-0 border-5">
-                {/* ZAGLAVLJE: Korištenje bg-info akcenta */}
-                <Card.Header className="d-flex justify-content-between align-items-center bg-info text-white">
-                    <h1 className="h4 mb-0 font-monospace">Popis Vozila</h1>
+            <Card className="shadow-lg border-primary border-top-0 border-5">
+                <Card.Header className="d-flex justify-content-between align-items-center bg-primary text-white">
+                    <h1 className="h4 mb-0 font-monospace">Popis Dodjela (Assignments)</h1>
                     <Button
-                        variant="light" // Neutralni gumb
-                        onClick={handleAddVehicle}
-                        className="font-monospace fw-bold text-info" // Tekst u boji akcenta
+                        variant="light"
+                        onClick={handleAddAssignment}
+                        className="font-monospace fw-bold text-primary"
                     >
-                        <i className="bi bi-plus-circle me-1"></i> Dodaj Novo Vozilo
+                        <i className="bi bi-plus-circle me-1"></i> Kreiraj Novu Dodjelu
                     </Button>
                 </Card.Header>
                 <Card.Body>
-                    {vehicles.length === 0 ? (
+                    {message && <Alert variant="success" className="font-monospace">{message}</Alert>}
+
+                    {assignments.length === 0 ? (
                         <Alert variant="info" className="text-center font-monospace">
-                            Nema registriranih vozila.
+                            Nema registriranih dodjela.
                         </Alert>
                     ) : (
                         <div className="table-responsive">
@@ -107,38 +118,31 @@ const VehicleList = () => {
                                 <thead className="table-dark">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Registracija</th>
-                                    <th>Marka / Model</th> {/* Ispravljeno poravnanje */}
-                                    <th>Godina</th>
-                                    <th>Kapacitet (kg)</th>
+                                    <th>Status</th>
                                     <th>Vozač</th>
+                                    <th>Vozilo (Reg.)</th>
+                                    <th>Pošiljka (Tracking)</th>
+                                    <th>Početak</th>
                                     <th className="text-nowrap">Akcije</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {vehicles.map((v) => (
-                                    <tr key={v.id}>
-                                        <td>{v.id}</td>
-                                        <td>{v.licensePlate}</td>
-                                        <td className="text-start">{`${v.make} ${v.model}`}</td>
+                                {assignments.map((a) => (
+                                    <tr key={a.id}>
+                                        <td>{a.id}</td>
+                                        <td>{a.assignmentStatus}</td>
+                                        <td>{a.driver?.fullName || 'N/A'}</td>
+                                        <td>{a.vehicle?.licensePlate || 'N/A'}</td>
+                                        <td>{a.shipment?.trackingNumber || 'N/A'}</td>
+                                        <td>{new Date(a.startTime).toLocaleString()}</td>
 
-                                        {/* Ispravak DTO polja: Podržava modelYear (novi unos) i year (fallback) */}
-                                        <td>{v.modelYear || v.year}</td>
-
-                                        <td>{v.loadCapacityKg}</td>
-                                        <td>
-                                            {v.currentDriver
-                                                ? `${v.currentDriver.fullName}`  : <span className="text-danger">Nije dodijeljen</span>}
-                                        </td>
-
-                                        {/* GUMBI: Korištenje outline-warning i outline-danger */}
                                         <td className="text-center text-nowrap">
                                             <div className="d-flex justify-content-center">
                                                 <Button
-                                                    variant="outline-warning"
+                                                    variant="outline-primary"
                                                     size="sm"
                                                     className="me-2 font-monospace fw-bold"
-                                                    onClick={() => navigate(`/vehicles/edit/${v.id}`)}
+                                                    onClick={() => navigate(`/assignments/edit/${a.id}`)}
                                                 >
                                                     Uredi
                                                 </Button>
@@ -146,7 +150,7 @@ const VehicleList = () => {
                                                     variant="outline-danger"
                                                     size="sm"
                                                     className="font-monospace fw-bold"
-                                                    onClick={() => handleDeleteClick(v)}
+                                                    onClick={() => handleDeleteClick(a)}
                                                 >
                                                     Izbriši
                                                 </Button>
@@ -161,14 +165,14 @@ const VehicleList = () => {
                 </Card.Body>
             </Card>
 
-            {/* MODAL (footer gumbi ostaju klasični za akciju brisanja) */}
+            {/* MODAL ZA BRISANJE */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
-                    Jeste li sigurni da želite izbrisati vozilo s registracijom **{vehicleToDelete?.licensePlate}**?
-                    Ova akcija je nepovratna.
+                    Jeste li sigurni da želite izbrisati dodjelu ID **{assignmentToDelete?.id}**?
+                    Ova akcija će pošiljku **{assignmentToDelete?.shipment?.trackingNumber}** vratiti u status PENDING.
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="font-monospace">
@@ -183,4 +187,4 @@ const VehicleList = () => {
     );
 };
 
-export default VehicleList;
+export default AssignmentList;

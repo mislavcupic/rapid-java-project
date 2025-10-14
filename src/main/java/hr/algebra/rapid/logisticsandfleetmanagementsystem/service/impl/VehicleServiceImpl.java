@@ -1,137 +1,160 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Vehicle;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo; // Dodan import za UserInfo
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleRequest;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleResponse; // DODAN NOVI DTO ZA IZLAZ
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleResponse;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.VehicleRepository;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository; // ⭐ NOVI REPOZITORIJ
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors; // Potreban za mapiranje liste
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
-    private final UserRepository userRepository;
+    private final DriverRepository driverRepository; // ⭐ Koristimo DriverRepository
 
-    @Override // Dodajemo @Override jer je metoda sada u interfaceu
+    // --- Pomoćna metoda za mapiranje (Vehicle -> VehicleResponse DTO) ---
+    @Override
     public VehicleResponse mapToResponse(Vehicle vehicle) {
         VehicleResponse dto = new VehicleResponse();
         dto.setId(vehicle.getId());
         dto.setLicensePlate(vehicle.getLicensePlate());
         dto.setMake(vehicle.getMake());
         dto.setModel(vehicle.getModel());
-        // Provjerite da li se polje zove modelYear ili year
-        dto.setModelYear(vehicle.getYear());
+        dto.setModelYear(vehicle.getYear()); // Preimenovano u getYear() ako je to ispravan naziv u entitetu
         dto.setFuelType(vehicle.getFuelType());
         dto.setLoadCapacityKg(vehicle.getLoadCapacityKg());
 
-        // Logika za ID vozača
-        UserInfo currentDriver = vehicle.getCurrentDriver();
+        // LOGIKA MAPIRANJA VOZAČA
+        Driver currentDriver = vehicle.getCurrentDriver(); // Entitet je tipa Driver
         if (currentDriver != null) {
-            dto.setCurrentDriverId(currentDriver.getId());
-            // Ako želite puno ime vozača, osigurajte da je entitet inicijaliziran
-            // (ovdje možemo pretpostaviti da je u kreiranju/ažuriranju inicijaliziran)
-            // dto.setCurrentDriverFullName(currentDriver.getFirstName() + " " + currentDriver.getLastName());
+            // Koristimo statičku metodu koja mapira Driver entitet u DTO
+            DriverResponseDTO driverDto = DriverResponseDTO.fromDriver(currentDriver);
+            dto.setCurrentDriver(driverDto);
         }
 
         return dto;
     }
-    // --- Glavne metode (Ažurirane za povrat DTO-a) ---
+
+    // --- READ operacije ---
 
     @Override
-    public List<VehicleResponse> findAll() {
-        List<Vehicle> vehicles = vehicleRepository.findAll();
-
-        return vehicles.stream()
-                .map(this::mapToResponse) // Koristimo novu javnu mapToResponse metodu
+    @Transactional(readOnly = true)
+    public List<VehicleResponse> findAllVehicles() {
+        return vehicleRepository.findAll().stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // Ažuriramo metodu findById da koristi javnu metodu za mapiranje
     @Override
-    public Optional<VehicleResponse> findById(Long id) {
-        return vehicleRepository.findById(id)
-                .map(this::mapToResponse); // Koristimo novu javnu mapToResponse metodu
+    @Transactional(readOnly = true)
+    public Optional<VehicleResponse> findVehicleById(Long id) {
+        return vehicleRepository.findById(id).map(this::mapToResponse);
     }
 
-
-    // --- Metode za unos/izmjenu (koriste VehicleRequest DTO) ---
+    // --- CREATE operacija ---
 
     @Override
-    // Ostaje Vehicle za povrat, ali se može promijeniti u VehicleResponse
-    public Vehicle createVehicle(VehicleRequest request) {
+    @Transactional
+    public VehicleResponse createVehicle(VehicleRequest request) {
+
+        // 1. Provjera konflikta za registraciju
+        if (vehicleRepository.findByLicensePlate(request.getLicensePlate()).isPresent()) {
+            throw new ConflictException("Vozilo s registracijom " + request.getLicensePlate() + " već postoji.");
+        }
 
         Vehicle vehicle = new Vehicle();
         vehicle.setLicensePlate(request.getLicensePlate());
         vehicle.setMake(request.getMake());
         vehicle.setModel(request.getModel());
-        // Korištenje modelYear kako je definirano u DTO-u
         vehicle.setYear(request.getModelYear());
         vehicle.setFuelType(request.getFuelType());
         vehicle.setLoadCapacityKg(request.getLoadCapacityKg());
 
-        // Logika za postavljanje vozača
+        // 2. Logika za postavljanje Driver entiteta (koristimo DriverRepository)
         if (request.getCurrentDriverId() != null) {
-            // Dohvaćamo vozača, bacamo iznimku ako ne postoji
-            UserInfo driver = userRepository.findById(request.getCurrentDriverId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Vozač", "ID", request.getCurrentDriverId()));
+            Driver driver = driverRepository.findById(request.getCurrentDriverId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Vozač profil", "ID", request.getCurrentDriverId()));
+
+            // 3. Provjera konflikta: Je li vozač već dodijeljen drugom vozilu?
+            vehicleRepository.findByCurrentDriverId(driver.getId()).ifPresent(v -> {
+                throw new ConflictException("Vozač je već dodijeljen vozilu: " + v.getLicensePlate());
+            });
+
             vehicle.setCurrentDriver(driver);
         } else {
-            // Ako je ID null, postavljamo vozača na null
             vehicle.setCurrentDriver(null);
         }
 
-        return vehicleRepository.save(vehicle);
+        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+        return mapToResponse(savedVehicle);
     }
 
-
+    // --- UPDATE operacija ---
 
     @Override
     @Transactional
-    // Metoda updateVehicle sada prima VehicleRequest
-    public Vehicle updateVehicle(Long id, VehicleRequest request) {
+    public VehicleResponse updateVehicle(Long id, VehicleRequest request) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vozilo", "ID", id));
 
-        // Ažuriraj polja iz Request DTO-a
+        // 1. Provjera konflikta za registraciju (ako je promijenjena)
+        if (!vehicle.getLicensePlate().equals(request.getLicensePlate()) &&
+                vehicleRepository.findByLicensePlate(request.getLicensePlate()).isPresent()) {
+            throw new ConflictException("Vozilo s registracijom " + request.getLicensePlate() + " već postoji.");
+        }
+
         vehicle.setLicensePlate(request.getLicensePlate());
         vehicle.setMake(request.getMake());
         vehicle.setModel(request.getModel());
-        vehicle.setYear(request.getModelYear()); // Korištenje modelYear
+        vehicle.setYear(request.getModelYear());
         vehicle.setFuelType(request.getFuelType());
         vehicle.setLoadCapacityKg(request.getLoadCapacityKg());
 
-        // Logika za ažuriranje vozača
+        // 2. Logika za ažuriranje vozača
+        Driver driver = null;
         if (request.getCurrentDriverId() != null) {
-            UserInfo driver = userRepository.findById(request.getCurrentDriverId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Vozač", "ID", request.getCurrentDriverId()));
-            vehicle.setCurrentDriver(driver);
-        } else {
-            // Ako je ID null/prazan, uklanjamo vozača (odspajamo)
-            vehicle.setCurrentDriver(null);
+            driver = driverRepository.findById(request.getCurrentDriverId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Vozač profil", "ID", request.getCurrentDriverId()));
+
+            // 3. Provjera konflikta: Je li vozač dodijeljen drugom vozilu?
+            vehicleRepository.findByCurrentDriverId(driver.getId()).ifPresent(v -> {
+                // Dozvolite dodjelu samo ako je riječ o trenutnom vozilu
+                if (!v.getId().equals(id)) {
+                    throw new ConflictException("Vozač je već dodijeljen drugom vozilu: " + v.getLicensePlate());
+                }
+            });
         }
 
-        // Nema potrebe za eksplicitnim .save() zbog @Transactional, ali ga ostavljamo radi jasnoće
-        return vehicleRepository.save(vehicle);
+        vehicle.setCurrentDriver(driver);
+
+        Vehicle updatedVehicle = vehicleRepository.save(vehicle);
+        return mapToResponse(updatedVehicle);
     }
 
-    // Metoda deleteVehicle ostaje ista
+    // --- DELETE operacija ---
+
     @Override
     @Transactional
     public void deleteVehicle(Long id) {
         if (!vehicleRepository.existsById(id)) {
             throw new ResourceNotFoundException("Vozilo", "ID", id);
         }
+        // Opcionalno: Provjera ima li vozilo aktivne pošiljke (assignment) prije brisanja
+
         vehicleRepository.deleteById(id);
     }
 }

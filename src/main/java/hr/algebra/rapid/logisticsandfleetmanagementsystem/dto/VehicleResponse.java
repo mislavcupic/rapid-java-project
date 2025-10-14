@@ -15,8 +15,9 @@ public class VehicleResponse {
     private BigDecimal loadCapacityKg;
 
     // Ovo polje vraća samo ID vozača, čime izbjegavamo slanje cijelog UserInfo entiteta
-    private Long currentDriverId;
+   // private Long currentDriverId;
 
     // Opcija: Možete dodati i ime za lakši prikaz
-    private String currentDriverFullName;
+    //private String currentDriverFullName;
+    private DriverResponseDTO currentDriver;
 }

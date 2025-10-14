@@ -9,7 +9,5 @@ public interface UserService {
 
     List<UserInfo> findAll();
 
-    List<UserInfo> findDrivers();
-
     UserInfo findById(Long id); // Važna za dodjelu vozača vozilu
 }

@@ -21,20 +21,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.config.Customizer;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor // Zamjena za @AllArgsConstructor za final polja
+@RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig implements WebMvcConfigurer {
 
-    // Morate osigurati da je ova klasa kreirana i da radi JWT validaciju
     private final JwtAuthFilter jwtAuthenticationFilter;
 
-    // --- 1. CORS Konfiguracija (Za React Frontend) ---
+    // --- 1. CORS Konfiguracija (OSTALO NETAKNUTO) ---
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // Postavite port na kojem se pokreće vaš React frontend (Vite = 5173, CRA = 3000)
         String reactDevPort = "http://localhost:5173";
 
         registry.addMapping("/**")
@@ -44,30 +43,47 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .allowCredentials(true);
     }
 
-    // --- 2. Security Filter Chain (Pravila) ---
+    // --- 2. Security Filter Chain (Pravila) - Korigirano ---
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((auth) -> auth
-                        // A. Javno Dostupne Rute (PermitAll)
+
+                        // A. Javno Dostupne Rute (PermitAll) - ZADRŽANO DA BI LOGIN RADIO!
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/auth/login", "/auth/register").permitAll() // Login i registracija
-                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll() // Javne rute za pregled
-                        .requestMatchers(HttpMethod.GET, "/api/welcome").permitAll() // Vaš test endpoint
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/welcome").permitAll()
 
-                        // B. Rute za Korisnike (REGISTERED)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/drivers/my-info").hasAnyRole("REGISTERED", "DRIVER")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/drivers/{id}").hasAnyRole("REGISTERED", "DRIVER") // Ažuriranje vlastitih podataka
+                        // B. Rute za KORISNIKE/VOZAČE - ISPRAVLJENE PUTANJE
+                        .requestMatchers(HttpMethod.GET, "/api/drivers/my-info").hasAnyRole("REGISTERED", "DRIVER") // Uklonjen v1
+                        .requestMatchers(HttpMethod.PUT, "/api/drivers/{id}").hasAnyRole("REGISTERED", "DRIVER") // Uklonjen v1
 
-                        // C. Rute za Administratora (ADMIN)
-                        .requestMatchers("/api/v1/vehicles/**").hasRole("ADMIN")       // Upravljanje vozilima
-                        .requestMatchers("/api/v1/routes/**").hasRole("ADMIN")         // Upravljanje rutama
-                        .requestMatchers("/api/v1/drivers/**").hasRole("ADMIN")        // Upravljanje vozačima (svim)
-                        .requestMatchers("/api/v1/reports/**").hasRole("ADMIN")        // Financijski izvještaji
-                        .requestMatchers("/auth/update-role/**").hasRole("ADMIN")      // Admin rute za sigurnost
+                        // C. DODANE RUTE ZA DISPATCHER I ADMINISTRATORA
+
+                        // 1. DISPATCHER: Potrebne liste za Assignment Form (GET)
+                        // /api/users/drivers je KRITIČNA putanja za frontend
+                        .requestMatchers(HttpMethod.GET, "/api/users/drivers").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").hasAnyRole("ADMIN", "DISPATCHER") // Čitanje vozila
+                        .requestMatchers(HttpMethod.GET, "/api/shipments/**").hasAnyRole("ADMIN", "DISPATCHER") // Čitanje pošiljaka
+                        .requestMatchers(HttpMethod.GET, "/api/drivers/**").hasAnyRole("ADMIN", "DISPATCHER") // Čitanje svih Driver profila
+
+                        // 2. DISPATCHER/ADMIN CRUD
+                        .requestMatchers("/api/assignments/**").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.POST, "/api/shipments").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.PUT, "/api/shipments/**").hasAnyRole("ADMIN", "DISPATCHER")
+
+                        // 3. ADMIN Rute (Puna kontrola) - ISPRAVLJENE PUTANJE
+                        // Sve što nije izričito dozvoljeno DISPATCHER-u ili DRIVER-u spada ovdje (npr. DELETE, update role, routes, reports)
+                        .requestMatchers(HttpMethod.DELETE, "/api/shipments/**").hasRole("ADMIN")
+                        .requestMatchers("/api/vehicles/**").hasRole("ADMIN") // Općenita PUT/POST/DELETE vozila
+                        .requestMatchers("/api/routes/**").hasRole("ADMIN")
+                        .requestMatchers("/api/drivers/**").hasRole("ADMIN")
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
+                        .requestMatchers("/auth/update-role/**").hasRole("ADMIN")
 
                         // D. Sve ostalo zahtijeva autentifikaciju
                         .anyRequest().authenticated()
@@ -77,13 +93,14 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling.authenticationEntryPoint(authenticationEntryPoint())
                                 .accessDeniedHandler(accessDeniedHandler()))
-                .cors(httpSecurityCorsConfigurer -> {}); // Koristimo globalnu CORS konfiguraciju iz addCorsMappings
+                // KLJUČNO: Ostavljeno kao u Vašem originalu da bi CORS radio
+                .cors(httpSecurityCorsConfigurer -> {});
 
         return http.build();
     }
 
-    // --- 3. Exception Handlers ---
-
+    // --- 3. Exception Handlers, AuthenticationManager, PasswordEncoder ostaju isti ---
+    // ...
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
@@ -92,6 +109,7 @@ public class SecurityConfig implements WebMvcConfigurer {
         };
     }
 
+    // ...
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -100,16 +118,15 @@ public class SecurityConfig implements WebMvcConfigurer {
         };
     }
 
+    // ...
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        // Spring Boot automatski konfigurira AuthenticationConfiguration
-        // koja se koristi za dobivanje AuthenticationManagera
         return config.getAuthenticationManager();
     }
 
+    // ...
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Vratite BCryptPasswordEncoder jer su vaše lozinke heširane BCryptom ($2a$10...)
         return new BCryptPasswordEncoder();
     }
 }

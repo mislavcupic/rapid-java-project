@@ -3,6 +3,7 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Entity
 @Table(name = "vehicle")
@@ -31,8 +32,14 @@ public class Vehicle {
     @Column(name = "load_capacity_kg")
     private BigDecimal loadCapacityKg;
 
-    // Veza na korisnika/vozača. Pretpostavljam da je ApplicationUser vaš entitet (UserInfo)
-    @OneToOne(fetch = FetchType.EAGER)
+    // 🛑 KRITIČNA KOREKCIJA: Veza s Driver entitetom
+    // Polje je sada tipa Driver, a JoinColumn se referencira na driver.id
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_driver_id", unique = true)
-    private UserInfo currentDriver;
+    private Driver currentDriver;
+
+    // Pomoćna metoda za lakše rukovanje Optional-om
+    public Optional<Driver> getCurrentDriverOptional() {
+        return Optional.ofNullable(currentDriver);
+    }
 }
