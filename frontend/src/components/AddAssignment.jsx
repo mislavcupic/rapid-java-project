@@ -105,7 +105,7 @@ const AddAssignment = () => {
                                 {shipments.map(shipment => (
                                     // ✅ KRITIČNO: Pretvaramo ID u String za ispravnu sinkronizaciju
                                     <option key={shipment.id} value={String(shipment.id)}>
-                                        #{shipment.id} - {shipment.originAddress} -> {shipment.destinationAddress}
+                                        #{shipment.id} - {shipment.originAddress} &rarr; {shipment.destinationAddress}
                                     </option>
                                 ))}
                             </Form.Select>

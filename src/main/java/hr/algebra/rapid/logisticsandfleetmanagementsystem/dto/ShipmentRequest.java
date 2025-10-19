@@ -1,5 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,6 +31,7 @@ public class ShipmentRequest {
 
     @NotNull(message = "Expected delivery date is required")
     @FutureOrPresent(message = "Delivery date cannot be in the past")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime expectedDeliveryDate;
 
     // Opis nije obavezan

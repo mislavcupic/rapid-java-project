@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface DriverService {
 
-
     List<DriverResponseDTO> findAllDrivers();
     Optional<DriverResponseDTO> findDriverById(Long id);
     Long getDriverIdFromUsername(String username);

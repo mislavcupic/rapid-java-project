@@ -17,6 +17,9 @@ import AddShipment from './components/AddShipment.jsx';
 import EditAssignment from './components/EditAssignment.jsx';
 import EditShipment from './components/EditShipment.jsx';
 import AddAssignment from "./components/AddAssignment.jsx";
+import DriverForm from "./components/DriverForm.jsx";
+import DriverList from "./components/DriverList.jsx";
+import AnalyticsPage from "./components/AnalyticsPage.jsx";
 const AppNavbar = () => {
     const isAuthenticated = !!localStorage.getItem('accessToken');
     const navigate = useNavigate();
@@ -43,8 +46,10 @@ const AppNavbar = () => {
                         {isAuthenticated && (
                             <>
                                 <Nav.Link as={Link} to="/vehicles">Vozila</Nav.Link>
+                                <Nav.Link as={Link} to="/drivers">Vozači</Nav.Link>
                                 <Nav.Link as={Link} to="/shipments">Pošiljke</Nav.Link>
                                 <Nav.Link as={Link} to="/assignments">Dodjele</Nav.Link>
+                                <Nav.Link as={Link} to="/analytics">Analitika</Nav.Link>
                             </>
                         )}
                     </Nav>
@@ -101,6 +106,10 @@ function App() {
                         <Route path="/assignments/edit/:id" element={<EditAssignment />}/>
                         <Route path="/assignments/add/:id" element={<AddAssignment />}/>
                         <Route path="/shipments/edit/:id" element={<EditShipment />}/>
+                        <Route path="/drivers" element={<DriverList />} />
+                        <Route path="/drivers/add" element={<DriverForm />} />
+                        <Route path="/drivers/edit/:id" element={<DriverForm />} />
+                        <Route path="/analytics" element={<AnalyticsPage />} />
                     </Routes>
                 </Container>
             </div>

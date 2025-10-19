@@ -5,18 +5,36 @@ import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner 
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchShipmentById, createShipment, updateShipment } from '../services/ShipmentApi';
 
+// Pomoćna funkcija za formatiranje datuma iz Backenda (LocalDateTime) u format YYYY-MM-DDThh:mm
+// Ovaj format je obavezan za input type="datetime-local"
+const formatDateTimeLocal = (isoString) => {
+    if (!isoString) {
+        // Ako nema datuma, vraćamo trenutno vrijeme (za novu pošiljku)
+        return new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+    }
+    // Uzimamo samo prvih 16 znakova: YYYY-MM-DDTHH:MM (eliminiramo sekunde i milisekunde)
+    return isoString.slice(0, 16);
+}
 
 const ShipmentForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
 
+    const [success, setSuccess] = useState(null);
+
     const [formData, setFormData] = useState({
         trackingNumber: '',
         originAddress: '',
         destinationAddress: '',
         description: '',
-        status: 'PENDING' // Početni status za novu pošiljku
+        status: 'PENDING',
+
+        // ✅ KRITIČNA IZMJENA: Koristimo ispravan format za inicijalizaciju
+        expectedDeliveryDate: formatDateTimeLocal(null),
+        weightKg: '',
+        shipmentValue: '',
+        volumeM3: ''
     });
 
     const SHIPMENT_STATUSES = ['PENDING', 'SCHEDULED', 'IN_TRANSIT', 'DELIVERED', 'CANCELED'];
@@ -41,11 +59,19 @@ const ShipmentForm = () => {
                         originAddress: data.originAddress || '',
                         destinationAddress: data.destinationAddress || '',
                         description: data.description || '',
-                        status: data.status || 'PENDING'
+                        status: data.status || 'PENDING',
+
+                        // ✅ KRITIČNA IZMJENA: Koristimo formatDateTimeLocal za učitavanje
+                        expectedDeliveryDate: formatDateTimeLocal(data.expectedDeliveryDate),
+
+                        weightKg: data.weightKg || '',
+                        shipmentValue: data.shipmentValue || '',
+                        volumeM3: data.volumeM3 || ''
                     });
+                    setError(null);
                 } catch (err) {
                     console.error("Greška pri učitavanju pošiljke:", err);
-                    setError(err.message);
+                    setError(err.message || "Greška pri učitavanju pošiljke.");
                 }
             }
             setLoading(false);
@@ -61,42 +87,48 @@ const ShipmentForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        setSaving(true);
         setError(null);
         setSuccess(null);
 
-        // ✅ KRITIČNA IZMJENA: ČIŠĆENJE PODATAKA
-        const dataToSend = { ...formData };
+        // Provjera obaveznih polja
+        if (!formData.trackingNumber || !formData.originAddress || !formData.destinationAddress ||
+            !formData.expectedDeliveryDate || !formData.weightKg) {
 
-        // Prođi kroz sva polja i pretvori prazan string u null.
-        // OVO JE KRITIČNO za ispravnu Java validaciju (@NotNull).
+            setError('Molimo popunite sva obavezna polja (Broj za praćenje, Adrese, Datum i Težina).');
+            setSaving(false);
+            return;
+        }
+
+        // ČIŠĆENJE PODATAKA prije slanja na backend (konverzija "" u null)
+        const dataToSend = { ...formData };
         for (const key in dataToSend) {
-            // Provjeri je li polje prazan string. Ostavite datume i ostale ne-string vrijednosti kakve jesu.
-            if (typeof dataToSend[key] === 'string' && dataToSend[key].trim() === '') {
+            const value = dataToSend[key];
+            if (typeof value === 'string' && value.trim() === '') {
                 dataToSend[key] = null;
             }
         }
 
-        // NAPOMENA: Ako su polja 'weight', 'volume', 'value' na backendu obavezni
-        // (@NotNull), moraju imati vrijednost.
-        // Ako su na backendu obavezni (@NotBlank), onda 'null' NEĆE proći.
-        // Ali za numerička polja to rješava problem.
+        // NAPOMENA: Nije potrebna ručna korekcija datuma/vremena jer ga type="datetime-local" već šalje ispravno.
 
         try {
             if (id) {
-                // updateShipment na liniji 72
                 await updateShipment(id, dataToSend);
+                setSuccess('Pošiljka je uspješno ažurirana!');
             } else {
-                // createShipment na liniji 70
                 await createShipment(dataToSend);
+                setSuccess('Nova pošiljka je uspješno kreirana!');
             }
-            // ... (logika za uspjeh)
+            setTimeout(() => navigate('/shipments'), 1500);
         } catch (err) {
-            // ... (logika za grešku)
+            console.error("Greška pri spremanju pošiljke:", err);
+            setError(err.message || 'Greška pri spremanju pošiljke. Provjerite podatke i pokušajte ponovno.');
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
+
+    // UI za Loading
     if (loading) {
         return (
             <div className="text-center py-5">
@@ -114,7 +146,9 @@ const ShipmentForm = () => {
                 </Card.Header>
                 <Card.Body>
 
+                    {/* Prikaz poruka o grešci i uspjehu */}
                     {error && <Alert variant="danger" className="font-monospace">{error}</Alert>}
+                    {success && <Alert variant="success" className="font-monospace">{success}</Alert>}
 
                     <Form onSubmit={handleSubmit} className="p-1">
 
@@ -142,7 +176,6 @@ const ShipmentForm = () => {
                                         onChange={handleChange}
                                         required
                                         className="font-monospace"
-                                        // U Edit modu, PENDING se može mijenjati u SCHEDULED ručno, ostalo se obično mijenja kroz Assignment
                                         disabled={isEditMode && formData.status !== 'PENDING' && formData.status !== 'SCHEDULED'}
                                     >
                                         {SHIPMENT_STATUSES.map(s => (
@@ -182,6 +215,73 @@ const ShipmentForm = () => {
                                 </FloatingLabel>
                             </Col>
                         </Row>
+
+                        {/* ✅ KRITIČNA POLJA: DATUM i TEŽINA */}
+                        <Row className="mb-3">
+                            {/* Datum Isporuke (Sada uvijek u YYYY-MM-DDThh:mm formatu) */}
+                            <Col md={6}>
+                                <FloatingLabel controlId="expectedDeliveryDate" label="Očekivani Datum Isporuke">
+                                    <Form.Control
+                                        type="datetime-local"
+                                        name="expectedDeliveryDate"
+                                        value={formData.expectedDeliveryDate}
+                                        onChange={handleChange}
+                                        required
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </Col>
+
+                            {/* Težina (kg) */}
+                            <Col md={6}>
+                                <FloatingLabel controlId="weightKg" label="Težina (kg)">
+                                    <Form.Control
+                                        type="number"
+                                        name="weightKg"
+                                        value={formData.weightKg}
+                                        onChange={handleChange}
+                                        required
+                                        min="0.1"
+                                        step="0.01"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </Col>
+                        </Row>
+
+                        {/* Dodatna Numerička polja (Vrijednost i Volumen) */}
+                        <Row className="mb-4">
+                            {/* Vrijednost Pošiljke */}
+                            <Col md={6}>
+                                <FloatingLabel controlId="shipmentValue" label="Vrijednost (€)">
+                                    <Form.Control
+                                        type="number"
+                                        name="shipmentValue"
+                                        value={formData.shipmentValue}
+                                        onChange={handleChange}
+                                        min="0"
+                                        step="0.01"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </Col>
+
+                            {/* Volumen (m3) */}
+                            <Col md={6}>
+                                <FloatingLabel controlId="volumeM3" label="Volumen (m³)">
+                                    <Form.Control
+                                        type="number"
+                                        name="volumeM3"
+                                        value={formData.volumeM3}
+                                        onChange={handleChange}
+                                        min="0"
+                                        step="0.01"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </Col>
+                        </Row>
+
 
                         {/* Opis */}
                         <Row className="mb-4">

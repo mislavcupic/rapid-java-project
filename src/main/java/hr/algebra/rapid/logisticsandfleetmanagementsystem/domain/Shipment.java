@@ -16,7 +16,7 @@ public class Shipment {
 
     // 1. Osnovni podaci o pošiljci
     @Column(name = "tracking_number", unique = true, nullable = false)
-    private String trackingNumber; // Jedinstveni kod za praćenje
+    private String trackingNumber;
 
     @Column(name = "description")
     private String description;
@@ -35,10 +35,10 @@ public class Shipment {
     @Column(name = "destination_address", nullable = false)
     private String destinationAddress;
 
-    // 4. Status i datumi
-    // Koristimo String za status, ali u praksi je bolje koristiti Enum.
+
+    // razmislit ću o enumu
     @Column(name = "status", nullable = false)
-    private String status; // Npr. PENDING, IN_TRANSIT, DELIVERED, CANCELED
+    private String status;
 
     @Column(name = "expected_delivery_date")
     private LocalDateTime expectedDeliveryDate;
@@ -46,7 +46,5 @@ public class Shipment {
     @Column(name = "actual_delivery_date")
     private LocalDateTime actualDeliveryDate;
 
-    // Opcija: Veza na Dispečera koji je kreirao pošiljku (ako je potrebno)
-    // @ManyToOne
-    // private UserInfo createdBy;
+
 }

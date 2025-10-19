@@ -74,11 +74,15 @@ public class SecurityConfig implements WebMvcConfigurer {
                         // 2. DISPATCHER/ADMIN CRUD
                         .requestMatchers("/api/assignments/**").hasAnyRole("ADMIN", "DISPATCHER")
                         .requestMatchers(HttpMethod.POST, "/api/shipments").hasAnyRole("ADMIN", "DISPATCHER")
-                        .requestMatchers(HttpMethod.PUT, "/api/shipments/**").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.PUT, "/api/shipments/edit/**").hasRole("DISPATCHER")
 
-                        // 3. ADMIN Rute (Puna kontrola) - ISPRAVLJENE PUTANJE
+                        // 🌟 3. ANALITIKA RUTE (DODANO) 🌟
+                        .requestMatchers(HttpMethod.GET, "/api/analytics/shipments/average-active-weight").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.POST, "/api/analytics/shipments/mark-overdue").hasRole("ADMIN")
+
+                        // 4. ADMIN Rute (Puna kontrola) - ISPRAVLJENE PUTANJE
                         // Sve što nije izričito dozvoljeno DISPATCHER-u ili DRIVER-u spada ovdje (npr. DELETE, update role, routes, reports)
-                        .requestMatchers(HttpMethod.DELETE, "/api/shipments/**").hasRole("ADMIN")
+                      // Eksplicitno s ID-om
                         .requestMatchers("/api/vehicles/**").hasRole("ADMIN") // Općenita PUT/POST/DELETE vozila
                         .requestMatchers("/api/routes/**").hasRole("ADMIN")
                         .requestMatchers("/api/drivers/**").hasRole("ADMIN")
@@ -98,7 +102,6 @@ public class SecurityConfig implements WebMvcConfigurer {
 
         return http.build();
     }
-
     // --- 3. Exception Handlers, AuthenticationManager, PasswordEncoder ostaju isti ---
     // ...
     @Bean

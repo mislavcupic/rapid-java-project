@@ -1,0 +1,22 @@
+/* Primijenite Courier New na sve unutar komponente */
+.courierFont {
+    font-family: 'Courier New', monospace;
+}
+
+/* Stil za pastelni gumb (override za Bulk akciju) */
+.pastelButton {
+    /* Nadjačajte defaultni stil (npr. Mint zelena) */
+    background-color: #a8e6cf !important;
+    color: #1a1a1a !important; /* Crni tekst */
+    border: 1px solid #1a1a1a !important;
+    font-weight: bold;
+    /* Dodajte blagu sjenu ako želite pisaći stroj efekt */
+    box-shadow: 2px 2px 0px #000000;
+}
+
+/* Stil za karticu koja služi kao prozor terminala */
+.terminalCard {
+    background-color: #1a1a1a !important;
+    color: #f0f0f0 !important;
+    border: 2px solid #555 !important; /* Jači sivi okvir */
+}

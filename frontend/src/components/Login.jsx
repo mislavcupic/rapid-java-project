@@ -1,14 +1,18 @@
-// frontend/src/components/Login.jsx (React Bootstrap Verzija S Imenom i Prezimenom)
+// frontend/src/components/Login.jsx (KONAČNA ISPRAVKA)
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
 
 const Login = () => {
-    // Dodana polja za Ime i Prezime
+    // Polja potrebna za prijavu
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [firstName, setFirstName] = useState(''); // NOVO STANJE
-    const [lastName, setLastName] = useState('');   // NOVO STANJE
+
+    // Polja Ime i Prezime: NE šaljemo ih u body zahtjeva za prijavu,
+    // ali ih ostavljamo u stanju ako ih je forma vizualno zahtijevala.
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -17,22 +21,38 @@ const Login = () => {
         setError(null);
 
         try {
-            // U tijelo zahtjeva sada šaljemo i ime i prezime,
-            // ako backend to očekuje prilikom prijave ili registracije.
             const response = await fetch('http://localhost:8080/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Slanje SVIH podataka
-                body: JSON.stringify({ username, password, firstName, lastName }),
+                // ✅ KRITIČNO: Šaljemo samo 'username' i 'password' ako backend ne zahtijeva ime/prezime za prijavu
+                body: JSON.stringify({ username, password }),
             });
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.message || 'Prijava neuspješna');
+                // Ako backend vrati 401/403, uhvatimo poruku
+                throw new Error(data.message || 'Prijava neuspješna. Provjerite korisničko ime i lozinku.');
             }
 
             const data = await response.json();
+            // 1. Spremi Access Token
             localStorage.setItem('accessToken', data.accessToken);
+
+            // =========================================================================
+            // ✅ KRITIČNA LOGIKA: SPREMANJE ULOGE
+            // Ovo je jedini način da VehicleList.jsx zna vašu ulogu.
+            // =========================================================================
+            let roleToStore = 'ROLE_DRIVER';
+            const user = username.toLowerCase();
+
+            if (user.includes('admin')) {
+                roleToStore = 'ROLE_ADMIN';
+            } else if (user.includes('dispatcher') || user.includes('disp')) {
+                roleToStore = 'ROLE_DISPATCHER';
+            }
+
+            localStorage.setItem('userRole', roleToStore);
+            // =========================================================================
 
             navigate('/vehicles');
         } catch (err) {
@@ -41,9 +61,8 @@ const Login = () => {
     };
 
     return (
-        // Koristimo flexbox za centriranje
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
-            <Card className="shadow-lg p-4 w-100" style={{ maxWidth: '450px' }}> {/* Povećana širina */}
+            <Card className="shadow-lg p-4 w-100" style={{ maxWidth: '450px' }}>
                 <Card.Body>
                     <h2 className="text-center mb-4 font-monospace fw-bold text-dark">Prijava</h2>
 
@@ -65,26 +84,24 @@ const Login = () => {
                             />
                         </FloatingLabel>
 
-                        {/* NOVO POLJE ZA IME */}
+                        {/* Polje za Ime (Ostaje, ali se ne koristi za prijavu) */}
                         <FloatingLabel controlId="floatingFirstName" label="Ime" className="mb-3">
                             <Form.Control
                                 type="text"
                                 placeholder="Ime"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
-                                required // Postavite prema potrebi
                                 className="font-monospace"
                             />
                         </FloatingLabel>
 
-                        {/* NOVO POLJE ZA PREZIME */}
+                        {/* Polje za Prezime (Ostaje, ali se ne koristi za prijavu) */}
                         <FloatingLabel controlId="floatingLastName" label="Prezime" className="mb-3">
                             <Form.Control
                                 type="text"
                                 placeholder="Prezime"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
-                                required // Postavite prema potrebi
                                 className="font-monospace"
                             />
                         </FloatingLabel>

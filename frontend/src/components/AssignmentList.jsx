@@ -1,8 +1,9 @@
-// frontend/src/components/AssignmentList.jsx
+// frontend/src/components/AssignmentList.jsx (KONAČNA VERZIJA)
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAssignments, deleteAssignment } from '../services/AssignmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 
 const AssignmentList = () => {
     const [assignments, setAssignments] = useState([]);
@@ -15,7 +16,17 @@ const AssignmentList = () => {
 
     const navigate = useNavigate();
     const location = useLocation();
-    const message = location.state?.message; // Za Success poruku nakon Create/Update
+    const message = location.state?.message;
+
+    // =========================================================================
+    // ✅ PROVJERE ULOGA
+    // Pretpostavka: Admin i Dispečer smiju raditi sve s dodjelama
+    // =========================================================================
+    const userRole = localStorage.getItem('userRole');
+    const isAdmin = userRole && userRole.includes('ROLE_ADMIN');
+    // Svi CRUD-ovi su dostupni Adminu i Dispečeru
+    const isDispatcherOrAdmin = isAdmin || (userRole && userRole.includes('ROLE_DISPATCHER'));
+    // =========================================================================
 
     const loadAssignments = useCallback(async () => {
         if (!isAuthenticated) {
@@ -35,13 +46,17 @@ const AssignmentList = () => {
 
     useEffect(() => {
         loadAssignments();
-        // Očisti poruku nakon što se prikaže
         if (message) {
             window.history.replaceState({}, document.title);
         }
     }, [loadAssignments, message]);
 
     const handleDeleteClick = (assignment) => {
+        if (!isDispatcherOrAdmin) {
+            setError("Pristup odbijen. Samo ADMINISTRATOR ili DISPEČER smiju brisati dodjele.");
+            return;
+        }
+        setError(null);
         setAssignmentToDelete(assignment);
         setShowDeleteModal(true);
     };
@@ -52,7 +67,6 @@ const AssignmentList = () => {
         try {
             setLoading(true);
             await deleteAssignment(assignmentToDelete.id);
-            // Osvježi listu
             await loadAssignments();
             navigate('/assignments', { state: { message: `Dodjela ID ${assignmentToDelete.id} uspješno obrisana.` } });
             setAssignmentToDelete(null);
@@ -101,8 +115,11 @@ const AssignmentList = () => {
                         variant="light"
                         onClick={handleAddAssignment}
                         className="font-monospace fw-bold text-primary"
+                        // ✅ GUMB DODAJ: Aktivan za Admina i Dispečera
+                        disabled={!isDispatcherOrAdmin}
+                        title={!isDispatcherOrAdmin ? "Samo Dispečeri/Admini smiju dodavati dodjele" : "Kreiraj novu dodjelu"}
                     >
-                        <i className="bi bi-plus-circle me-1"></i> Kreiraj Novu Dodjelu
+                        <FaPlus className="me-1" /> Kreiraj Novu Dodjelu
                     </Button>
                 </Card.Header>
                 <Card.Body>
@@ -143,16 +160,22 @@ const AssignmentList = () => {
                                                     size="sm"
                                                     className="me-2 font-monospace fw-bold"
                                                     onClick={() => navigate(`/assignments/edit/${a.id}`)}
+                                                    // ✅ GUMB UREDI: Aktivan za Admina i Dispečera
+                                                    disabled={!isDispatcherOrAdmin}
+                                                    title={!isDispatcherOrAdmin ? "Samo Dispečeri/Admini smiju uređivati dodjele" : "Uredi dodjelu"}
                                                 >
-                                                    Uredi
+                                                    <FaEdit className="me-1"/> Uredi
                                                 </Button>
                                                 <Button
                                                     variant="outline-danger"
                                                     size="sm"
                                                     className="font-monospace fw-bold"
                                                     onClick={() => handleDeleteClick(a)}
+                                                    // ✅ GUMB IZBRIŠI: Aktivan za Admina i Dispečera
+                                                    disabled={!isDispatcherOrAdmin}
+                                                    title={!isDispatcherOrAdmin ? "Samo Dispečeri/Admini smiju brisati dodjele" : "Izbriši dodjelu"}
                                                 >
-                                                    Izbriši
+                                                    <FaTrash className="me-1"/> Izbriši
                                                 </Button>
                                             </div>
                                         </td>

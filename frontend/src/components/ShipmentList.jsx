@@ -1,8 +1,10 @@
-// frontend/src/components/ShipmentList.jsx
+// frontend/src/components/ShipmentList.jsx (KORIGIRANA VERZIJA)
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchShipments, deleteShipment } from '../services/ShipmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 
 const ShipmentList = () => {
     const [shipments, setShipments] = useState([]);
@@ -16,6 +18,17 @@ const ShipmentList = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const message = location.state?.message;
+    const userRole = localStorage.getItem('userRole');
+    const isAdmin = userRole && userRole.includes('ROLE_ADMIN');
+    const isDispatcher = userRole && userRole.includes('ROLE_DISPATCHER');
+
+    // Admin i Dispečer smiju kreirati i uređivati (prema ShipmentController.java)
+    const canCreate = isAdmin || isDispatcher;
+    const canEdit = isAdmin || isDispatcher;
+
+    const canDelete = isAdmin;
+
+
 
     const loadShipments = useCallback(async () => {
         if (!isAuthenticated) {
@@ -41,6 +54,11 @@ const ShipmentList = () => {
     }, [loadShipments, message]);
 
     const handleDeleteClick = (shipment) => {
+        if (!canDelete) {
+            setError("Pristup odbijen. Samo ADMINISTRATOR smije brisati pošiljke.");
+            return;
+        }
+        setError(null);
         setShipmentToDelete(shipment);
         setShowDeleteModal(true);
     };
@@ -99,8 +117,11 @@ const ShipmentList = () => {
                         variant="light"
                         onClick={handleAddShipment}
                         className="font-monospace fw-bold text-primary"
+                        // GUMB DODAJ: Aktivan za Admina i Dispečera
+                        disabled={!canCreate}
+                        title={!canCreate ? "Samo Dispečeri/Admini smiju dodavati pošiljke" : "Kreiraj novu pošiljku"}
                     >
-                        <i className="bi bi-plus-circle me-1"></i> Kreiraj Novu Pošiljku
+                        <FaPlus className="me-1" /> Kreiraj Novu Pošiljku
                     </Button>
                 </Card.Header>
                 <Card.Body>
@@ -141,16 +162,22 @@ const ShipmentList = () => {
                                                     size="sm"
                                                     className="me-2 font-monospace fw-bold"
                                                     onClick={() => navigate(`/shipments/edit/${s.id}`)}
+                                                    // GUMB UREDI: Aktivan za Admina I Dispečera
+                                                    disabled={!canEdit}
+                                                    title={!canEdit ? "Samo Admin/Dispečer smije uređivati pošiljke" : "Uredi pošiljku"}
                                                 >
-                                                    Uredi
+                                                    <FaEdit className="me-1"/> Uredi
                                                 </Button>
                                                 <Button
                                                     variant="outline-danger"
                                                     size="sm"
                                                     className="font-monospace fw-bold"
                                                     onClick={() => handleDeleteClick(s)}
+                                                    // GUMB IZBRIŠI: Aktivan SAMO za Admina
+                                                    disabled={!canDelete}
+                                                    title={!canDelete ? "Samo Admin smije brisati pošiljke" : "Izbriši pošiljku"}
                                                 >
-                                                    Izbriši
+                                                    <FaTrash className="me-1"/> Izbriši
                                                 </Button>
                                             </div>
                                         </td>
@@ -163,7 +190,7 @@ const ShipmentList = () => {
                 </Card.Body>
             </Card>
 
-            {/* MODAL ZA BRISANJE */}
+
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>

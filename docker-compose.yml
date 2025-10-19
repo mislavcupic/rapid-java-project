@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  db:
+    # Koristimo službenu PostgreSQL 16 Alpine sliku (lagana verzija)
+    image: postgres:16-alpine
+    container_name: rapid-logistics-postgres
+    restart: always
+    environment:
+      # Korisničko ime, lozinka i ime baze podataka KREIRANI ZA OVAJ PROJEKT
+      POSTGRES_USER: rapid_user
+      POSTGRES_PASSWORD: rapid_password
+      POSTGRES_DB: fleet_db
+    ports:
+      # Mapiranje porta: port 5432 na vašem računalu ide na port 5432 u kontejneru
+      - "5432:5432"
+    volumes:
+      # Trajno spremanje podataka baze
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

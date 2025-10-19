@@ -29,9 +29,8 @@ public class Driver {
     @Column(name = "license_expiration_date")
     private LocalDate licenseExpirationDate;
 
-    // --- POLJE ZA POVEZANO VOZILO (koristi se u DriverServiceImpl) ---
 
-    // Veza s vozilom: Driver može biti current_driver samo JEDNOM vozilu
+    // Driver može biti current_driver samo JEDNOM vozilu
     @OneToOne(mappedBy = "currentDriver", fetch = FetchType.LAZY)
     private Vehicle currentVehicle; // BITNO: Ovo omogućuje getCurrentVehicle() metodu
 
@@ -46,7 +45,7 @@ public class Driver {
     }
 
     /**
-     * Pomoćna metoda koja vraća Optional<Vehicle> (koristi se u deleteDriver)
+     * Helper metoda koja vraća Optional<Vehicle> (koristi se u deleteDriver)
      */
     public Optional<Vehicle> getCurrentVehicle() {
         return Optional.ofNullable(currentVehicle);
