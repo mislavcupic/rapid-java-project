@@ -7,10 +7,10 @@ services:
     container_name: rapid-logistics-postgres
     restart: always
     environment:
-      # Korisničko ime, lozinka i ime baze podataka KREIRANI ZA OVAJ PROJEKT
-      POSTGRES_USER: rapid_user
-      POSTGRES_PASSWORD: rapid_password
-      POSTGRES_DB: fleet_db
+      # POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB su sada varijable okruženja!
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME} # Koristimo DB_NAME umjesto POSTGRES_DB direktno, radi jasnoće
     ports:
       # Mapiranje porta: port 5432 na vašem računalu ide na port 5432 u kontejneru
       - "5432:5432"
