@@ -19,23 +19,36 @@ public class ShipmentRequest {
     @NotBlank(message = "Origin address is required")
     private String originAddress;
 
+    // ✅ UKLONJENA @NotNull VALIDACIJA: Koordinate smiju biti NULL/prazne.
+    // Frontend ih automatski popunjava.
+    private Double originLatitude;
+    private Double originLongitude;
+
+
     @NotBlank(message = "Destination address is required")
     private String destinationAddress;
+
+    // ✅ UKLONJENA @NotNull VALIDACIJA
+    private Double destinationLatitude;
+    private Double destinationLongitude;
+
 
     @NotNull(message = "Weight is required")
     @DecimalMin(value = "0.1", message = "Weight must be positive")
     private BigDecimal weightKg;
 
-    // Volumen nije obavezan
+    // Volumen i Vrijednost su opcionalni
     private BigDecimal volumeM3;
+
+    private BigDecimal shipmentValue;
+
 
     @NotNull(message = "Expected delivery date is required")
     @FutureOrPresent(message = "Delivery date cannot be in the past")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime expectedDeliveryDate;
 
-    // Opis nije obavezan
     private String description;
 
-    // Status nije potreban u requestu, jer ga backend postavlja na "PENDING"
+    private String status;
 }

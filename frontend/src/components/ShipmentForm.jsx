@@ -1,20 +1,31 @@
-// frontend/src/components/ShipmentForm.jsx (Create & Edit)
+// frontend/src/components/ShipmentForm.jsx - S INTEGRIRANIM NOMINATIM GEOCORDINGOM
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchShipmentById, createShipment, updateShipment } from '../services/ShipmentApi';
+import { fetchShipmentById, createShipment, updateShipment, geocodeAddress } from '../services/ShipmentApi';
 
-// Pomoćna funkcija za formatiranje datuma iz Backenda (LocalDateTime) u format YYYY-MM-DDThh:mm
-// Ovaj format je obavezan za input type="datetime-local"
+
+// Pomoćna funkcija za formatiranje datuma (LocalDateTime)
 const formatDateTimeLocal = (isoString) => {
     if (!isoString) {
-        // Ako nema datuma, vraćamo trenutno vrijeme (za novu pošiljku)
         return new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
     }
-    // Uzimamo samo prvih 16 znakova: YYYY-MM-DDTHH:MM (eliminiramo sekunde i milisekunde)
     return isoString.slice(0, 16);
 }
+
+// 💥 Debounce funkcija - Ključna za poštivanje Nominatim pravila (1 zahtjev u sekundi)
+const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(() => {
+            func.apply(null, args);
+        }, delay);
+    };
+};
 
 const ShipmentForm = () => {
     const { id } = useParams();
@@ -22,19 +33,22 @@ const ShipmentForm = () => {
     const isEditMode = !!id;
 
     const [success, setSuccess] = useState(null);
-
     const [formData, setFormData] = useState({
         trackingNumber: '',
         originAddress: '',
         destinationAddress: '',
         description: '',
         status: 'PENDING',
-
-        // ✅ KRITIČNA IZMJENA: Koristimo ispravan format za inicijalizaciju
         expectedDeliveryDate: formatDateTimeLocal(null),
         weightKg: '',
         shipmentValue: '',
-        volumeM3: ''
+        volumeM3: '',
+
+        // Koordinate su null dok ih Nominatim ne popuni
+        originLatitude: null,
+        originLongitude: null,
+        destinationLatitude: null,
+        destinationLongitude: null,
     });
 
     const SHIPMENT_STATUSES = ['PENDING', 'SCHEDULED', 'IN_TRANSIT', 'DELIVERED', 'CANCELED'];
@@ -43,6 +57,52 @@ const ShipmentForm = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
+    // NOVO: STATE ZA PRIKAZ STATUSA/GREŠKE GEOCORDINGA KORISNIKU
+    const [geocodeInfo, setGeocodeInfo] = useState({
+        origin: 'Unesite adresu polazišta.',
+        destination: 'Unesite adresu odredišta.'
+    });
+
+
+    // Geocoding funkcija omotana Debounce-om
+    const runGeocode = useCallback(debounce(async (address, fieldPrefix) => {
+        // Ne šaljemo zahtjev ako je adresa prekratka ili prazna
+        if (!address || address.length < 5) {
+            setGeocodeInfo(prev => ({ ...prev, [fieldPrefix]: 'Unos mora biti dulji od 5 znakova.' }));
+            // Brišemo koordinate ako je adresa obrisana
+            setFormData(prev => ({
+                ...prev,
+                [`${fieldPrefix}Latitude`]: null,
+                [`${fieldPrefix}Longitude`]: null,
+            }));
+            return;
+        }
+
+        setGeocodeInfo(prev => ({ ...prev, [fieldPrefix]: 'Tražim koordinate... (molimo pričekajte 0.5s)' }));
+
+        const coords = await geocodeAddress(address);
+
+        if (coords) {
+            setFormData(prev => ({
+                ...prev,
+                [`${fieldPrefix}Latitude`]: coords.lat,
+                [`${fieldPrefix}Longitude`]: coords.lng,
+            }));
+            // Prikaz korisniku da su koordinate pronađene
+            setGeocodeInfo(prev => ({ ...prev, [fieldPrefix]: `Pronađeno: Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}` }));
+        } else {
+            // Ako nije pronađeno, koordinate su null (što trigerira validaciju kod spremanja)
+            setFormData(prev => ({
+                ...prev,
+                [`${fieldPrefix}Latitude`]: null,
+                [`${fieldPrefix}Longitude`]: null,
+            }));
+            setGeocodeInfo(prev => ({ ...prev, [fieldPrefix]: 'Greška: Koordinate nisu pronađene za ovu adresu.' }));
+        }
+    }, 500), []); // 500ms debounce delay
+
+
+    // Učitavanje pošiljke (ostaje isto, samo učitava i koordinate)
     useEffect(() => {
         const loadShipment = async () => {
             if (!localStorage.getItem('accessToken')) {
@@ -60,14 +120,23 @@ const ShipmentForm = () => {
                         destinationAddress: data.destinationAddress || '',
                         description: data.description || '',
                         status: data.status || 'PENDING',
-
-                        // ✅ KRITIČNA IZMJENA: Koristimo formatDateTimeLocal za učitavanje
                         expectedDeliveryDate: formatDateTimeLocal(data.expectedDeliveryDate),
-
                         weightKg: data.weightKg || '',
                         shipmentValue: data.shipmentValue || '',
-                        volumeM3: data.volumeM3 || ''
+                        volumeM3: data.volumeM3 || '',
+                        // Učitavanje koordinata
+                        originLatitude: data.originLatitude || null,
+                        originLongitude: data.originLongitude || null,
+                        destinationLatitude: data.destinationLatitude || null,
+                        destinationLongitude: data.destinationLongitude || null,
                     });
+                    // Nakon učitavanja, postavi info o koordinatama
+                    if (data.originLatitude && data.destinationLatitude) {
+                        setGeocodeInfo({
+                            origin: `Učitano: Lat ${data.originLatitude.toFixed(4)}, Lng ${data.originLongitude.toFixed(4)}`,
+                            destination: `Učitano: Lat ${data.destinationLatitude.toFixed(4)}, Lng ${data.destinationLongitude.toFixed(4)}`,
+                        });
+                    }
                     setError(null);
                 } catch (err) {
                     console.error("Greška pri učitavanju pošiljke:", err);
@@ -80,9 +149,18 @@ const ShipmentForm = () => {
         loadShipment();
     }, [id, isEditMode]);
 
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+
+        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // 💥 POZIV GEOCORDINGA S DEBOUNCE-OM
+        if (name === 'originAddress') {
+            runGeocode(value, 'origin');
+        } else if (name === 'destinationAddress') {
+            runGeocode(value, 'destination');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -91,7 +169,7 @@ const ShipmentForm = () => {
         setError(null);
         setSuccess(null);
 
-        // Provjera obaveznih polja
+        // ... (Provjera obaveznih polja)
         if (!formData.trackingNumber || !formData.originAddress || !formData.destinationAddress ||
             !formData.expectedDeliveryDate || !formData.weightKg) {
 
@@ -100,7 +178,17 @@ const ShipmentForm = () => {
             return;
         }
 
-        // ČIŠĆENJE PODATAKA prije slanja na backend (konverzija "" u null)
+        // ✅ KRITIČNA VALIDACIJA: Koordinate su obavezne (Back-end zahtjev)
+        if (!formData.originLatitude || !formData.destinationLatitude ||
+            !formData.originLongitude || !formData.destinationLongitude) {
+
+            // Poruka koja usmjerava korisnika
+            setError('Koordinate polazišta i odredišta su obavezne! Molimo pričekajte da se adrese geokodiraju (zelena poruka ispod polja).');
+            setSaving(false);
+            return;
+        }
+
+        // ČIŠĆENJE I KONVERZIJA PODATAKA
         const dataToSend = { ...formData };
         for (const key in dataToSend) {
             const value = dataToSend[key];
@@ -109,7 +197,10 @@ const ShipmentForm = () => {
             }
         }
 
-        // NAPOMENA: Nije potrebna ručna korekcija datuma/vremena jer ga type="datetime-local" već šalje ispravno.
+        dataToSend.weightKg = dataToSend.weightKg ? Number(dataToSend.weightKg) : null;
+        dataToSend.volumeM3 = dataToSend.volumeM3 ? Number(dataToSend.volumeM3) : null;
+        dataToSend.shipmentValue = dataToSend.shipmentValue ? Number(dataToSend.shipmentValue) : null;
+
 
         try {
             if (id) {
@@ -128,7 +219,6 @@ const ShipmentForm = () => {
         }
     };
 
-    // UI za Loading
     if (loading) {
         return (
             <div className="text-center py-5">
@@ -146,14 +236,12 @@ const ShipmentForm = () => {
                 </Card.Header>
                 <Card.Body>
 
-                    {/* Prikaz poruka o grešci i uspjehu */}
                     {error && <Alert variant="danger" className="font-monospace">{error}</Alert>}
                     {success && <Alert variant="success" className="font-monospace">{success}</Alert>}
 
                     <Form onSubmit={handleSubmit} className="p-1">
 
                         <Row className="mb-3">
-                            {/* Tracking Number */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formTrackingNumber" label="Broj za praćenje (Tracking No.)">
                                     <Form.Control
@@ -167,7 +255,6 @@ const ShipmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* Status */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formStatus" label="Status">
                                     <Form.Select
@@ -199,6 +286,16 @@ const ShipmentForm = () => {
                                         className="font-monospace"
                                     />
                                 </FloatingLabel>
+                                {/* Poruka za Geocoding status (koordinate) */}
+                                <Form.Text
+                                    className={`fw-bold ms-2 ${
+                                        geocodeInfo.origin.includes('Pronađeno') ? 'text-success' :
+                                            geocodeInfo.origin.includes('Greška') ? 'text-danger' :
+                                                'text-muted'
+                                    }`}
+                                >
+                                    {geocodeInfo.origin}
+                                </Form.Text>
                             </Col>
 
                             {/* Odredište */}
@@ -213,12 +310,28 @@ const ShipmentForm = () => {
                                         className="font-monospace"
                                     />
                                 </FloatingLabel>
+                                {/* Poruka za Geocoding status (koordinate) */}
+                                <Form.Text
+                                    className={`fw-bold ms-2 ${
+                                        geocodeInfo.destination.includes('Pronađeno') ? 'text-success' :
+                                            geocodeInfo.destination.includes('Greška') ? 'text-danger' :
+                                                'text-muted'
+                                    }`}
+                                >
+                                    {geocodeInfo.destination}
+                                </Form.Text>
                             </Col>
                         </Row>
 
-                        {/* ✅ KRITIČNA POLJA: DATUM i TEŽINA */}
+                        {/* SKRIVENA POLJA ZA KOORDINATE - Automatski popunjena Nominatimom */}
+                        <Form.Control type="hidden" name="originLatitude" value={formData.originLatitude || ''} />
+                        <Form.Control type="hidden" name="originLongitude" value={formData.originLongitude || ''} />
+                        <Form.Control type="hidden" name="destinationLatitude" value={formData.destinationLatitude || ''} />
+                        <Form.Control type="hidden" name="destinationLongitude" value={formData.destinationLongitude || ''} />
+
+
+                        {/* Datum Isporuke i Težina - OSTAJE ISTO */}
                         <Row className="mb-3">
-                            {/* Datum Isporuke (Sada uvijek u YYYY-MM-DDThh:mm formatu) */}
                             <Col md={6}>
                                 <FloatingLabel controlId="expectedDeliveryDate" label="Očekivani Datum Isporuke">
                                     <Form.Control
@@ -232,7 +345,6 @@ const ShipmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* Težina (kg) */}
                             <Col md={6}>
                                 <FloatingLabel controlId="weightKg" label="Težina (kg)">
                                     <Form.Control
@@ -249,9 +361,8 @@ const ShipmentForm = () => {
                             </Col>
                         </Row>
 
-                        {/* Dodatna Numerička polja (Vrijednost i Volumen) */}
+                        {/* Vrijednost i Volumen - OSTAJE ISTO */}
                         <Row className="mb-4">
-                            {/* Vrijednost Pošiljke */}
                             <Col md={6}>
                                 <FloatingLabel controlId="shipmentValue" label="Vrijednost (€)">
                                     <Form.Control
@@ -266,7 +377,6 @@ const ShipmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* Volumen (m3) */}
                             <Col md={6}>
                                 <FloatingLabel controlId="volumeM3" label="Volumen (m³)">
                                     <Form.Control
@@ -283,7 +393,7 @@ const ShipmentForm = () => {
                         </Row>
 
 
-                        {/* Opis */}
+                        {/* Opis - OSTAJE ISTO */}
                         <Row className="mb-4">
                             <Col>
                                 <FloatingLabel controlId="formDescription" label="Opis Pošiljke (Opcionalno)">

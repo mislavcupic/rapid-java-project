@@ -1,9 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Vehicle;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Shipment;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.*;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentResponseDTO;
@@ -47,7 +44,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         dto.setId(assignment.getId());
         dto.setStartTime(assignment.getStartTime());
         dto.setEndTime(assignment.getEndTime());
-        // Korekcija: Koristite samo getStatus() koji Lombok generira za polje 'status'
+        //lombok (getStatus())
         dto.setAssignmentStatus(assignment.getStatus());
 
         // Mapiranje ugniježđenih objekata
@@ -124,7 +121,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         assignment.setStatus("SCHEDULED");
 
         // 5. Ažuriranje statusa pošiljke
-        shipment.setStatus("SCHEDULED");
+        shipment.setStatus(ShipmentStatus.valueOf("SCHEDULED"));
         shipmentRepository.save(shipment);
 
         // 6. Spremanje
@@ -149,10 +146,10 @@ public class AssignmentServiceImpl implements AssignmentService {
                 throw new ConflictException("New Shipment ID " + newShipment.getId() + " is already assigned to another assignment.");
             }
             // Vraćanje starog statusa pošiljke
-            assignment.getShipment().setStatus("PENDING");
+            assignment.getShipment().setStatus(ShipmentStatus.valueOf("PENDING"));
             shipmentRepository.save(assignment.getShipment());
 
-            newShipment.setStatus("SCHEDULED");
+            newShipment.setStatus(ShipmentStatus.valueOf("SCHEDULED"));
             shipmentRepository.save(newShipment);
         }
 
@@ -176,7 +173,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         // Vraćanje statusa pošiljke na PENDING prije brisanja dodjele
         Shipment shipment = assignment.getShipment();
-        shipment.setStatus("PENDING");
+        shipment.setStatus(ShipmentStatus.valueOf("PENDING"));
         shipmentRepository.save(shipment);
 
         assignmentRepository.delete(assignment);

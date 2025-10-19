@@ -141,6 +141,8 @@ const ShipmentList = () => {
                                     <th>Status</th>
                                     <th>Polazište</th>
                                     <th>Odredište</th>
+                                    {/* ✅ PROMJENA: Dodan status rute */}
+                                    <th>Status Rute</th>
                                     <th>Opis</th>
                                     <th className="text-nowrap">Akcije</th>
                                 </tr>
@@ -153,6 +155,8 @@ const ShipmentList = () => {
                                         <td>{s.status}</td>
                                         <td>{s.originAddress}</td>
                                         <td>{s.destinationAddress}</td>
+                                        {/* ✅ PROMJENA: Prikaz statusa rute */}
+                                        <td>{s.routeStatus || 'Nije Proračunata'}</td>
                                         <td>{s.description || 'N/A'}</td>
 
                                         <td className="text-center text-nowrap">

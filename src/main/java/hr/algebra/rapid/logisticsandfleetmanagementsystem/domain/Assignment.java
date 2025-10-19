@@ -3,6 +3,7 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.domain;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Shipment;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Vehicle;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -50,4 +51,8 @@ public class Assignment {
     // KRITIČNA KOREKCIJA: Status kao String, nazvan 'status'
     @Column(name = "status", nullable = false)
     private String status;
+
+    @OneToOne(cascade = CascadeType.ALL) // Kaskadiraj operacije (kada kreiraš Assignment, kreiraš i Route)
+    @JoinColumn(name = "route_id", referencedColumnName = "id", nullable = false)
+    Route route;
 }

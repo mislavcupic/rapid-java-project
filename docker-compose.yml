@@ -7,10 +7,10 @@ services:
     container_name: rapid-logistics-postgres
     restart: always
     environment:
-      # POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB su sada varijable okruženja!
+      # env
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME} # Koristimo DB_NAME umjesto POSTGRES_DB direktno, radi jasnoće
+      POSTGRES_DB: ${DB_NAME}
     ports:
       # Mapiranje porta: port 5432 na vašem računalu ide na port 5432 u kontejneru
       - "5432:5432"

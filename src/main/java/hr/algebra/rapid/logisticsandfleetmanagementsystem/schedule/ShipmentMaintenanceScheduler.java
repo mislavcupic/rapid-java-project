@@ -19,7 +19,7 @@ public class ShipmentMaintenanceScheduler {
      * Automatski pokreće masovno ažuriranje pošiljaka u status 'OVERDUE'.
      * Pokreće se svaki sat (u 0. minuti, 0. sekundi).
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void markOverdueShipments() {
 
         // Logiranje početka zadatka (INFO razina)
