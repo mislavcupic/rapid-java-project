@@ -34,4 +34,25 @@ public interface VehicleService {
 
     /** Briše vozilo. */
     void deleteVehicle(Long id);
+    Long countVehiclesOverdueForService();
+    Long countVehiclesInServiceWarning(Long warningThresholdKm);
+    Long countFreeVehicles();
+
+    Long countTotalVehicles();
+
+    /**
+     * Dohvaća listu vozila kojima je servis prekoračen (Overdue).
+     */
+    List<VehicleResponse> findOverdueMaintenanceVehicles();
+
+    /**
+     * Dohvaća listu vozila koja su unutar praga upozorenja za servis.
+     * @param warningThresholdKm Prag u kilometrima.
+     */
+    List<VehicleResponse> findWarningMaintenanceVehicles(Long warningThresholdKm);
+
+    /**
+     * Dohvaća listu vozila kojima trenutno nije dodijeljen vozač.
+     */
+    List<VehicleResponse> findFreeVehiclesDetails();
 }

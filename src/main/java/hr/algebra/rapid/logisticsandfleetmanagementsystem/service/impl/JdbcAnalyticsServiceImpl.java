@@ -1,6 +1,8 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleAnalyticsResponse;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AnalyticsService;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j; // Dodan import za Logger
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,7 +18,7 @@ public class JdbcAnalyticsServiceImpl implements AnalyticsService {
 
     // Spring automatski injektira konfigurirani JdbcTemplate bean
     private final JdbcTemplate jdbcTemplate;
-
+    private final VehicleService vehicleService;
     // 1. ANALITIKA (READ)
     @Override
     public Double getAverageActiveShipmentWeight() {
@@ -60,5 +62,25 @@ public class JdbcAnalyticsServiceImpl implements AnalyticsService {
             log.error("KRITIČNA GREŠKA pri bulkMarkOverdue:", e);
             throw new RuntimeException("Greška pri masovnom ažuriranju statusa pošiljaka.", e);
         }
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public VehicleAnalyticsResponse getVehicleAlertStatus() {
+        // Pozivamo metode koje smo definirali u VehicleServiceImpl za brojanje
+        Long overdue = vehicleService.countVehiclesOverdueForService();
+        Long warning = vehicleService.countVehiclesInServiceWarning(5000L); // Prag upozorenja 5000 km
+        Long free = vehicleService.countFreeVehicles();
+        Long total = vehicleService.countTotalVehicles();
+
+        log.info("Analitika Vozila: Prekoračeno={}, Upozorenje={}, Slobodno={}, Ukupno={}",
+                overdue, warning, free, total);
+
+        // Vraćamo DTO s agregiranim podacima
+        return VehicleAnalyticsResponse.builder()
+                .overdue(overdue)
+                .warning(warning)
+                .free(free)
+                .total(total)
+                .build();
     }
 }

@@ -68,4 +68,26 @@ public class VehicleController {
         vehicleService.deleteVehicle(id);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/details/overdue")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<List<VehicleResponse>> getOverdueMaintenanceVehicles() {
+        // Prag upozorenja je definiran u Service implementaciji, ovdje ga samo pozivamo
+        List<VehicleResponse> list = vehicleService.findOverdueMaintenanceVehicles();
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/details/warning")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<List<VehicleResponse>> getWarningMaintenanceVehicles() {
+        // Prag 5000 km je definiran u Service implementaciji
+        List<VehicleResponse> list = vehicleService.findWarningMaintenanceVehicles(5000L);
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/details/free")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<List<VehicleResponse>> getFreeVehiclesDetails() {
+        List<VehicleResponse> list = vehicleService.findFreeVehiclesDetails();
+        return ResponseEntity.ok(list);
+    }
 }

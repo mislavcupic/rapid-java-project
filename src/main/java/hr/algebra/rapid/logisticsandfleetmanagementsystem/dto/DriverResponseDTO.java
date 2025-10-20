@@ -1,44 +1,40 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver; // Uvoz novog entiteta Driver
-import lombok.Value;
-import lombok.Builder;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
+import lombok.Data; // Koristimo @Data za jednostavnost
 
-// Ako koristite @Data umjesto @Value/Builder:
-// import lombok.Data;
-// @Data public class DriverResponseDTO { ... }
-
-@Value
-@Builder
+@Data
 public class DriverResponseDTO {
 
-    Long id; // ID entiteta Driver
-    String username;
-    String firstName;
-    String lastName;
-    String fullName;
+    private Long id; // ID entiteta Driver
+    private String username;
+    private String firstName;
+    private String lastName;
+    private String fullName;
+    private String licenseNumber; // Dodao sam i LicenseNumber jer je koristan na Frontendu
 
     /**
      * Statička metoda za konverziju Driver entiteta u Response DTO.
-     * OVA METODA JE KRITIČNA ZA RAD AssignmentServiceImpl-a.
+     * Ova metoda rješava problem "crvenila" nakon promjene u entitetima.
      */
     public static DriverResponseDTO fromDriver(Driver driver) {
 
-        // Logika se oslanja na postojanje UserInfo unutar Driver entiteta
         if (driver == null || driver.getUserInfo() == null) {
-            // Možete baciti iznimku ili vratiti null/default, ali ovo sprječava NullPointerException
-            return null;
+            return null; // Vraćamo null ako entitet ili UserInfo ne postoje
         }
 
-        // Dohvaćanje podataka iz UserInfo (koji je ugniježđen u Driver entitetu)
-        String fullName = driver.getFullName();
+        DriverResponseDTO dto = new DriverResponseDTO();
+        dto.setId(driver.getId());
+        dto.setUsername(driver.getUserInfo().getUsername());
+        dto.setFirstName(driver.getUserInfo().getFirstName());
+        dto.setLastName(driver.getUserInfo().getLastName());
 
-        return DriverResponseDTO.builder()
-                .id(driver.getId())
-                .username(driver.getUserInfo().getUsername())
-                .firstName(driver.getUserInfo().getFirstName())
-                .lastName(driver.getUserInfo().getLastName())
-                .fullName(fullName)
-                .build();
+        // KRITIČNA KOREKCIJA: Kreiranje fullName bez oslanjanja na getter u entitetu
+        dto.setFullName(driver.getUserInfo().getFirstName() + " " + driver.getUserInfo().getLastName());
+
+        // Dodavanje polja LicenseNumber, ako je potrebno
+        dto.setLicenseNumber(driver.getLicenseNumber());
+
+        return dto;
     }
 }

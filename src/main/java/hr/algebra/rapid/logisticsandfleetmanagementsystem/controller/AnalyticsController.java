@@ -1,5 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleAnalyticsResponse;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -56,4 +57,12 @@ public class AnalyticsController {
 
         return ResponseEntity.ok(responseMessage);
     }
+    @GetMapping("/vehicles/status") // <--- OVO JE URL KOJI VAM JE FALIO
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<VehicleAnalyticsResponse> getVehicleAlertStatus() {
+        // Poziva implementaciju iz JdbcAnalyticsServiceImpl (koja zove VehicleService)
+        VehicleAnalyticsResponse response = analyticsService.getVehicleAlertStatus();
+        return ResponseEntity.ok(response);
+    }
+
 }

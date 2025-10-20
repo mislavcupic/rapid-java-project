@@ -2,8 +2,9 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
 import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDate; // DODANO
 
-@Data // Anotacija od Lomboka za gettere, settere, toString, itd.
+@Data
 public class VehicleResponse {
 
     private Long id;
@@ -14,10 +15,14 @@ public class VehicleResponse {
     private String fuelType;
     private BigDecimal loadCapacityKg;
 
-    // Ovo polje vraća samo ID vozača, čime izbjegavamo slanje cijelog UserInfo entiteta
-   // private Long currentDriverId;
+    // NOVO: Maintenance fields
+    private Long currentMileageKm;
+    private LocalDate lastServiceDate;
+    private Long nextServiceMileageKm;
+    private BigDecimal fuelConsumptionLitersPer100Km;
 
-    // Opcija: Možete dodati i ime za lakši prikaz
-    //private String currentDriverFullName;
+    // NOVO: Calculated Field (za Frontend Alert)
+    private Long remainingKmToService;
+
     private DriverResponseDTO currentDriver;
 }
