@@ -4,8 +4,10 @@ import { fetchAssignments, deleteAssignment } from '../services/AssignmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const AssignmentList = () => {
+    const { t } = useTranslation();
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -93,7 +95,7 @@ const AssignmentList = () => {
         return (
             <div className="text-center py-5">
                 <Spinner animation="border" variant="info" role="status" />
-                <p className="text-muted mt-2">Učitavanje dodjela...</p>
+                <p className="text-muted mt-2">{t("assignments.loading_assignments")}</p>
             </div>
         );
     }
@@ -135,12 +137,12 @@ const AssignmentList = () => {
                                 <thead className="table-dark">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Status</th>
-                                    <th>Vozač</th>
-                                    <th>Vozilo (Reg.)</th>
-                                    <th>Pošiljka (Tracking)</th>
+                                    <th>{t("assignments.status")}</th>
+                                    <th>{t("assignments.driver")}</th>
+                                    <th>{t("vehicles.vehicle_reg")}</th>
+                                    <th>{t("shipments.shipment_tracking")}</th>
                                     <th>Početak</th>
-                                    <th className="text-nowrap">Akcije</th>
+                                    <th className="text-nowrap">{t("general.actions")}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -191,7 +193,7 @@ const AssignmentList = () => {
             {/* MODAL ZA BRISANJE */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>
+                    <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
                     Jeste li sigurni da želite izbrisati dodjelu ID **{assignmentToDelete?.id}**?

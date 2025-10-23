@@ -9,8 +9,10 @@ import { updateShipment, fetchShipmentById } from '../services/ShipmentApi';
 
 // ✅ ISPRAVAK: Uvoz fetchDrivers i fetchVehicles iz VehicleApi.js
 import { fetchDrivers, fetchVehicles } from '../services/VehicleApi';
+import { useTranslation } from 'react-i18next';
 
 const EditShipment = () => {
+    const { t } = useTranslation();
     const { id } = useParams(); // ID pošiljke koju uređujemo
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true); // Za učitavanje postojećih podataka
@@ -85,7 +87,7 @@ const EditShipment = () => {
 
         try {
             await updateShipment(id, formData);
-            setSuccess('Pošiljka uspješno ažurirana!');
+            setSuccess(t('messages.shipment_updated'));
             setTimeout(() => navigate('/shipments'), 1500);
 
         } catch (err) {
@@ -123,12 +125,12 @@ const EditShipment = () => {
                                 </FloatingLabel>
                             </div>
                             <div className="col-md-6">
-                                <FloatingLabel controlId="weightKg" label="Težina (kg)">
+                                <FloatingLabel controlId="weightKg" label={t("shipments.weight")}>
                                     <Form.Control type="number" name="weightKg" value={formData.weightKg} onChange={handleChange} required min="1" className="font-monospace" />
                                 </FloatingLabel>
                             </div>
                             <div className="col-md-6">
-                                <FloatingLabel controlId="status" label="Status">
+                                <FloatingLabel controlId="status" label={t("assignments.status")}>
                                     <Form.Select name="status" value={formData.status} onChange={handleChange} required className="font-monospace">
                                         <option value="">Odaberite status</option>
                                         <option value="PENDING">PENDING</option>
@@ -145,7 +147,7 @@ const EditShipment = () => {
                         <h5 className="text-muted font-monospace">Dodjela</h5>
                         <div className="row g-3 mb-4">
                             <div className="col-md-6">
-                                <FloatingLabel controlId="assignedDriverId" label="Dodijeljeni Vozač">
+                                <FloatingLabel controlId="assignedDriverId" label={t("forms.assigned_driver")}>
                                     <Form.Select name="assignedDriverId" value={formData.assignedDriverId} onChange={handleChange} className="font-monospace">
                                         <option value="">Nije dodijeljen</option>
                                         {drivers.map(driver => (
@@ -157,9 +159,9 @@ const EditShipment = () => {
                                 </FloatingLabel>
                             </div>
                             <div className="col-md-6">
-                                <FloatingLabel controlId="assignedVehicleId" label="Dodijeljeno Vozilo">
+                                <FloatingLabel controlId="assignedVehicleId" label={t("forms.assigned_vehicle")}>
                                     <Form.Select name="assignedVehicleId" value={formData.assignedVehicleId} onChange={handleChange} className="font-monospace">
-                                        <option value="">Nije dodijeljeno</option>
+                                        <option value="">{t("vehicles.unassigned")}</option>
                                         {vehicles.map(vehicle => (
                                             <option key={vehicle.id} value={vehicle.id}>
                                                 {vehicle.make} {vehicle.model} - {vehicle.licensePlate}
@@ -180,7 +182,7 @@ const EditShipment = () => {
                             {saving ? (
                                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                             ) : (
-                                'Spremi Promjene'
+                                t("assignments.edit_button")
                             )}
                         </Button>
                         <Button

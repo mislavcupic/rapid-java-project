@@ -4,9 +4,11 @@ import { fetchVehicles, deleteVehicle } from '../services/VehicleApi';
 import { Table, Alert, Button, Card, Spinner, Modal, Container } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 
 const VehicleList = () => {
+    const { t } = useTranslation();
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -31,7 +33,7 @@ const VehicleList = () => {
             setVehicles(data);
             setError(null);
         } catch (err) {
-            setError(err.message || 'Greška pri dohvaćanju vozila.');
+            setError(err.message || t("error.fetch_vehicles"));
         } finally {
             setLoading(false);
         }
@@ -54,7 +56,7 @@ const VehicleList = () => {
 
         try {
             await deleteVehicle(vehicleToDelete.id);
-            setDeleteSuccess(`Vozilo ${vehicleToDelete.licensePlate} uspješno izbrisano.`);
+            setDeleteSuccess(t('messages.vehicle_deleted', { licensePlate: vehicleToDelete.licensePlate }));
             loadVehicles();
         } catch (err) {
             setDeleteSuccess(`ERROR: ${err.message}`);
@@ -94,7 +96,7 @@ const VehicleList = () => {
                         {isDispatcherOrAdmin && (
                             <Link to="/vehicles/add">
                                 <Button variant="light" className="fw-bold">
-                                    <FaPlus className="me-1" /> Dodaj Vozilo
+                                    <FaPlus className="me-1" /> {t("general.add_vehicle")}
                                 </Button>
                             </Link>
                         )}
@@ -104,22 +106,22 @@ const VehicleList = () => {
                         {error && <Alert variant="danger">{error}</Alert>}
 
                         {loading ? (
-                            <div className="text-center"><Spinner animation="border" /> Učitavanje...</div>
+                            <div className="text-center"><Spinner animation="border" /> {t("general.loading")}</div>
                         ) : (
                             <div className="table-responsive">
                                 <Table striped bordered hover responsive className="mt-4 font-monospace">
                                     <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Reg. Oznaka</th>
-                                        <th>Vozilo (God.)</th>
+                                        <th>{t("general.reg_mark")}</th>
+                                        <th>{t("general.vehicle")}</th>
                                         <th>Nosivost</th>
-                                        <th>Trenutni Vozač</th>
+                                        <th>{t("general.current_driver")}</th>
                                         <th>Kilometraža</th>
                                         {/* ✅ VRAĆENI STUPCI ZA SERVIS */}
                                         <th>Do Servisa</th>
-                                        <th>Status Servisa</th>
-                                        <th>Akcije</th>
+                                        <th>{t("vehicles.service_status")}</th>
+                                        <th>{t("general.actions")}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -179,7 +181,7 @@ const VehicleList = () => {
 
                 <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                     <Modal.Header closeButton>
-                        <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>
+                        <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body className="font-monospace">
                         Jeste li sigurni da želite izbrisati vozilo s registracijom **{vehicleToDelete?.licensePlate}**?

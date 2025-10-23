@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
+    const { t } = useTranslation();
     // Polja potrebna za prijavu
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -64,7 +66,7 @@ const Login = () => {
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
             <Card className="shadow-lg p-4 w-100" style={{ maxWidth: '450px' }}>
                 <Card.Body>
-                    <h2 className="text-center mb-4 font-monospace fw-bold text-dark">Prijava</h2>
+                    <h2 className="text-center mb-4 font-monospace fw-bold text-dark">{t("LOGIN")}</h2>
 
                     {error && (
                         <Alert variant="danger" className="font-monospace">{error}</Alert>
@@ -73,10 +75,10 @@ const Login = () => {
                     <Form onSubmit={handleSubmit}>
 
                         {/* Polje za Korisničko Ime */}
-                        <FloatingLabel controlId="floatingUsername" label="Korisničko Ime" className="mb-3">
+                        <FloatingLabel controlId="floatingUsername" label={t("forms.username")} className="mb-3">
                             <Form.Control
                                 type="text"
-                                placeholder="Korisničko Ime"
+                                placeholder={t("forms.username")}
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
@@ -85,10 +87,10 @@ const Login = () => {
                         </FloatingLabel>
 
                         {/* Polje za Ime (Ostaje, ali se ne koristi za prijavu) */}
-                        <FloatingLabel controlId="floatingFirstName" label="Ime" className="mb-3">
+                        <FloatingLabel controlId="floatingFirstName" label={t("forms.firstName")} className="mb-3">
                             <Form.Control
                                 type="text"
-                                placeholder="Ime"
+                                placeholder={t("forms.firstName")}
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
                                 className="font-monospace"
@@ -96,10 +98,10 @@ const Login = () => {
                         </FloatingLabel>
 
                         {/* Polje za Prezime (Ostaje, ali se ne koristi za prijavu) */}
-                        <FloatingLabel controlId="floatingLastName" label="Prezime" className="mb-3">
+                        <FloatingLabel controlId="floatingLastName" label={t("forms.lastName")} className="mb-3">
                             <Form.Control
                                 type="text"
-                                placeholder="Prezime"
+                                placeholder={t("forms.lastName")}
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
                                 className="font-monospace"
@@ -107,10 +109,10 @@ const Login = () => {
                         </FloatingLabel>
 
                         {/* Polje za Lozinku */}
-                        <FloatingLabel controlId="floatingPassword" label="Lozinka" className="mb-4">
+                        <FloatingLabel controlId="floatingPassword" label={t("forms.password")} className="mb-4">
                             <Form.Control
                                 type="password"
-                                placeholder="Lozinka"
+                                placeholder={t("forms.password")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required

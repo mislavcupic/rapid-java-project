@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner, Modal, Table } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import styles from '../Analytics.module.css';
 
 // Uvoz service funkcija za ANALITIKU (za brojeve)
 import {
     getAverageActiveShipmentWeight,
     bulkMarkOverdue,
-    // fetchVehicleAlertStatus // Pretpostavimo da je ova funkcija definirana u AnalyticsService.js
 } from '../services/AnalyticsService.js';
 
 // 🆕 Uvoz service funkcija za DETALJNE LISTE (iz VehicleApi.js)
@@ -36,28 +36,23 @@ const getAuthData = () => {
 };
 
 const formatNumber = (num, unit = '') => {
-    // Koristi padobran u slučaju da je num null/undefined
     const value = num !== null && num !== undefined ? num : 0;
     return value.toLocaleString('hr-HR', { maximumFractionDigits: 2 }) + unit;
 };
-
-// **NAPOMENA:** Morate u AnalyticsService.js dodati mock funkciju
-// za fetchVehicleAlertStatus, ili ručno postaviti brojeve za testiranje,
-// jer je ona ključna za analytics state.
 
 // =================================================================
 // 🚀 GLAVNA KOMPONENTA
 // =================================================================
 
 const AnalyticsPage = () => {
+    const { t } = useTranslation();
 
     // --- STANJE ZA AGREGIRANE VRIJEDNOSTI ---
     const [auth, setAuth] = useState(getAuthData());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [avgWeight, setAvgWeight] = useState(0);
-    // ⭐ Privremeno postavljam mock brojeve dok ne dodate fetchVehicleAlertStatus
-    const [analytics, setAnalytics] = useState({ overdue: 0, warning: 0, free: 0, total: 0 }); // Brojevi
+    const [analytics, setAnalytics] = useState({ overdue: 0, warning: 0, free: 0, total: 0 });
 
     // --- STANJE ZA BULK OPERACIJE ---
     const [isLoading, setIsLoading] = useState(false);
@@ -69,13 +64,16 @@ const AnalyticsPage = () => {
     const [freeList, setFreeList] = useState([]);
 
     // --- STANJE ZA MODALE ---
-    const [showModal, setShowModal] = useState(null); // 'overdue', 'warning', 'free'
+    const [showModal, setShowModal] = useState(null);
 
     // --- UTILITY MEMO VRIJEDNOSTI ---
     const canViewAnalytics = auth.roles.includes('ROLE_ADMIN') || auth.roles.includes('ROLE_DISPATCHER');
     const isAdmin = auth.roles.includes('ROLE_ADMIN');
     const token = auth.token;
 
+    // =================================================================
+    // 🔄 UČITAVANJE PODATAKA
+    // =================================================================
 
     const loadData = useCallback(async () => {
         if (!canViewAnalytics || !token) {
@@ -84,12 +82,11 @@ const AnalyticsPage = () => {
         }
 
         try {
-            // Dohvat agregiranih podataka
-            // ⭐ Zbog nedostatka implementacije funkcije, ovdje je privremeno zamijenjen kod:
-            // const [weight, vehicleStatus] = await Promise.all([...
+            setLoading(true);
+            
+            // Dohvat prosječne težine
             const weight = await getAverageActiveShipmentWeight(token);
             setAvgWeight(weight);
-            // setAnalytics(await fetchVehicleAlertStatus(token));
 
             // 🆕 Dohvat detaljnih listi
             const [ovList, waList, frList] = await Promise.all([
@@ -102,15 +99,13 @@ const AnalyticsPage = () => {
             setWarningList(waList);
             setFreeList(frList);
 
-            // ⭐ Ako ne koristite fetchVehicleAlertStatus, ručno postavite brojeve za kartice:
+            // ⭐ Postavi brojeve za kartice na temelju stvarnih podataka
             setAnalytics({
                 overdue: ovList.length,
                 warning: waList.length,
                 free: frList.length,
                 total: ovList.length + waList.length + frList.length
-                // NAPOMENA: Ovo nije točan ukupni broj vozila, ali služi za prikaz
             });
-
 
             setError(null);
         } catch (err) {
@@ -119,65 +114,102 @@ const AnalyticsPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [canViewAnalytics, token]);
-
+    }, [token, canViewAnalytics]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
 
+    // =================================================================
+    // 🚀 BULK ACTION: Označi overdue
+    // =================================================================
+    const handleBulkMarkOverdue = async () => {
+        if (!isAdmin) {
+            alert('Samo ADMINISTRATOR smije izvršiti ovu akciju.');
+            return;
+        }
 
-    const handleMarkOverdue = async () => {
-        if (!isAdmin || isLoading) return;
-
-        setIsLoading(true);
-        setOverdueMessage('');
+        const confirmAction = window.confirm(
+            'Jeste li sigurni da želite OZNAČITI SVA VOZILA s PREKORAČENIM SERVISOM kao OVERDUE? Ova akcija je nepovratna!'
+        );
+        if (!confirmAction) return;
 
         try {
-            const responseText = await bulkMarkOverdue(token);
-            setOverdueMessage(`[SUCCESS] ${responseText}`);
-
-            // Osvježi analitiku nakon bulk operacije
-            await loadData();
-
+            setIsLoading(true);
+            const result = await bulkMarkOverdue(token);
+            setOverdueMessage(result.message || 'Bulk UPDATE izvršen.');
         } catch (err) {
-            setOverdueMessage(`[ERROR] ${err.message || 'Neuspjela masovna akcija.'}`);
-            console.error(err);
+            console.error('Greška pri bulk update-u:', err);
+            setOverdueMessage(err.message || 'Greška pri bulk update-u.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // --- POMOĆNA KOMPONENTA ZA PRIKAZ DETALJA (MODAL) ---
-    const DetailModal = ({ list, title, showKey, closeKey, columns }) => {
 
-        // ⭐ KRITIČNA KOREKCIJA: ListToShow sada kopira ključna polja, uključujući licensePlate i remainingKmToService
-        const listToShow = list.map(item => ({
-            ...item, // Kopiraj sva polja
-            // Dodatna proračunata polja
-            name: `${item.make} ${item.model} (${item.modelYear})`,
-            driver: item.currentDriver ? `${item.currentDriver.fullName}` : 'N/A',
-            // Opcionalno, preostali km za maintenance
-            remainingKm: item.remainingKmToService,
-        }));
+    const openModalForList = useCallback(
+        async (type) => {
+            if (!token) return;
+
+            try {
+                setShowModal(type);
+                if (type === 'overdue') {
+                    const data = await fetchOverdueVehicles(token);
+                    setOverdueList(data || []);
+                } else if (type === 'warning') {
+                    const data = await fetchWarningVehicles(token);
+                    setWarningList(data || []);
+                } else if (type === 'free') {
+                    const data = await fetchFreeVehiclesDetails(token);
+                    setFreeList(data || []);
+                }
+            } catch (err) {
+                console.error(`Greška pri dohvaćanju ${type} liste:`, err);
+            }
+        },
+        [token]
+    );
+
+    const closeModal = () => {
+        setShowModal(null);
+    };
+
+
+    const renderModal = () => {
+        if (!showModal) return null;
+
+        let title = '';
+        let listToShow = [];
+        let columns = [];
+
+        if (showModal === 'overdue') {
+            title = 'PREKORAČEN SERVIS (Overdue)';
+            listToShow = overdueList;
+            columns = ['driver', 'km'];
+        } else if (showModal === 'warning') {
+            title = 'UPOZORENJE (Warning): Blizu servisnog roka';
+            listToShow = warningList;
+            columns = ['driver', 'km'];
+        } else if (showModal === 'free') {
+            title = 'SLOBODNA VOZILA (Free)';
+            listToShow = freeList;
+            columns = ['driver'];
+        }
 
         return (
-            <Modal show={showModal === showKey} onHide={() => setShowModal(null)} size="lg" centered>
+            <Modal show={true} onHide={closeModal} size="lg" centered>
                 <Modal.Header closeButton>
-                    <Modal.Title className={`font-monospace text-${closeKey === 'overdue' ? 'danger' : closeKey === 'warning' ? 'warning' : 'success'}`}>
-                        {title} ({list.length})
-                    </Modal.Title>
+                    <Modal.Title className="font-monospace">{title}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Table striped bordered hover size="sm" className='font-monospace'>
                         <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Vozilo (God.)</th>
-                            <th>Reg. Oznaka</th>
-                            {columns.includes('driver') && <th>Trenutni Vozač</th>}
-                            {/* Ispravljen naslov stupca */}
-                            {columns.includes('km') && <th>Preostali Km do servisa</th>}
+                            <th>{t("general.index")}</th>
+                            <th>{t("general.vehicle")}</th>
+                            <th>{t("general.reg_mark")}</th>
+                            {columns.includes('driver') && <th>{t("general.current_driver")}</th>}
+                            {columns.includes('km') && <th>{t("general.remaining_km")}</th>}
                         </tr>
                         </thead>
                         <tbody>
@@ -185,184 +217,168 @@ const AnalyticsPage = () => {
                             <tr key={item.id}>
                                 <td>{index + 1}</td>
                                 <td>{item.name}</td>
-                                {/* ⭐ ISPRAVLJENO: Korištenje licensePlate iz item. */}
                                 <td>{item.licensePlate}</td>
                                 <td className={item.driver === 'N/A' ? 'text-danger' : 'text-success'}>{item.driver}</td>
-
-                                {/* ⭐ ISPRAVLJENO: Korištenje remainingKm iz item. */}
-                                {columns.includes('km') && (
-                                    <td className={item.remainingKm < 0 ? 'text-danger fw-bold' : item.remainingKm <= 5000 ? 'text-warning' : 'text-secondary'}>
-                                        {item.remainingKm !== null && item.remainingKm !== undefined
-                                            ? formatNumber(item.remainingKm, ' km')
-                                            : 'N/A'}
-                                    </td>
-                                )}
+                                {columns.includes('km') && <td>{item.remainingKm} km</td>}
                             </tr>
                         ))}
                         </tbody>
                     </Table>
+                    {listToShow.length === 0 && (
+                        <p className="text-center text-muted">Nema podataka.</p>
+                    )}
                 </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={closeModal} className='font-monospace'>
+                        Zatvori
+                    </Button>
+                </Modal.Footer>
             </Modal>
         );
     };
 
-    // --- KARTICE ZA VOZILA (KORISTIMO MAPIRANJE) ---
-    const vehicleCards = useMemo(() => [
-        {
-            title: "HITNI SERVIS",
-            value: analytics.overdue,
-            variant: "danger",
-            key: 'overdue',
-            list: overdueList,
-            description: "Vozila kojima je servis PREKORAČEN (km < 0)."
-        },
-        {
-            title: "UPOZORENJE SERVIS",
-            value: analytics.warning,
-            variant: "warning",
-            key: 'warning',
-            list: warningList,
-            description: `Vozila unutar praga upozorenja (npr. 0 - 5000 km).`
-        },
-        {
-            title: "SLOBODNA VOZILA",
-            value: analytics.free,
-            variant: "success",
-            key: 'free',
-            list: freeList,
-            description: "Vozila kojima NIJE dodijeljen vozač."
-        },
-        {
-            title: "UKUPNA FLOTA",
-            value: analytics.total,
-            variant: "info",
-            key: 'total',
-            list: [], // Nema detaljne liste za Total
-            description: "Ukupan broj vozila u sustavu."
-        },
-    ], [analytics, overdueList, warningList, freeList]);
 
 
-    // =================================================================
-    // 🎨 RENDER KOMPONENTE
-    // =================================================================
     if (!canViewAnalytics) {
         return (
             <Container className="mt-5">
                 <Alert variant="danger" className='font-monospace'>
-                    Pristup odbijen. Analitika je dostupna samo ADMIN/DISPATCHER korisnicima.
+                    <strong>Pristup odbijen!</strong> Nemate ovlasti za pristup ovoj stranici.
                 </Alert>
             </Container>
         );
     }
 
+    if (loading) {
+        return (
+            <Container className="mt-5 text-center">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3 text-muted font-monospace">Učitavanje podataka...</p>
+            </Container>
+        );
+    }
+
+    if (error) {
+        return (
+            <Container className="mt-5">
+                <Alert variant="warning" className='font-monospace'>
+                    <strong>Greška:</strong> {error}
+                </Alert>
+            </Container>
+        );
+    }
+
+    // --- Klikabilne Kartice ---
+    const cards = [
+        {
+            title: 'Overdue Service',
+            count: analytics.overdue,
+            variant: 'danger',
+            description: t("analytics.unassigned_vehicles"),
+            onClick: () => openModalForList('overdue'),
+        },
+        {
+            title: 'Service Warning',
+            count: analytics.warning,
+            variant: 'warning',
+            description: 'Vozila blizu servisnog roka.',
+            onClick: () => openModalForList('warning'),
+        },
+        {
+            title: 'Free Vehicles',
+            count: analytics.free,
+            variant: 'success',
+            description: 'Vozila bez dodijeljenog vozača.',
+            onClick: () => openModalForList('free'),
+        },
+        {
+            title: 'Total Vehicles',
+            count: analytics.total,
+            variant: 'info',
+            description: 'Ukupan broj vozila u floti.',
+            onClick: null,
+        },
+        {
+            title: 'Average Active Shipment Weight (kg)',
+            count: formatNumber(avgWeight, ' kg'),
+            variant: 'primary',
+            description: 'Prosječna težina trenutno AKTIVNIH pošiljaka.',
+            onClick: null,
+        },
+    ];
+
     return (
-        <Container className="mt-5">
-            <h1 className='mb-4 font-monospace'>Fleet Analytics Dashboard</h1>
+        <Container className="mt-4">
+            <Row className="mb-4">
+                <Col>
+                    <h1 className="h3 fw-bold font-monospace">Nadzorna Ploča za Upravljanje Flotom</h1>
+                    <p className="text-muted font-monospace">
+                        Status:{' '}
+                        <span className="badge bg-success">SPREMNO</span>
+                    </p>
+                </Col>
+            </Row>
 
-            {loading && <Spinner animation="border" variant="primary" className='mb-4' />}
-            {error && <Alert variant="danger" className='font-monospace'>{error}</Alert>}
-
-            {/* Red s ANALITIČKIM KARTICAMA (Vozila) */}
-            <Row xs={1} md={2} lg={4} className="g-4 mb-5">
-                {vehicleCards.map((card) => (
-                    <Col key={card.key}>
-                        <Card border={card.variant} className={`text-center font-monospace h-100`}>
-                            <Card.Header className={`bg-${card.variant} text-white fw-bold`}>{card.title}</Card.Header>
+            {/* Klikabilne Kartice */}
+            <Row className="mb-4 g-4">
+                {cards.map((card, idx) => (
+                    <Col key={idx} xs={12} md={6} lg={4}>
+                        <Card
+                            className={`shadow-sm border-${card.variant} h-100 ${
+                                card.onClick ? 'cursor-pointer hover-shadow' : ''
+                            }`}
+                            onClick={card.onClick}
+                            style={{ cursor: card.onClick ? 'pointer' : 'default' }}
+                        >
                             <Card.Body>
-                                <Card.Title style={{ fontSize: '2.5rem' }}>{formatNumber(card.value)}</Card.Title>
-                                <Card.Text className='text-muted'>{card.description}</Card.Text>
-                                {/* Prikaz gumba za detalje samo ako postoji lista i nije Total */}
-                                {card.key !== 'total' && card.list.length > 0 && (
-                                    <Button
-                                        variant={`outline-${card.variant}`}
-                                        size="sm"
-                                        onClick={() => setShowModal(card.key)}
-                                        className='fw-bold mt-2 font-monospace'
-                                    >
-                                        Prikaži {card.list.length} Detalja
-                                    </Button>
-                                )}
+                                <Card.Title className={`text-${card.variant} fw-bold font-monospace`}>
+                                    {card.title}
+                                </Card.Title>
+                                <h2 className={`display-4 text-${card.variant} font-monospace`}>
+                                    {card.count}
+                                </h2>
+                                <Card.Text className="text-muted small font-monospace">
+                                    {card.description}
+                                </Card.Text>
                             </Card.Body>
                         </Card>
                     </Col>
                 ))}
             </Row>
 
-            {/* Red s ANALITIČKIM KARTICAMA (Pošiljke i Bulk) */}
-            <Row xs={1} md={2} lg={4} className="g-4 mb-5">
-                {/* 1. KARTICA: Prosječna težina pošiljaka */}
-                <Col lg={4}>
-                    <Card border="info" className={`text-center font-monospace h-100`}>
-                        <Card.Header className={`bg-info text-white fw-bold`}>PROSJEČNA TEŽINA POŠILJKI</Card.Header>
-                        <Card.Body>
-                            <Card.Title style={{ fontSize: '2.5rem' }}>{formatNumber(avgWeight, ' kg')}</Card.Title>
-                            <Card.Text className='text-muted'>Prosječna težina svih aktivnih pošiljaka (Pending/In Transit).</Card.Text>
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                {/* 2. KARTICA: BULK UPDATE (Vidljivo samo Adminu) */}
-                {isAdmin && (
-                    <Col lg={8}>
-                        <Card className={styles.terminalCard}>
-                            <Card.Header className='text-success font-monospace'>
-                                {'>'} ADMIN_ACTION_02_BULK_UPDATE
-                            </Card.Header>
+            {/* Bulk Action Section (samo ADMIN) */}
+            {isAdmin && (
+                <Row className="mb-4">
+                    <Col>
+                        <Card className="shadow-sm">
                             <Card.Body>
-                                <Card.Title className='text-danger'>MASOVNA AKCIJA: MARK OVERDUE</Card.Title>
-                                <Card.Text className='text-muted'>
-
-                                </Card.Text>
-
-                                <Button
-                                    variant="custom"
-                                    className={styles.pastelButton}
-                                    onClick={handleMarkOverdue}
-                                    disabled={isLoading}
-                                >
-                                    {isLoading ? <><Spinner animation="border" size="sm" className='me-2'/>EXECUTING DML...</> : 'EXECUTE BULK UPDATE'}
-                                </Button>
-
-                                <p className='mt-3'>
-                                    <span style={{ color: overdueMessage.includes('ERROR') ? '#ff4d4d' : '#90ee90' }} className='font-monospace'>
-                                        {overdueMessage || 'Status: READY'}
-                                    </span>
+                                <h5 className="text-danger fw-bold font-monospace">
+                                    AKCIJA U MASI: OZNAČI KAO ISTEKLO
+                                </h5>
+                                <p className="text-muted small font-monospace">
+                                    UPOZORENJE: Ova akcija izvršava izravan DML upit na bazu podataka i nepovratna je.
                                 </p>
+                                <Button
+                                    variant="danger"
+                                    onClick={handleBulkMarkOverdue}
+                                    disabled={isLoading}
+                                    className='font-monospace'
+                                >
+                                    {isLoading ? 'IZVRŠAVAM DML...' : 'Izvrši Masovno Ažuriranje'}
+                                </Button>
+                                {overdueMessage && (
+                                    <Alert variant="info" className="mt-3 font-monospace">
+                                        {overdueMessage}
+                                    </Alert>
+                                )}
                             </Card.Body>
                         </Card>
                     </Col>
-                )}
-            </Row>
-
-            {/* Modali za prikaz detaljnih listi */}
-            {/* Ovdje koristimo listu s KRITIČNIM POLJIMA za prikaz */}
-            {showModal && (
-                <>
-                    <DetailModal
-                        list={overdueList}
-                        title="Vozila KASNIMO sa Servisom"
-                        showKey="overdue"
-                        closeKey="overdue"
-                        columns={['driver', 'km']} // Prikazuje i vozača i km
-                    />
-                    <DetailModal
-                        list={warningList}
-                        title="Vozila u Upozorenju za Servis"
-                        showKey="warning"
-                        closeKey="warning"
-                        columns={['driver', 'km']} // Prikazuje i vozača i km
-                    />
-                    <DetailModal
-                        list={freeList}
-                        title="Detalji Slobodnih Vozila"
-                        showKey="free"
-                        closeKey="free"
-                        columns={['driver']} // Prikazuje samo vozača (bit će N/A)
-                    />
-                </>
+                </Row>
             )}
 
+            {/* Render Modal */}
+            {renderModal()}
         </Container>
     );
 };

@@ -1,12 +1,15 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.RefreshToken;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AuthRequestDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.JwtResponseDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RefreshTokenRequestDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AuthResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.JwtService;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.RefreshTokenService;
-import lombok.AllArgsConstructor;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,47 +17,85 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("auth")
-@AllArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
+@RequestMapping("/auth")// Omogući CORS za sve izvore (prilagodi u produkciji)
 public class AuthController {
 
-    private AuthenticationManager authenticationManager;
+    @Autowired
+    private UserService userService;
 
+    @Autowired
     private JwtService jwtService;
 
-    private RefreshTokenService refreshTokenService;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
-    @PostMapping("/login")
-    public JwtResponseDTO authenticateAndGetToken(@RequestBody AuthRequestDTO authRequestDTO){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(), authRequestDTO.getPassword()));
-        if(authentication.isAuthenticated()){
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequestDTO.getUsername());
-            return JwtResponseDTO.builder()
-                    .accessToken(jwtService.generateToken(authRequestDTO.getUsername()))
-                    .token(refreshToken.getToken())
+    /**
+     * 🆕 REGISTER ENDPOINT
+     * POST /auth/register
+     * Body: { username, password, firstName, lastName, email }
+     */
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequestDTO registerRequest) {
+        try {
+            // 1. Registriraj korisnika kroz service
+            UserInfo newUser = userService.registerUser(registerRequest);
+            
+            // 2. Generiraj JWT token za novog korisnika (automatska prijava nakon registracije)
+            String accessToken = jwtService.generateToken(newUser.getUsername());
+            
+            // 3. Vrati response s tokenom
+            AuthResponseDTO response = AuthResponseDTO.builder()
+                    .accessToken(accessToken)
+                    .username(newUser.getUsername())
+                    .message("Registracija uspješna! Dobrodošli, " + newUser.getFirstName() + "!")
                     .build();
-        } else {
-            throw new UsernameNotFoundException("invalid user request..!!");
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
+        } catch (IllegalArgumentException e) {
+            // Username ili email već postoji
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Greška pri registraciji: " + e.getMessage()));
         }
     }
 
-    @PostMapping("/api/v1/refreshToken")
-    public JwtResponseDTO refreshToken(@RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO){
-        return refreshTokenService.findByToken(refreshTokenRequestDTO.getToken())
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUserInfo)
-                .map(userInfo -> {
-                    String accessToken = jwtService.generateToken(userInfo.getUsername());
-                    return JwtResponseDTO.builder()
-                            .accessToken(accessToken)
-                            .token(refreshTokenRequestDTO.getToken()).build();
-                }).orElseThrow(() ->new RuntimeException("Refresh Token is not in DB..!!"));
+    /**
+     * LOGIN ENDPOINT (postojeći)
+     * POST /auth/login
+     * Body: { username, password }
+     */
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateAndGetToken(@RequestBody AuthRequestDTO authRequest) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            authRequest.getUsername(), 
+                            authRequest.getPassword()
+                    )
+            );
+
+            if (authentication.isAuthenticated()) {
+                String accessToken = jwtService.generateToken(authRequest.getUsername());
+                
+                AuthResponseDTO response = AuthResponseDTO.builder()
+                        .accessToken(accessToken)
+                        .username(authRequest.getUsername())
+                        .message("Prijava uspješna!")
+                        .build();
+                
+                return ResponseEntity.ok(response);
+            } else {
+                throw new UsernameNotFoundException("Neispravni kredencijali!");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Neuspješna prijava: " + e.getMessage()));
+        }
     }
 
-    @PostMapping("/api/v1/logout")
-    public void logout() {
-        System.out.println("Logout...");
-    }
-
+    // DTO za error response
+    private record ErrorResponse(String message) {}
 }

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchShipmentById, createShipment, updateShipment, geocodeAddress } from '../services/ShipmentApi';
+import { useTranslation } from 'react-i18next';
 
 
 // Pomoćna funkcija za formatiranje datuma (LocalDateTime)
@@ -28,6 +29,7 @@ const debounce = (func, delay) => {
 };
 
 const ShipmentForm = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
@@ -205,10 +207,10 @@ const ShipmentForm = () => {
         try {
             if (id) {
                 await updateShipment(id, dataToSend);
-                setSuccess('Pošiljka je uspješno ažurirana!');
+                setSuccess(t('messages.shipment_updated'));
             } else {
                 await createShipment(dataToSend);
-                setSuccess('Nova pošiljka je uspješno kreirana!');
+                setSuccess(t('messages.shipment_created'));
             }
             setTimeout(() => navigate('/shipments'), 1500);
         } catch (err) {
@@ -223,7 +225,7 @@ const ShipmentForm = () => {
         return (
             <div className="text-center py-5">
                 <Spinner animation="border" variant="primary" role="status" />
-                <p className="text-muted mt-2">Učitavanje forme...</p>
+                <p className="text-muted mt-2">{t("general.loading_form")}</p>
             </div>
         );
     }
@@ -256,7 +258,7 @@ const ShipmentForm = () => {
                             </Col>
 
                             <Col md={6}>
-                                <FloatingLabel controlId="formStatus" label="Status">
+                                <FloatingLabel controlId="formStatus" label={t("assignments.status")}>
                                     <Form.Select
                                         name="status"
                                         value={formData.status}
@@ -300,7 +302,7 @@ const ShipmentForm = () => {
 
                             {/* Odredište */}
                             <Col md={6}>
-                                <FloatingLabel controlId="formDestinationAddress" label="Adresa Odredišta">
+                                <FloatingLabel controlId="formDestinationAddress" label={t("shipments.destination")}>
                                     <Form.Control
                                         type="text"
                                         name="destinationAddress"
@@ -346,7 +348,7 @@ const ShipmentForm = () => {
                             </Col>
 
                             <Col md={6}>
-                                <FloatingLabel controlId="weightKg" label="Težina (kg)">
+                                <FloatingLabel controlId="weightKg" label={t("shipments.weight")}>
                                     <Form.Control
                                         type="number"
                                         name="weightKg"
@@ -418,7 +420,7 @@ const ShipmentForm = () => {
                             {saving ? (
                                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                             ) : (
-                                isEditMode ? 'Spremi Promjene' : 'Kreiraj Pošiljku'
+                                isEditMode ? t("assignments.edit_button") : 'Kreiraj Pošiljku'
                             )}
                         </Button>
                         <Button

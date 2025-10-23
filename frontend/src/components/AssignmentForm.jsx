@@ -7,9 +7,11 @@ import { fetchAssignmentById, createAssignment, updateAssignment } from '../serv
 import { fetchDrivers, fetchVehicles } from '../services/VehicleApi'; // Reupotreba servisa
 // Pretpostavljeni API za Pošiljke (MORATE ga implementirati u src/services/ShipmentApi.js)
 import { fetchShipments } from '../services/ShipmentApi';
+import { useTranslation } from 'react-i18next';
 
 
 const AssignmentForm = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
@@ -131,7 +133,7 @@ const AssignmentForm = () => {
         return (
             <div className="text-center py-5">
                 <Spinner animation="border" variant="primary" role="status" />
-                <p className="text-muted mt-2">Učitavanje forme...</p>
+                <p className="text-muted mt-2">{t("general.loading_form")}</p>
             </div>
         );
     }
@@ -156,9 +158,9 @@ const AssignmentForm = () => {
                         <Row className="mb-3">
                             {/* Select za Vozača */}
                             <Col md={6}>
-                                <FloatingLabel controlId="formDriver" label="Vozač">
+                                <FloatingLabel controlId="formDriver" label={t("assignments.driver")}>
                                     <Form.Select name="driverId" value={formData.driverId} onChange={handleChange} required className="font-monospace">
-                                        <option value="">Odaberi Vozača...</option>
+                                        <option value="">{t("general.select_driver")}</option>
                                         {drivers.map(d => (
                                             <option key={d.id} value={d.id}>{d.fullName}</option>
                                         ))}
@@ -168,7 +170,7 @@ const AssignmentForm = () => {
 
                             {/* Select za Vozilo */}
                             <Col md={6}>
-                                <FloatingLabel controlId="formVehicle" label="Vozilo">
+                                <FloatingLabel controlId="formVehicle" label={t("assignments.vehicle")}>
                                     <Form.Select name="vehicleId" value={formData.vehicleId} onChange={handleChange} required className="font-monospace">
                                         <option value="">Odaberi Vozilo...</option>
                                         {vehicles.map(v => (
@@ -212,14 +214,14 @@ const AssignmentForm = () => {
                         <Row className="mb-4">
                             {/* Datum Početka */}
                             <Col md={6}>
-                                <FloatingLabel controlId="formStartTime" label="Vrijeme Početka">
+                                <FloatingLabel controlId="formStartTime" label={t("assignments.start_time")}>
                                     <Form.Control type="datetime-local" name="startTime" value={formData.startTime} onChange={handleChange} required className="font-monospace" />
                                 </FloatingLabel>
                             </Col>
 
                             {/* Datum Završetka */}
                             <Col md={6}>
-                                <FloatingLabel controlId="formEndTime" label="Vrijeme Završetka (Opcionalno)">
+                                <FloatingLabel controlId="formEndTime" label={t("assignments.end_time")}>
                                     <Form.Control type="datetime-local" name="endTime" value={formData.endTime} onChange={handleChange} className="font-monospace" />
                                 </FloatingLabel>
                             </Col>
@@ -234,7 +236,7 @@ const AssignmentForm = () => {
                             {saving ? (
                                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                             ) : (
-                                isEditMode ? 'Spremi Promjene' : 'Kreiraj Dodjelu'
+                                isEditMode ? t("assignments.edit_button") : t("assignments.create_button")
                             )}
                         </Button>
                         <Button

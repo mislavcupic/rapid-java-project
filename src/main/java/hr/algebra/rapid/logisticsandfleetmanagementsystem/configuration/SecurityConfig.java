@@ -37,7 +37,7 @@ public class SecurityConfig implements WebMvcConfigurer {
         String reactDevPort = "http://localhost:5173";
 
         registry.addMapping("/**")
-                .allowedOrigins(reactDevPort)
+                .allowedOriginPatterns(reactDevPort)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

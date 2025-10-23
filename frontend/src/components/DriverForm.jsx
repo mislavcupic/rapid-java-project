@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchDriverById, createDriver, updateDriver } from '../services/DriverApi';
+import { useTranslation } from 'react-i18next';
 
 const DriverForm = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
@@ -70,14 +72,14 @@ const DriverForm = () => {
 
         // Klijentska validacija za Driver polja
         if (!formData.licenseExpirationDate || !formData.licenseNumber || !formData.phoneNumber) {
-            setError("Sva polja za vozača su obavezna!");
+            setError(t('messages.all_driver_fields_required'));
             setSaving(false);
             return;
         }
 
         // Dodatna validacija za KREIRANJE novog korisnika
         if (!isEditMode && (!formData.username || !formData.password || !formData.firstName || !formData.lastName || !formData.email)) {
-            setError("Korisničko ime, lozinka, ime, prezime i E-mail su obavezni za kreiranje novog vozača!");
+            setError(t('messages.driver_creation_fields_required'));
             setSaving(false);
             return;
         }
@@ -107,7 +109,7 @@ const DriverForm = () => {
             if (isEditMode) {
                 // UPDATE šalje samo baseData
                 await updateDriver(id, baseData);
-                setSuccess('Vozač uspješno ažuriran!');
+                setSuccess(t('messages.driver_updated'));
             } else {
                 // CREATE šalje sva polja
                 await createDriver(dataToSubmit);
@@ -152,7 +154,7 @@ const DriverForm = () => {
                                         </FloatingLabel>
                                     </Col>
                                     <Col md={6}>
-                                        <FloatingLabel controlId="lastName" label="Prezime" className="mb-3">
+                                        <FloatingLabel controlId="lastName" label={t("forms.lastName")} className="mb-3">
                                             <Form.Control type="text" name="lastName" value={formData.lastName} onChange={handleChange} required className="font-monospace" />
                                         </FloatingLabel>
                                     </Col>
@@ -162,7 +164,7 @@ const DriverForm = () => {
                                     <Form.Control type="text" name="username" value={formData.username} onChange={handleChange} required className="font-monospace" />
                                 </FloatingLabel>
 
-                                <FloatingLabel controlId="email" label="E-mail" className="mb-3">
+                                <FloatingLabel controlId="email" label={t("forms.email")} className="mb-3">
                                     <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} required className="font-monospace" />
                                 </FloatingLabel>
 
@@ -195,12 +197,12 @@ const DriverForm = () => {
                         {/* ------------------------------------------- */}
 
                         {/* 1. Broj licence */}
-                        <FloatingLabel controlId="licenseNumber" label="Broj Licence" className="mb-3">
+                        <FloatingLabel controlId="licenseNumber" label={t("forms.license_number")} className="mb-3">
                             <Form.Control type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleChange} required className="font-monospace" />
                         </FloatingLabel>
 
                         {/* 2. Telefon */}
-                        <FloatingLabel controlId="phoneNumber" label="Telefon" className="mb-3">
+                        <FloatingLabel controlId="phoneNumber" label={t("forms.phone")} className="mb-3">
                             <Form.Control type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="font-monospace" required />
                         </FloatingLabel>
 
@@ -218,7 +220,7 @@ const DriverForm = () => {
 
 
                         <Button type="submit" variant="outline-success" className="w-100 fw-bold font-monospace" disabled={saving}>
-                            {saving ? <Spinner as="span" animation="border" size="sm" className="me-2" /> : (isEditMode ? 'Spremi Promjene' : 'Kreiraj Vozača')}
+                            {saving ? <Spinner as="span" animation="border" size="sm" className="me-2" /> : (isEditMode ? t("assignments.edit_button") : 'Kreiraj Vozača')}
                         </Button>
                         <Button variant="outline-secondary" className="w-100 fw-bold font-monospace mt-2" onClick={() => navigate('/drivers')}>
                             Odustani

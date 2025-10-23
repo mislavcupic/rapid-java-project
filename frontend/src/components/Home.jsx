@@ -2,8 +2,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, Button } from 'react-bootstrap'; // Uvezi Bootstrap komponente
+import { useTranslation } from 'react-i18next';
 
 const Home = () => {
+    const { t } = useTranslation();
     const isAuthenticated = !!localStorage.getItem('accessToken');
 
     return (
@@ -12,16 +14,16 @@ const Home = () => {
             <Card className="text-center shadow-lg border-info border-top-0 border-5 p-4" style={{ maxWidth: '500px' }}>
                 <Card.Body>
                     <h1 className="display-5 fw-bold text-dark mb-3">
-                        Dobrodošli u Sustav za Logistiku
+                        {t('messages.welcome_title')}
                     </h1>
                     <p className="lead text-muted mb-4 font-monospace">
-                        Upravljajte svojom flotom i logističkim operacijama učinkovito i digitalno.
+                        {t('messages.welcome_text')}
                     </p>
 
                     {isAuthenticated ? (
                         <div className="d-grid gap-2">
                             <p className="text-info fw-semibold fs-5">
-                                Uspješno ste prijavljeni.
+                                {t('messages.login_success')}
                             </p>
                             <Button
                                 as={Link}
@@ -30,7 +32,7 @@ const Home = () => {
                                 size="lg"
                                 className="fw-bold font-monospace shadow"
                             >
-                                Pregledajte flotu
+                                {t('messages.view_fleet')}
                             </Button>
                         </div>
                     ) : (
@@ -41,7 +43,7 @@ const Home = () => {
                             size="lg"
                             className="fw-bold shadow-sm font-monospace"
                         >
-                            Prijavite se
+                            {t('LOGIN')}
                         </Button>
                     )}
                 </Card.Body>

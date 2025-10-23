@@ -4,8 +4,10 @@ import { fetchDrivers, deleteDriver } from '../services/DriverApi';
 import { Table, Alert, Button, Card, Spinner, Modal, Container } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const DriverList = () => {
+    const { t } = useTranslation();
     const [drivers, setDrivers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -49,10 +51,10 @@ const DriverList = () => {
         loadDrivers();
     }, [loadDrivers]);
 
-    // Rukovanje klikom na gumb 'Izbriši'
+    // Rukovanje klikom na gumb t("general.delete")
     const handleDeleteClick = (driver) => {
         if (!isAdmin) {
-            setError("Pristup odbijen. Samo ADMINISTRATOR smije brisati vozače.");
+            setError(t('messages.access_denied_delete_drivers'));
             return;
         }
         setError(null);
@@ -129,11 +131,11 @@ const DriverList = () => {
                                 <thead className="table-light">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Ime i Prezime</th>
+                                    <th>{t("forms.driver_name")}</th>
                                     <th>OIB</th>
                                     <th>Licenca</th>
-                                    <th>Telefon</th>
-                                    <th>Akcije</th>
+                                    <th>{t("forms.phone")}</th>
+                                    <th>{t("general.actions")}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -181,7 +183,7 @@ const DriverList = () => {
             {/* MODAL za potvrdu brisanja */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>
+                    <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
                     Jeste li sigurni da želite izbrisati vozača **{driverToDelete?.firstName} {driverToDelete?.lastName}**?

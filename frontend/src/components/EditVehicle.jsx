@@ -1,7 +1,6 @@
 // frontend/src/components/EditVehicle.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-// Uvezite funkcije za dohvaćanje vozača i ažuriranje vozila
 import { updateVehicle, fetchVehicleById, fetchDrivers } from '../services/VehicleApi';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
 
@@ -12,20 +11,20 @@ const EditVehicle = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [drivers, setDrivers] = useState([]);
 
-    const [drivers, setDrivers] = useState([]); // 1. NOVO STANJE: Lista vozača
-
-    // DTO ISPRAVAK: Dodajemo polje za ID vozača
     const [formData, setFormData] = useState({
         licensePlate: '',
         make: '',
         model: '',
         modelYear: '',
         loadCapacityKg: '',
-        currentDriverId: '', // 1. NOVO POLJE: ID trenutnog vozača (šalje se Backendu)
+        currentDriverId: '',
+        currentMileageKm: 0,
+        nextServiceMileageKm: 0,
+        fuelConsumptionLitersPer100Km: 0,
     });
 
-    // Učitavanje liste vozača i podataka o vozilu pri renderu
     useEffect(() => {
         const loadData = async () => {
             if (!localStorage.getItem('accessToken')) {
@@ -34,11 +33,9 @@ const EditVehicle = () => {
                 return;
             }
             try {
-                // 2a. Dohvati listu vozača (kao u AddVehicle.jsx)
                 const driverList = await fetchDrivers();
                 setDrivers(driverList);
 
-                // 2b. Dohvati podatke o vozilu
                 const data = await fetchVehicleById(id);
 
                 setFormData({
@@ -47,10 +44,10 @@ const EditVehicle = () => {
                     model: data.model || '',
                     modelYear: data.modelYear ? String(data.modelYear) : (data.year ? String(data.year) : ''),
                     loadCapacityKg: data.loadCapacityKg ? String(data.loadCapacityKg) : '',
-
-                    // 2c. KRITIČNO: Postavi ID trenutnog vozača
-                    // data.currentDriver je ugniježđeni objekt (nakon ispravke Backenda)
                     currentDriverId: data.currentDriver ? String(data.currentDriver.id) : '',
+                    currentMileageKm: data.currentMileageKm || 0,
+                    nextServiceMileageKm: data.nextServiceMileageKm || 0,
+                    fuelConsumptionLitersPer100Km: data.fuelConsumptionLitersPer100Km || 0,
                 });
                 setLoading(false);
             } catch (err) {
@@ -66,7 +63,17 @@ const EditVehicle = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        let newValue = value;
+
+        if (name === 'currentDriverId') {
+            newValue = value === '' ? '' : Number(value);
+        }
+        else if (['modelYear', 'loadCapacityKg', 'currentMileageKm', 'nextServiceMileageKm', 'fuelConsumptionLitersPer100Km'].includes(name)) {
+            newValue = value ? Number(value) : 0;
+        }
+
+        setFormData(prev => ({ ...prev, [name]: newValue }));
     };
 
     const handleSubmit = async (e) => {
@@ -81,9 +88,10 @@ const EditVehicle = () => {
             model: formData.model,
             modelYear: parseInt(formData.modelYear, 10),
             loadCapacityKg: parseInt(formData.loadCapacityKg, 10),
-
-            // KRITIČNO: Šaljemo ID vozača natrag
-            currentDriverId: formData.currentDriverId ? parseInt(formData.currentDriverId, 10) : null,
+            currentDriverId: formData.currentDriverId === '' ? null : formData.currentDriverId,
+            currentMileageKm: Number(formData.currentMileageKm),
+            nextServiceMileageKm: Number(formData.nextServiceMileageKm),
+            fuelConsumptionLitersPer100Km: Number(formData.fuelConsumptionLitersPer100Km),
         };
 
         try {
@@ -102,8 +110,6 @@ const EditVehicle = () => {
         }
     };
 
-    // ... (ostatak koda za loading i error poruke) ...
-
     if (loading) {
         return (
             <div className="text-center py-5">
@@ -113,7 +119,6 @@ const EditVehicle = () => {
         );
     }
 
-    // Provjera autentikacije
     if (error && error.includes("prijavite se")) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
@@ -121,7 +126,6 @@ const EditVehicle = () => {
             </Alert>
         );
     }
-
 
     return (
         <Container className="d-flex justify-content-center pt-3">
@@ -135,14 +139,25 @@ const EditVehicle = () => {
                     {success && <Alert variant="success" className="font-monospace">{success}</Alert>}
 
                     <Form onSubmit={handleSubmit}>
-                        {/* ... (Registracija i Marka) ... */}
                         <div className="row mb-3">
-                            <div className="col-md-6"><FloatingLabel controlId="licensePlate" label="Registracija"><Form.Control type="text" name="licensePlate" value={formData.licensePlate} onChange={handleChange} required className="font-monospace" /></FloatingLabel></div>
-                            <div className="col-md-6"><FloatingLabel controlId="make" label="Marka"><Form.Control type="text" name="make" value={formData.make} onChange={handleChange} required className="font-monospace" /></FloatingLabel></div>
+                            <div className="col-md-6">
+                                <FloatingLabel controlId="licensePlate" label="Registracija">
+                                    <Form.Control type="text" name="licensePlate" value={formData.licensePlate} onChange={handleChange} required className="font-monospace" />
+                                </FloatingLabel>
+                            </div>
+                            <div className="col-md-6">
+                                <FloatingLabel controlId="make" label="Marka">
+                                    <Form.Control type="text" name="make" value={formData.make} onChange={handleChange} required className="font-monospace" />
+                                </FloatingLabel>
+                            </div>
                         </div>
-                        {/* ... (Model i Godina Proizvodnje) ... */}
+
                         <div className="row mb-3">
-                            <div className="col-md-6"><FloatingLabel controlId="model" label="Model"><Form.Control type="text" name="model" value={formData.model} onChange={handleChange} required className="font-monospace" /></FloatingLabel></div>
+                            <div className="col-md-6">
+                                <FloatingLabel controlId="model" label="Model">
+                                    <Form.Control type="text" name="model" value={formData.model} onChange={handleChange} required className="font-monospace" />
+                                </FloatingLabel>
+                            </div>
                             <div className="col-md-6">
                                 <FloatingLabel controlId="modelYear" label="Godina Proizvodnje">
                                     <Form.Control
@@ -159,18 +174,16 @@ const EditVehicle = () => {
                             </div>
                         </div>
 
-                        {/* 3. KRITIČNO: DODAN PADJUĆI IZBORNIK ZA VOZAČA */}
-                        <div className="row mb-4">
+                        <div className="row mb-3">
                             <div className="col-md-6">
                                 <FloatingLabel controlId="currentDriverId" label="Dodijeli Vozača">
                                     <Form.Select
                                         name="currentDriverId"
-                                        value={formData.currentDriverId} // Prikazuje trenutno dodijeljenog
+                                        value={formData.currentDriverId}
                                         onChange={handleChange}
                                         className="font-monospace"
                                     >
                                         <option value="">-- Nije dodijeljen --</option>
-                                        {/* Mapiranje liste vozača */}
                                         {drivers.map(driver => (
                                             <option key={driver.id} value={driver.id}>
                                                 {driver.fullName || `${driver.firstName} ${driver.lastName}` || 'N/A'}
@@ -186,7 +199,52 @@ const EditVehicle = () => {
                             </div>
                         </div>
 
-                        {/* ... (Gumbi za spremanje i odustajanje) ... */}
+                        <div className="row mb-3">
+                            <div className="col-md-6">
+                                <FloatingLabel controlId="currentMileageKm" label="Trenutna Kilometraža (km)">
+                                    <Form.Control
+                                        type="number"
+                                        name="currentMileageKm"
+                                        value={formData.currentMileageKm}
+                                        onChange={handleChange}
+                                        required
+                                        min="0"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </div>
+                            <div className="col-md-6">
+                                <FloatingLabel controlId="nextServiceMileageKm" label="Sljedeći Servis (km)">
+                                    <Form.Control
+                                        type="number"
+                                        name="nextServiceMileageKm"
+                                        value={formData.nextServiceMileageKm}
+                                        onChange={handleChange}
+                                        required
+                                        min="0"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </div>
+                        </div>
+
+                        <div className="row mb-4">
+                            <div className="col-md-6">
+                                <FloatingLabel controlId="fuelConsumptionLitersPer100Km" label="Potrošnja (L/100km)">
+                                    <Form.Control
+                                        type="number"
+                                        step="0.1"
+                                        name="fuelConsumptionLitersPer100Km"
+                                        value={formData.fuelConsumptionLitersPer100Km}
+                                        onChange={handleChange}
+                                        required
+                                        min="0.1"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </div>
+                        </div>
+
                         <Button
                             type="submit"
                             variant="outline-success"

@@ -1,0 +1,91 @@
+{
+  "Home": "Home",
+  "Vehicles": "Vehicles",
+  "Drivers": "Drivers",
+  "Shipments": "Shipments",
+  "Assignments": "Assignments",
+  "Analytics": "Analytics",
+  "LOGOUT": "LOGOUT",
+  "LOGIN": "LOGIN",
+
+  "general": {
+    "dashboard_title": "Fleet Management Dashboard",
+    "execute_bulk_update": "Execute Bulk Update",
+    "status_ready": "Status: READY",
+    "loading": "Loading...",
+    "executing_dml": "EXECUTING DML...",
+    "add_new": "Add New",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save_changes": "Save Changes",
+    "delete_permanently": "Delete Permanently"
+  },
+
+  "analytics": {
+    "bulk_action_title": "BULK ACTION: MARK OVERDUE",
+    "bulk_action_text": "WARNING: This action executes a direct DML query on the database and is irreversible."
+  },
+
+  "alerts": {
+    "overdue_service": "Overdue Service",
+    "service_warning": "Service Warning",
+    "free_vehicles": "Free Vehicles",
+    "total_vehicles": "Total Vehicles",
+    "average_weight": "Average Active Shipment Weight (kg)"
+  },
+
+  "forms": {
+    "create_assignment": "Create Assignment",
+    "create_vehicle": "Save Vehicle",
+    "create_driver": "Create Driver",
+    "create_shipment": "Create Shipment",
+    "license_plate": "License Plate",
+    "make": "Make",
+    "model": "Model",
+    "year": "Year",
+    "driver_name": "Driver Name",
+    "license_number": "License Number",
+    "phone": "Phone Number",
+    "license_expiry": "License Expiry"
+  },
+
+  "shipments": {
+    "origin": "Origin Address",
+    "destination": "Destination Address",
+    "expected_delivery": "Expected Delivery Time",
+    "description": "Description"
+  },
+
+  "assignments": {
+    "shipment": "Shipment",
+    "vehicle": "Vehicle",
+    "driver": "Driver",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "status": "Status",
+    "confirm_delete_text": "Are you sure you want to delete assignment ID **{{id}}**? This action will revert shipment **{{trackingNumber}}** to PENDING status."
+  },
+
+  "vehicles": {
+    "current_mileage": "Current Mileage (km)",
+    "next_service": "Next Service (km)",
+    "fuel_type": "Fuel Type",
+    "load_capacity": "Load Capacity (kg)",
+    "service_status": "Service Status",
+    "used_by": "Used By"
+  },
+
+  "messages": {
+    "welcome_title": "Welcome to the Logistics System",
+    "welcome_text": "Manage your fleet and logistics operations efficiently and digitally.",
+    "login_success": "You are successfully logged in.",
+    "view_fleet": "View Fleet",
+    "page_not_found": "Page Not Found",
+    "not_found_text": "We are sorry, the page you requested does not exist.",
+    "back_to_home": "Back to Home",
+    "no_data": "No data to display.",
+    "delete_shipment_condition": "Deletion is only possible if the shipment is in **PENDING** status.",
+    "confirm_delete_title": "Deletion Confirmation"
+  }
+}

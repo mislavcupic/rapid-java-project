@@ -12,8 +12,10 @@ import { fetchShipments } from '../services/ShipmentApi';
 
 // ✅ Uvoz pomoćnih funkcija (Vozači i Vozila)
 import { fetchDrivers, fetchVehicles } from '../services/VehicleApi';
+import { useTranslation } from 'react-i18next';
 
 const AddAssignment = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -70,7 +72,7 @@ const AddAssignment = () => {
 
         // Provjera da li su sva ključna polja odabrana
         if (!formData.shipmentId || !formData.driverId || !formData.vehicleId) {
-            setError('Molimo odaberite Pošiljku, Vozača i Vozilo.');
+            setError(t('messages.select_all_fields'));
             setLoading(false);
             return;
         }
@@ -99,7 +101,7 @@ const AddAssignment = () => {
                     <Form onSubmit={handleSubmit} className="mt-4">
 
                         {/* 1. ODABIR POŠILJKE - (value pretvorena u String) */}
-                        <FloatingLabel controlId="shipmentId" label="Pošiljka za dodjelu" className="mb-4">
+                        <FloatingLabel controlId="shipmentId" label={t("forms.shipment_for_assignment")} className="mb-4">
                             <Form.Select name="shipmentId" value={formData.shipmentId} onChange={handleChange} required className="font-monospace">
                                 <option value="">--- Odaberite Pošiljku ---</option>
                                 {shipments.map(shipment => (
@@ -114,9 +116,9 @@ const AddAssignment = () => {
                         <div className="row g-3 mb-4">
                             {/* 2. ODABIR VOZAČA - (value pretvorena u String) */}
                             <div className="col-md-6">
-                                <FloatingLabel controlId="driverId" label="Vozač">
+                                <FloatingLabel controlId="driverId" label={t("assignments.driver")}>
                                     <Form.Select name="driverId" value={formData.driverId} onChange={handleChange} required className="font-monospace">
-                                        <option value="">--- Odaberite Vozača ---</option>
+                                        <option value="">{t("general.choose_driver")}</option>
                                         {drivers.map(driver => (
                                             // ✅ KRITIČNO: Pretvaramo ID u String
                                             <option key={driver.id} value={String(driver.id)}>
@@ -129,7 +131,7 @@ const AddAssignment = () => {
 
                             {/* 3. ODABIR VOZILA - (value pretvorena u String) */}
                             <div className="col-md-6">
-                                <FloatingLabel controlId="vehicleId" label="Vozilo">
+                                <FloatingLabel controlId="vehicleId" label={t("assignments.vehicle")}>
                                     <Form.Select name="vehicleId" value={formData.vehicleId} onChange={handleChange} required className="font-monospace">
                                         <option value="">--- Odaberite Vozilo ---</option>
                                         {vehicles.map(vehicle => (
@@ -158,7 +160,7 @@ const AddAssignment = () => {
                             {loading ? (
                                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                             ) : (
-                                'Kreiraj Dodjelu'
+                                t("assignments.create_button")
                             )}
                         </Button>
                         <Button

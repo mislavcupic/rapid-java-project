@@ -1,0 +1,91 @@
+{
+  "Home": "Accueil",
+  "Vehicles": "Véhicules",
+  "Drivers": "Conducteurs",
+  "Shipments": "Expéditions",
+  "Assignments": "Affectations",
+  "Analytics": "Analytique",
+  "LOGOUT": "Déconnexion",
+  "LOGIN": "Connexion",
+
+  "general": {
+    "dashboard_title": "Tableau de bord de gestion de flotte",
+    "execute_bulk_update": "Exécuter la mise à jour en masse",
+    "status_ready": "Statut: PRÊT",
+    "loading": "Chargement...",
+    "executing_dml": "EXÉCUTION DML...",
+    "add_new": "Ajouter Nouveau",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "cancel": "Annuler",
+    "save_changes": "Enregistrer les Modifications",
+    "delete_permanently": "Supprimer Définitivement"
+  },
+
+  "analytics": {
+    "bulk_action_title": "ACTION EN MASSE: MARQUER EN RETARD",
+    "bulk_action_text": "AVERTISSEMENT: Cette action exécute une requête DML directe sur la base de données et est irréversible."
+  },
+
+  "alerts": {
+    "overdue_service": "Service en Retard",
+    "service_warning": "Avertissement de Service",
+    "free_vehicles": "Véhicules Libres",
+    "total_vehicles": "Total des Véhicules",
+    "average_weight": "Poids moyen des expéditions actives (kg)"
+  },
+
+  "forms": {
+    "create_assignment": "Créer une Affectation",
+    "create_vehicle": "Enregistrer le Véhicule",
+    "create_driver": "Créer le Conducteur",
+    "create_shipment": "Créer l'Expédition",
+    "license_plate": "Immatriculation",
+    "make": "Marque",
+    "model": "Modèle",
+    "year": "Année",
+    "driver_name": "Nom du Conducteur",
+    "license_number": "Numéro de Permis",
+    "phone": "Téléphone",
+    "license_expiry": "Expiration du Permis"
+  },
+
+  "shipments": {
+    "origin": "Adresse de Départ",
+    "destination": "Adresse de Destination",
+    "expected_delivery": "Heure de Livraison Prévue",
+    "description": "Description"
+  },
+
+  "assignments": {
+    "shipment": "Expédition",
+    "vehicle": "Véhicule",
+    "driver": "Conducteur",
+    "start_time": "Début",
+    "end_time": "Fin",
+    "status": "Statut",
+    "confirm_delete_text": "Êtes-vous sûr de vouloir supprimer l'affectation ID **{{id}}**? Cette action ramènera l'expédition **{{trackingNumber}}** au statut PENDING."
+  },
+
+  "vehicles": {
+    "current_mileage": "Kilométrage Actuel (km)",
+    "next_service": "Prochain Service (km)",
+    "fuel_type": "Type de Carburant",
+    "load_capacity": "Capacité de Charge (kg)",
+    "service_status": "Statut du Service",
+    "used_by": "Utilisé Par"
+  },
+
+  "messages": {
+    "welcome_title": "Bienvenue dans le Système Logistique",
+    "welcome_text": "Gérez votre flotte et vos opérations logistiques efficacement et numériquement.",
+    "login_success": "Vous êtes connecté avec succès.",
+    "view_fleet": "Visualiser la Flotte",
+    "page_not_found": "Page Introuvable",
+    "not_found_text": "Nous sommes désolés, la page que vous recherchez n'existe pas.",
+    "back_to_home": "Retour à l'accueil",
+    "no_data": "Aucune donnée à afficher.",
+    "delete_shipment_condition": "La suppression n'est possible que si l'expédition est au statut **PENDING**.",
+    "confirm_delete_title": "Confirmation de Suppression"
+  }
+}

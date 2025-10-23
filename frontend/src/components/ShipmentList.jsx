@@ -5,8 +5,10 @@ import { fetchShipments, deleteShipment } from '../services/ShipmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const ShipmentList = () => {
+    const { t } = useTranslation();
     const [shipments, setShipments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -70,10 +72,10 @@ const ShipmentList = () => {
             setLoading(true);
             await deleteShipment(shipmentToDelete.id);
             await loadShipments();
-            navigate('/shipments', { state: { message: `Pošiljka ${shipmentToDelete.trackingNumber} uspješno obrisana.` } });
+            navigate('/shipments', { state: { message: t('messages.shipment_deleted', { trackingNumber: shipmentToDelete.trackingNumber }) } });
             setShipmentToDelete(null);
         } catch (err) {
-            setError(`Greška pri brisanju: ${err.message}. Pošiljka se ne smije brisati ako je dodijeljena (SCHEDULED) ili u tranzitu!`);
+            setError(t('messages.shipment_delete_error', { error: err.message }));
         } finally {
             setLoading(false);
         }
@@ -95,7 +97,7 @@ const ShipmentList = () => {
         return (
             <div className="text-center py-5">
                 <Spinner animation="border" variant="primary" role="status" />
-                <p className="text-muted mt-2">Učitavanje pošiljki...</p>
+                <p className="text-muted mt-2">{t("general.loading")}</p>
             </div>
         );
     }
@@ -138,13 +140,13 @@ const ShipmentList = () => {
                                 <tr>
                                     <th>ID</th>
                                     <th>Tracking No.</th>
-                                    <th>Status</th>
+                                    <th>{t("assignments.status")}</th>
                                     <th>Polazište</th>
                                     <th>Odredište</th>
                                     {/* ✅ PROMJENA: Dodan status rute */}
                                     <th>Status Rute</th>
-                                    <th>Opis</th>
-                                    <th className="text-nowrap">Akcije</th>
+                                    <th>{t("shipments.description")}</th>
+                                    <th className="text-nowrap">{t("general.actions")}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -197,7 +199,7 @@ const ShipmentList = () => {
 
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title className="font-monospace text-danger">Potvrda Brisanja</Modal.Title>
+                    <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
                     Jeste li sigurni da želite izbrisati pošiljku **{shipmentToDelete?.trackingNumber}**?
