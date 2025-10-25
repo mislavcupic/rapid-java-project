@@ -192,7 +192,6 @@ const AddVehicle = () => {
                                         value={formData.nextServiceMileageKm}
                                         onChange={handleChange}
                                         required
-                                        // ✅ UKLONJENO OGRANIČENJE min={formData.currentMileageKm}
                                         className="font-monospace"
                                     />
                                 </FloatingLabel>
@@ -209,7 +208,7 @@ const AddVehicle = () => {
                             {loading ? (
                                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                             ) : (
-                                <><FaSave className='me-2'/> {t('forms.create_vehicle_button')}</>
+                                <><FaSave className='me-2'/> {t('forms.create_vehicle')}</>
                             )}
                         </Button>
                         {/* Gumb za Odustajanje */}

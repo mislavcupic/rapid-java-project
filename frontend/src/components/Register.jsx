@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 const Register = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    
+
     // Form fields
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -15,7 +15,7 @@ const Register = () => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    
+
     // UI state
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -23,15 +23,15 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        
+
         // Client-side validation
         if (password !== confirmPassword) {
-            setError(t('register.password_mismatch'));
+            setError('Lozinke se ne podudaraju!');
             return;
         }
-        
+
         if (password.length < 6) {
-            setError(t('register.password_too_short'));
+            setError('Lozinka mora imati najmanje 6 znakova!');
             return;
         }
 
@@ -53,18 +53,18 @@ const Register = () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || t('register.registration_failed'));
+                throw new Error(data.message || 'Registracija nije uspjela.');
             }
 
             // ✅ Uspješna registracija - spremi token i preusmjeri
             localStorage.setItem('accessToken', data.accessToken);
-            
+
             // Postavi default ulogu (backend vraća ROLE_DRIVER za nove korisnike)
             localStorage.setItem('userRole', 'ROLE_DRIVER');
-            
+
             // Preusmjeri na početnu stranicu
             navigate('/');
-            
+
         } catch (err) {
             setError(err.message);
         } finally {
@@ -77,7 +77,7 @@ const Register = () => {
             <Card className="shadow-lg p-4 w-100" style={{ maxWidth: '500px' }}>
                 <Card.Body>
                     <h2 className="text-center mb-4 font-monospace fw-bold text-dark">
-                        {t('register.title')}
+                        Registracija
                     </h2>
 
                     {error && (
@@ -148,10 +148,10 @@ const Register = () => {
                         </FloatingLabel>
 
                         {/* Confirm Password */}
-                        <FloatingLabel controlId="floatingConfirmPassword" label={t("register.confirm_password")} className="mb-4">
+                        <FloatingLabel controlId="floatingConfirmPassword" label="Potvrdi Lozinku" className="mb-4">
                             <Form.Control
                                 type="password"
-                                placeholder={t("register.confirm_password")}
+                                placeholder="Potvrdi Lozinku"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
@@ -177,10 +177,10 @@ const Register = () => {
                                         aria-hidden="true"
                                         className="me-2"
                                     />
-                                    {t('register.registering')}
+                                    Registriram...
                                 </>
                             ) : (
-                                t('register.register_button')
+                                'Registriraj se'
                             )}
                         </Button>
                     </Form>
@@ -188,7 +188,7 @@ const Register = () => {
                     {/* Link to Login */}
                     <div className="text-center mt-3">
                         <p className="text-muted font-monospace">
-                            {t('register.already_have_account')}{' '}
+                            Već imaš račun?{' '}
                             <Link to="/login" className="text-decoration-none fw-bold">
                                 {t('LOGIN')}
                             </Link>

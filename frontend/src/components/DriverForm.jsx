@@ -46,7 +46,7 @@ const DriverForm = () => {
                         username: data.username || '',
                         firstName: data.firstName || '',
                         lastName: data.lastName || '',
-                        email: data.email || '', // ✅ Dohvaćanje emaila
+                        email: data.email || '',
                         password: '',
                     });
                 }
@@ -101,7 +101,7 @@ const DriverForm = () => {
                 password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                email: formData.email, // ✅ SLANJE EMAILA BACKENDU
+                email: formData.email,
             };
         }
 

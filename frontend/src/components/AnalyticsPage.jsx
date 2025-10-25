@@ -72,7 +72,7 @@ const AnalyticsPage = () => {
     const token = auth.token;
 
     // =================================================================
-    // 🔄 UČITAVANJE PODATAKA
+    // 📄 UČITAVANJE PODATAKA
     // =================================================================
 
     const loadData = useCallback(async () => {
@@ -83,7 +83,7 @@ const AnalyticsPage = () => {
 
         try {
             setLoading(true);
-            
+
             // Dohvat prosječne težine
             const weight = await getAverageActiveShipmentWeight(token);
             setAvgWeight(weight);
@@ -225,12 +225,12 @@ const AnalyticsPage = () => {
                         </tbody>
                     </Table>
                     {listToShow.length === 0 && (
-                        <p className="text-center text-muted">Nema podataka.</p>
+                        <p className="text-center text-muted">{t("messages.no_data")}</p>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={closeModal} className='font-monospace'>
-                        Zatvori
+                        {t("general.close")}
                     </Button>
                 </Modal.Footer>
             </Modal>
@@ -243,7 +243,7 @@ const AnalyticsPage = () => {
         return (
             <Container className="mt-5">
                 <Alert variant="danger" className='font-monospace'>
-                    <strong>Pristup odbijen!</strong> Nemate ovlasti za pristup ovoj stranici.
+                    <strong>Pristup odbijen!</strong> {t("messages.access_denied")}
                 </Alert>
             </Container>
         );
@@ -253,7 +253,7 @@ const AnalyticsPage = () => {
         return (
             <Container className="mt-5 text-center">
                 <Spinner animation="border" variant="primary" />
-                <p className="mt-3 text-muted font-monospace">Učitavanje podataka...</p>
+                <p className="mt-3 text-muted font-monospace">{t("general.loading_data")}</p>
             </Container>
         );
     }
@@ -268,38 +268,38 @@ const AnalyticsPage = () => {
         );
     }
 
-    // --- Klikabilne Kartice ---
+    // --- ✅ ISPRAVLJENA DEFINICIJA KARTICA SA t() ---
     const cards = [
         {
-            title: 'Overdue Service',
+            title: t('alerts.overdue_service'),
             count: analytics.overdue,
             variant: 'danger',
-            description: t("analytics.unassigned_vehicles"),
+            description: t('analytics.unassigned_vehicles'),
             onClick: () => openModalForList('overdue'),
         },
         {
-            title: 'Service Warning',
+            title: t('alerts.service_warning'),
             count: analytics.warning,
             variant: 'warning',
             description: 'Vozila blizu servisnog roka.',
             onClick: () => openModalForList('warning'),
         },
         {
-            title: 'Free Vehicles',
+            title: t('alerts.free_vehicles'),
             count: analytics.free,
             variant: 'success',
             description: 'Vozila bez dodijeljenog vozača.',
             onClick: () => openModalForList('free'),
         },
         {
-            title: 'Total Vehicles',
+            title: t('alerts.total_vehicles'),
             count: analytics.total,
             variant: 'info',
             description: 'Ukupan broj vozila u floti.',
             onClick: null,
         },
         {
-            title: 'Average Active Shipment Weight (kg)',
+            title: t('alerts.average_weight'),
             count: formatNumber(avgWeight, ' kg'),
             variant: 'primary',
             description: 'Prosječna težina trenutno AKTIVNIH pošiljaka.',
@@ -311,10 +311,9 @@ const AnalyticsPage = () => {
         <Container className="mt-4">
             <Row className="mb-4">
                 <Col>
-                    <h1 className="h3 fw-bold font-monospace">Nadzorna Ploča za Upravljanje Flotom</h1>
+                    <h1 className="h3 fw-bold font-monospace">{t("general.dashboard_title")}</h1>
                     <p className="text-muted font-monospace">
-                        Status:{' '}
-                        <span className="badge bg-success">SPREMNO</span>
+                        {t("general.status_ready")}
                     </p>
                 </Col>
             </Row>
@@ -353,10 +352,10 @@ const AnalyticsPage = () => {
                         <Card className="shadow-sm">
                             <Card.Body>
                                 <h5 className="text-danger fw-bold font-monospace">
-                                    AKCIJA U MASI: OZNAČI KAO ISTEKLO
+                                    {t("analytics.bulk_action_title")}
                                 </h5>
                                 <p className="text-muted small font-monospace">
-                                    UPOZORENJE: Ova akcija izvršava izravan DML upit na bazu podataka i nepovratna je.
+                                    {t("analytics.bulk_action_text")}
                                 </p>
                                 <Button
                                     variant="danger"
@@ -364,7 +363,7 @@ const AnalyticsPage = () => {
                                     disabled={isLoading}
                                     className='font-monospace'
                                 >
-                                    {isLoading ? 'IZVRŠAVAM DML...' : 'Izvrši Masovno Ažuriranje'}
+                                    {isLoading ? t("general.executing_dml") : t("analytics.execute_bulk_update")}
                                 </Button>
                                 {overdueMessage && (
                                     <Alert variant="info" className="mt-3 font-monospace">

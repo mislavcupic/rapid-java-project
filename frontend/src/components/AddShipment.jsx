@@ -11,9 +11,9 @@ const AddShipment = () => {
             <Card className="shadow-lg p-4">
                 <Card.Body>
                     <h2 className="text-info fw-bold font-monospace">{t("forms.create_shipment_title")}</h2>
-                    <p>Ovo je placeholder forma. Ovdje ide logistika kreiranja pošiljke.</p>
+                    <p>{t("forms.placeholder_text")}</p>
                     <Button variant="secondary" onClick={() => navigate('/shipments')}>
-                        Natrag na Pošiljke
+                        Natrag na {t("Shipments")}
                     </Button>
                 </Card.Body>
             </Card>

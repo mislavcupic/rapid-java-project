@@ -55,7 +55,7 @@ const AssignmentList = () => {
 
     const handleDeleteClick = (assignment) => {
         if (!isDispatcherOrAdmin) {
-            setError("Pristup odbijen. Samo ADMINISTRATOR ili DISPEČER smiju brisati dodjele.");
+            setError(t("messages.access_denied"));
             return;
         }
         setError(null);
@@ -86,7 +86,7 @@ const AssignmentList = () => {
     if (!isAuthenticated) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
-                Molimo, prijavite se za pristup listi dodjela.
+                {t("messages.access_denied")}
             </Alert>
         );
     }
@@ -103,7 +103,7 @@ const AssignmentList = () => {
     if (error) {
         return (
             <Alert variant="danger" className="text-center shadow font-monospace">
-                Greška: {error}
+                {t("error.general_error")}: {error}
             </Alert>
         );
     }
@@ -112,16 +112,16 @@ const AssignmentList = () => {
         <>
             <Card className="shadow-lg border-primary border-top-0 border-5">
                 <Card.Header className="d-flex justify-content-between align-items-center bg-primary text-white">
-                    <h1 className="h4 mb-0 font-monospace">Popis Dodjela (Assignments)</h1>
+                    <h1 className="h4 mb-0 font-monospace">Popis Dodjela ({t("Assignments")})</h1>
                     <Button
                         variant="light"
                         onClick={handleAddAssignment}
                         className="font-monospace fw-bold text-primary"
                         // ✅ GUMB DODAJ: Aktivan za Admina i Dispečera
                         disabled={!isDispatcherOrAdmin}
-                        title={!isDispatcherOrAdmin ? "Samo Dispečeri/Admini smiju dodavati dodjele" : "Kreiraj novu dodjelu"}
+                        title={!isDispatcherOrAdmin ? t("messages.access_denied_add_drivers") : t("assignments.create_button")}
                     >
-                        <FaPlus className="me-1" /> Kreiraj Novu Dodjelu
+                        <FaPlus className="me-1" /> {t("assignments.create_button")}
                     </Button>
                 </Card.Header>
                 <Card.Body>
@@ -129,7 +129,7 @@ const AssignmentList = () => {
 
                     {assignments.length === 0 ? (
                         <Alert variant="info" className="text-center font-monospace">
-                            Nema registriranih dodjela.
+                            {t("messages.no_data")}
                         </Alert>
                     ) : (
                         <div className="table-responsive">
@@ -141,7 +141,7 @@ const AssignmentList = () => {
                                     <th>{t("assignments.driver")}</th>
                                     <th>{t("vehicles.vehicle_reg")}</th>
                                     <th>{t("shipments.shipment_tracking")}</th>
-                                    <th>Početak</th>
+                                    <th>{t("assignments.start_time")}</th>
                                     <th className="text-nowrap">{t("general.actions")}</th>
                                 </tr>
                                 </thead>
@@ -164,9 +164,9 @@ const AssignmentList = () => {
                                                     onClick={() => navigate(`/assignments/edit/${a.id}`)}
                                                     // ✅ GUMB UREDI: Aktivan za Admina i Dispečera
                                                     disabled={!isDispatcherOrAdmin}
-                                                    title={!isDispatcherOrAdmin ? "Samo Dispečeri/Admini smiju uređivati dodjele" : "Uredi dodjelu"}
+                                                    title={!isDispatcherOrAdmin ? t("messages.access_denied_edit_drivers") : t("general.edit")}
                                                 >
-                                                    <FaEdit className="me-1"/> Uredi
+                                                    <FaEdit className="me-1"/> {t("general.edit")}
                                                 </Button>
                                                 <Button
                                                     variant="outline-danger"
@@ -175,9 +175,9 @@ const AssignmentList = () => {
                                                     onClick={() => handleDeleteClick(a)}
                                                     // ✅ GUMB IZBRIŠI: Aktivan za Admina i Dispečera
                                                     disabled={!isDispatcherOrAdmin}
-                                                    title={!isDispatcherOrAdmin ? "Samo Dispečeri/Admini smiju brisati dodjele" : "Izbriši dodjelu"}
+                                                    title={!isDispatcherOrAdmin ? t("messages.access_denied_delete_drivers") : t("general.delete")}
                                                 >
-                                                    <FaTrash className="me-1"/> Izbriši
+                                                    <FaTrash className="me-1"/> {t("general.delete")}
                                                 </Button>
                                             </div>
                                         </td>
@@ -196,15 +196,17 @@ const AssignmentList = () => {
                     <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
-                    Jeste li sigurni da želite izbrisati dodjelu ID **{assignmentToDelete?.id}**?
-                    Ova akcija će pošiljku **{assignmentToDelete?.shipment?.trackingNumber}** vratiti u status PENDING.
+                    {t("assignments.confirm_delete_text", {
+                        id: assignmentToDelete?.id,
+                        trackingNumber: assignmentToDelete?.shipment?.trackingNumber
+                    })}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="font-monospace">
-                        Odustani
+                        {t("general.cancel")}
                     </Button>
                     <Button variant="danger" onClick={confirmDelete} className="font-monospace">
-                        Izbriši Trajno
+                        {t("general.delete_permanently")}
                     </Button>
                 </Modal.Footer>
             </Modal>

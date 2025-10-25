@@ -11,7 +11,9 @@ const EditAssignment = () => {
         <Container>
             <Card className="shadow-lg p-4">
                 <Card.Body>
-                    <h2 className="text-info fw-bold font-monospace">{t('general.edit')} {t('Assignments')} #{id}</h2>
+                    <h2 className="text-info fw-bold font-monospace">
+                        {t('general.edit')} {t('Assignments')} #{id}
+                    </h2>
                     <p>{t("forms.placeholder_text")}</p>
                     <Button variant="secondary" onClick={() => navigate('/assignments')}>
                         Natrag na {t('Assignments')}

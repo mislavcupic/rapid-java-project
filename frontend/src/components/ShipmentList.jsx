@@ -27,10 +27,7 @@ const ShipmentList = () => {
     // Admin i Dispečer smiju kreirati i uređivati (prema ShipmentController.java)
     const canCreate = isAdmin || isDispatcher;
     const canEdit = isAdmin || isDispatcher;
-
     const canDelete = isAdmin;
-
-
 
     const loadShipments = useCallback(async () => {
         if (!isAuthenticated) {
@@ -57,7 +54,7 @@ const ShipmentList = () => {
 
     const handleDeleteClick = (shipment) => {
         if (!canDelete) {
-            setError("Pristup odbijen. Samo ADMINISTRATOR smije brisati pošiljke.");
+            setError(t("messages.access_denied"));
             return;
         }
         setError(null);
@@ -88,7 +85,7 @@ const ShipmentList = () => {
     if (!isAuthenticated) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
-                Molimo, prijavite se za pristup listi pošiljki.
+                {t("messages.access_denied")}
             </Alert>
         );
     }
@@ -105,7 +102,7 @@ const ShipmentList = () => {
     if (error) {
         return (
             <Alert variant="danger" className="text-center shadow font-monospace">
-                Greška: {error}
+                {t("error.general_error")}: {error}
             </Alert>
         );
     }
@@ -114,16 +111,16 @@ const ShipmentList = () => {
         <>
             <Card className="shadow-lg border-primary border-top-0 border-5">
                 <Card.Header className="d-flex justify-content-between align-items-center bg-primary text-white">
-                    <h1 className="h4 mb-0 font-monospace">Popis Pošiljki (Shipments)</h1>
+                    <h1 className="h4 mb-0 font-monospace">Popis Pošiljki ({t("Shipments")})</h1>
                     <Button
                         variant="light"
                         onClick={handleAddShipment}
                         className="font-monospace fw-bold text-primary"
                         // GUMB DODAJ: Aktivan za Admina i Dispečera
                         disabled={!canCreate}
-                        title={!canCreate ? "Samo Dispečeri/Admini smiju dodavati pošiljke" : "Kreiraj novu pošiljku"}
+                        title={!canCreate ? t("messages.access_denied_add_drivers") : t("forms.create_shipment")}
                     >
-                        <FaPlus className="me-1" /> Kreiraj Novu Pošiljku
+                        <FaPlus className="me-1" /> {t("forms.create_shipment")}
                     </Button>
                 </Card.Header>
                 <Card.Body>
@@ -131,7 +128,7 @@ const ShipmentList = () => {
 
                     {shipments.length === 0 ? (
                         <Alert variant="info" className="text-center font-monospace">
-                            Nema registriranih pošiljki.
+                            {t("messages.no_data")}
                         </Alert>
                     ) : (
                         <div className="table-responsive">
@@ -139,10 +136,10 @@ const ShipmentList = () => {
                                 <thead className="table-dark">
                                 <tr>
                                     <th>ID</th>
-                                    <th>Tracking No.</th>
+                                    <th>{t("shipments.tracking_number")}</th>
                                     <th>{t("assignments.status")}</th>
-                                    <th>Polazište</th>
-                                    <th>Odredište</th>
+                                    <th>{t("shipments.origin")}</th>
+                                    <th>{t("shipments.destination")}</th>
                                     {/* ✅ PROMJENA: Dodan status rute */}
                                     <th>Status Rute</th>
                                     <th>{t("shipments.description")}</th>
@@ -153,7 +150,7 @@ const ShipmentList = () => {
                                 {shipments.map((s) => (
                                     <tr key={s.id}>
                                         <td>{s.id}</td>
-                                        <td>**{s.trackingNumber}**</td>
+                                        <td className="fw-bold">{s.trackingNumber}</td>
                                         <td>{s.status}</td>
                                         <td>{s.originAddress}</td>
                                         <td>{s.destinationAddress}</td>
@@ -170,9 +167,9 @@ const ShipmentList = () => {
                                                     onClick={() => navigate(`/shipments/edit/${s.id}`)}
                                                     // GUMB UREDI: Aktivan za Admina I Dispečera
                                                     disabled={!canEdit}
-                                                    title={!canEdit ? "Samo Admin/Dispečer smije uređivati pošiljke" : "Uredi pošiljku"}
+                                                    title={!canEdit ? t("messages.access_denied_edit_drivers") : t("general.edit")}
                                                 >
-                                                    <FaEdit className="me-1"/> Uredi
+                                                    <FaEdit className="me-1"/> {t("general.edit")}
                                                 </Button>
                                                 <Button
                                                     variant="outline-danger"
@@ -181,9 +178,9 @@ const ShipmentList = () => {
                                                     onClick={() => handleDeleteClick(s)}
                                                     // GUMB IZBRIŠI: Aktivan SAMO za Admina
                                                     disabled={!canDelete}
-                                                    title={!canDelete ? "Samo Admin smije brisati pošiljke" : "Izbriši pošiljku"}
+                                                    title={!canDelete ? t("messages.access_denied_delete_drivers") : t("general.delete")}
                                                 >
-                                                    <FaTrash className="me-1"/> Izbriši
+                                                    <FaTrash className="me-1"/> {t("general.delete")}
                                                 </Button>
                                             </div>
                                         </td>
@@ -202,15 +199,16 @@ const ShipmentList = () => {
                     <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="font-monospace">
-                    Jeste li sigurni da želite izbrisati pošiljku **{shipmentToDelete?.trackingNumber}**?
-                    Brisanje je moguće samo ako je pošiljka u statusu **PENDING**.
+                    {t("messages.confirm_delete_shipment_text", { trackingNumber: shipmentToDelete?.trackingNumber })}
+                    <br/>
+                    {t("messages.delete_shipment_condition")}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="font-monospace">
-                        Odustani
+                        {t("general.cancel")}
                     </Button>
                     <Button variant="danger" onClick={confirmDelete} className="font-monospace">
-                        Izbriši Trajno
+                        {t("general.delete_permanently")}
                     </Button>
                 </Modal.Footer>
             </Modal>

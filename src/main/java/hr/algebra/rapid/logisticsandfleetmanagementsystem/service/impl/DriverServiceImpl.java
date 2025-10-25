@@ -32,7 +32,6 @@ public class DriverServiceImpl implements DriverService {
     private final PasswordEncoder passwordEncoder;
 
 
-    // --- Pomoćna metoda za mapiranje (Driver -> Response DTO) ---
     private DriverResponseDTO mapToResponse(Driver driver) {
         return DriverResponseDTO.fromDriver(driver);
     }
@@ -65,65 +64,49 @@ public class DriverServiceImpl implements DriverService {
         return driver.getId();
     }
 
-
-    // --- CREATE Implementacija (ISPRAVAK: DODAN EMAIL) ---
     @Override
     @Transactional
     public DriverResponseDTO createDriver(DriverRequestDTO request) {
 
-        // 1. KRITIČNA VALIDACIJA: Dodajte email u provjeru valjanosti
         if (request.getUsername() == null || request.getPassword() == null ||
                 request.getFirstName() == null || request.getLastName() == null ||
-                request.getEmail() == null) { // ⭐ DODANA PROVJERA EMAILA
-
+                request.getEmail() == null) {
             throw new IllegalArgumentException("Username, password, first name, last name, and email are required for new driver creation.");
         }
 
-        // 2. Provjera konflikta za korisničko ime
         if (userRepository.findByUsername(request.getUsername()) != null) {
             throw new ConflictException("User with username " + request.getUsername() + " already exists.");
         }
 
-        // 3. KREIRANJE USERINFO (Korisnički račun)
         UserInfo userInfo = new UserInfo();
-
         userInfo.setFirstName(request.getFirstName());
         userInfo.setLastName(request.getLastName());
-
-        // ⭐ KRITIČNO: OVO JE LINIJA KOJA JE NEDOSTAJALA I UZROKOVALA SVE GREŠKE
         userInfo.setEmail(request.getEmail());
-
         userInfo.setUsername(request.getUsername());
-        userInfo.setPassword(passwordEncoder.encode(request.getPassword())); // Hashiranje lozinke
+        userInfo.setPassword(passwordEncoder.encode(request.getPassword()));
 
-
-        // 4. Dodjela uloge
         UserRole driverRole = userRoleRepository.findByName("ROLE_DRIVER")
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "name", "ROLE_DRIVER"));
         userInfo.setRoles(List.of(driverRole));
 
         UserInfo savedUser = userRepository.save(userInfo);
 
-
-        // 5. Provjera konflikta: duplikat broja dozvole
         if (driverRepository.findByLicenseNumber(request.getLicenseNumber()).isPresent()) {
-            userRepository.delete(savedUser); // Cleanup
+            userRepository.delete(savedUser);
             throw new ConflictException("Driver profile with license number " + request.getLicenseNumber() + " already exists.");
         }
 
-        // 6. Mapiranje DTO-a u Driver entitet
         Driver driver = new Driver();
         driver.setUserInfo(savedUser);
         driver.setLicenseNumber(request.getLicenseNumber());
         driver.setLicenseExpirationDate(request.getLicenseExpirationDate());
         driver.setPhoneNumber(request.getPhoneNumber());
 
-        // 7. Spremanje Drivera
         Driver savedDriver = driverRepository.save(driver);
         return mapToResponse(savedDriver);
     }
 
-    // --- UPDATE Implementacija (OSTAVLJENA ISTA - NE MIJENJA USER INFO) ---
+    // ✅ ISPRAVLJENO - UPDATE SADA AŽURIRA I USERINFO POLJA
     @Override
     @Transactional
     public DriverResponseDTO updateDriver(Long id, DriverRequestDTO request) {
@@ -131,7 +114,24 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "ID", id));
 
-        // Provjera konflikta za broj dozvole
+        // ✅ AŽURIRAJ USERINFO POLJA (ime, prezime, email)
+        UserInfo userInfo = driver.getUserInfo();
+        if (userInfo != null) {
+            if (request.getFirstName() != null && !request.getFirstName().isEmpty()) {
+                userInfo.setFirstName(request.getFirstName());
+            }
+            if (request.getLastName() != null && !request.getLastName().isEmpty()) {
+                userInfo.setLastName(request.getLastName());
+            }
+            if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+                userInfo.setEmail(request.getEmail());
+            }
+            // Username NE mijenjamo jer je unique i može izazvati konflikte
+
+            userRepository.save(userInfo);
+        }
+
+        // ✅ AŽURIRAJ DRIVER POLJA (licenca, telefon)
         if (!driver.getLicenseNumber().equals(request.getLicenseNumber())) {
             if (driverRepository.findByLicenseNumber(request.getLicenseNumber()).isPresent()) {
                 throw new ConflictException("Driver profile with license number " + request.getLicenseNumber() + " already exists.");
@@ -146,7 +146,6 @@ public class DriverServiceImpl implements DriverService {
         return mapToResponse(updatedDriver);
     }
 
-    // --- DELETE Implementacija ---
     @Override
     @Transactional
     public void deleteDriver(Long id) {
@@ -156,6 +155,5 @@ public class DriverServiceImpl implements DriverService {
         driver.getCurrentVehicle().ifPresent(vehicle -> vehicle.setCurrentDriver(null));
 
         driverRepository.delete(driver);
-        // Opcionalno: Možete ovdje obrisati i UserInfo ako smatrate da se driver briše trajno.
     }
 }

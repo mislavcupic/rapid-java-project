@@ -17,13 +17,18 @@
     "cancel": "Odustani",
     "actions": "Akcije",
     "save_changes": "Spremi Promjene",
+    "save": "Spremi",
+    "saving": "Spremam...",
     "delete_permanently": "Izbriši Trajno",
     "loading": "Učitavanje...",
     "loading_form": "Učitavanje forme...",
     "loading_data": "Učitavanje podataka...",
     "view_details": "Prikaži Detalje",
+    "view": "Pregled",
+    "close": "Zatvori",
     "dashboard_title": "Nadzorna Ploča za Upravljanje Flotom",
     "status_ready": "Statut: SPREMNO",
+    "executing_dml": "IZVRŠAVANJE DML...",
     "index": "#",
     "vehicle": "Vozilo (God.)",
     "reg_mark": "Reg. Oznaka",
@@ -42,20 +47,29 @@
     "firstName": "Ime",
     "lastName": "Prezime",
     "driver_name": "Ime i Prezime",
+    "first_name": "Ime",
+    "last_name": "Prezime",
+    "email": "E-mail",
     "license_number": "Broj Licence",
+    "license": "Broj Licence",
+    "license_expiration": "Istek Licence",
     "phone": "Telefon",
     "license_expiry": "Istek Licence",
     "license_plate": "Registracija",
     "make": "Proizvođač",
     "model": "Model",
     "model_year": "Godina Proizvodnje",
+    "year": "Godina",
     "fuel_type": "Tip Goriva",
-    "email": "E-mail",
+    "create_assignment": "Kreiraj Dodjelu",
+    "create_driver": "Kreiraj Vozača",
     "create_driver_title": "Kreiranje Novog Vozača",
     "edit_driver_title": "Uređivanje Vozača: {{id}}",
+    "create_vehicle": "Spremi Vozilo",
     "create_vehicle_title": "Kreiranje Novog Vozila",
     "edit_vehicle_title": "Uređivanje Vozila: {{id}}",
     "edit_vehicle_id": "Uredi Vozilo (ID: {{id}})",
+    "create_shipment": "Kreiraj Pošiljku",
     "create_shipment_title": "Kreiranje Nove Pošiljke",
     "edit_shipment_title": "Uređivanje Pošiljke: {{id}}",
     "shipment_for_assignment": "Pošiljka za dodjelu",
@@ -65,13 +79,18 @@
   },
 
   "drivers": {
-    "current_vehicle": "Trenutno Vozilo"
+    "current_vehicle": "Trenutno Vozilo",
+    "driver_list": "Popis Vozača",
+    "add_driver": "Dodaj Vozača",
+    "edit_driver": "Uredi Vozača",
+    "driver_details": "Detalji Vozača"
   },
 
   "vehicles": {
     "current_mileage": "Trenutna Kilometraža (km)",
     "next_service": "Sljedeći Servis (km)",
     "load_capacity": "Nosivost (kg)",
+    "fuel_type": "Tip Goriva",
     "service_status": "Status Servisa",
     "used_by": "Korišteno",
     "unassigned": "Nije dodijeljeno",
@@ -91,7 +110,8 @@
     "tracking_number": "Broj Praćenja",
     "weight": "Težina (kg)",
     "description": "Opis",
-    "shipment_tracking": "Pošiljka (Tracking)"
+    "shipment_tracking": "Pošiljka (Tracking)",
+    "actions": "Akcije"
   },
 
   "assignments": {
@@ -103,7 +123,8 @@
     "end_time": "Vrijeme Završetka (Opcionalno)",
     "create_button": "Kreiraj Dodjelu",
     "edit_button": "Spremi Promjene",
-    "loading_assignments": "Učitavanje dodjela..."
+    "loading_assignments": "Učitavanje dodjela...",
+    "confirm_delete_text": "Jeste li sigurni da želite izbrisati dodjelu ID **{{id}}**? Ova akcija će pošiljku **{{trackingNumber}}** vratiti u status PENDING."
   },
 
   "analytics": {
@@ -111,6 +132,14 @@
     "bulk_action_text": "UPOZORENJE: Ova akcija izvršava izravan DML upit na bazu podataka i nepovratna je.",
     "execute_bulk_update": "Izvrši Masovno Ažuriranje",
     "unassigned_vehicles": "Vozila kojima NIJE dodijeljen vozač."
+  },
+
+  "alerts": {
+    "overdue_service": "Servis u Kašnjenju",
+    "service_warning": "Upozorenje za Servis",
+    "free_vehicles": "Slobodna Vozila",
+    "total_vehicles": "Ukupno Vozila",
+    "average_weight": "Prosječna težina aktivnih pošiljaka (kg)"
   },
 
   "messages": {
@@ -127,10 +156,13 @@
     "confirm_delete_shipment_text": "Jeste li sigurni da želite izbrisati pošiljku **{{trackingNumber}}**?",
     "delete_shipment_condition": "Brisanje je moguće samo ako je pošiljka u statusu **PENDING**.",
     "confirm_delete_driver_text": "Jeste li sigurni da želite izbrisati vozača **{{firstName}} {{lastName}}**?",
+    "confirm_delete_driver": "Jeste li sigurni da želite izbrisati vozača {{name}}? Ova akcija je nepovratna.",
     "confirm_delete_vehicle_text": "Jeste li sigurni da želite izbrisati vozilo s registracijom **{{licensePlate}}**?",
     "confirm_delete_assignment_text": "Jeste li sigurni da želite izbrisati dodjelu ID **{{id}}**? Ova akcija će pošiljku **{{trackingNumber}}** vratiti u status PENDING.",
     "select_all_fields": "Molimo odaberite Pošiljku, Vozača i Vozilo.",
     "driver_updated": "Vozač uspješno ažuriran!",
+    "driver_updated_success": "Vozač {{name}} uspješno ažuriran!",
+    "driver_deleted_success": "Vozač {{name}} je uspješno izbrisan.",
     "vehicle_updated": "Vozilo uspješno ažurirano!",
     "shipment_updated": "Pošiljka uspješno ažurirana!",
     "shipment_created": "Nova pošiljka je uspješno kreirana!",
@@ -139,7 +171,16 @@
     "vehicle_deleted": "Vozilo {{licensePlate}} uspješno izbrisano.",
     "all_driver_fields_required": "Sva polja za vozača su obavezna!",
     "driver_creation_fields_required": "Korisničko ime, lozinka, ime, prezime i E-mail su obavezni za kreiranje novog vozača!",
-    "access_denied_delete_drivers": "Pristup odbijen. Samo ADMINISTRATOR smije brisati vozače.",
+    "user_not_logged_in": "Korisnik nije prijavljen.",
+    "error_fetching_drivers": "Greška pri dohvaćanju liste vozača.",
+    "access_denied": "Pristup odbijen. Molimo prijavite se.",
+    "access_denied_add_drivers": "Samo Dispečeri/Admini smiju dodavati vozače",
+    "access_denied_edit_drivers": "Samo Dispečeri/Admini smiju uređivati vozače",
+    "access_denied_delete_drivers": "Samo Admin smije brisati vozače",
+    "no_drivers": "Trenutno nema registriranih vozača.",
+    "update_failed": "Ažuriranje nije uspjelo.",
+    "delete_failed": "Brisanje nije uspjelo.",
+    "loading_drivers": "Učitavanje vozača...",
     "shipment_delete_error": "Greška pri brisanju: {{error}}. Pošiljka se ne smije brisati ako je dodijeljena (SCHEDULED) ili u tranzitu!"
   },
 

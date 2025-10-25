@@ -19,12 +19,19 @@
     "delete": "Delete",
     "cancel": "Cancel",
     "save_changes": "Save Changes",
-    "delete_permanently": "Delete Permanently"
+    "save": "Save",
+    "saving": "Saving...",
+    "delete_permanently": "Delete Permanently",
+    "actions": "Actions",
+    "view": "View",
+    "close": "Close"
   },
 
   "analytics": {
     "bulk_action_title": "BULK ACTION: MARK OVERDUE",
-    "bulk_action_text": "WARNING: This action executes a direct DML query on the database and is irreversible."
+    "bulk_action_text": "WARNING: This action executes a direct DML query on the database and is irreversible.",
+    "execute_bulk_update": "Execute Bulk Update",
+    "unassigned_vehicles": "Vehicles with NO assigned driver."
   },
 
   "alerts": {
@@ -44,8 +51,14 @@
     "make": "Make",
     "model": "Model",
     "year": "Year",
-    "driver_name": "Driver Name",
+    "driver_name": "Full Name",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email": "Email",
+    "username": "Username",
     "license_number": "License Number",
+    "license": "License Number",
+    "license_expiration": "License Expiration",
     "phone": "Phone Number",
     "license_expiry": "License Expiry"
   },
@@ -54,7 +67,12 @@
     "origin": "Origin Address",
     "destination": "Destination Address",
     "expected_delivery": "Expected Delivery Time",
-    "description": "Description"
+    "description": "Description",
+    "status": "Status",
+    "tracking_number": "Tracking Number",
+    "weight": "Weight (kg)",
+    "shipment_tracking": "Shipment (Tracking)",
+    "actions": "Actions"
   },
 
   "assignments": {
@@ -76,6 +94,13 @@
     "used_by": "Used By"
   },
 
+  "drivers": {
+    "driver_list": "Driver List",
+    "add_driver": "Add Driver",
+    "edit_driver": "Edit Driver",
+    "driver_details": "Driver Details"
+  },
+
   "messages": {
     "welcome_title": "Welcome to the Logistics System",
     "welcome_text": "Manage your fleet and logistics operations efficiently and digitally.",
@@ -86,6 +111,19 @@
     "back_to_home": "Back to Home",
     "no_data": "No data to display.",
     "delete_shipment_condition": "Deletion is only possible if the shipment is in **PENDING** status.",
-    "confirm_delete_title": "Deletion Confirmation"
+    "confirm_delete_title": "Deletion Confirmation",
+    "user_not_logged_in": "User is not logged in.",
+    "error_fetching_drivers": "Error fetching driver list.",
+    "access_denied": "Access denied. Please log in.",
+    "access_denied_add_drivers": "Only Dispatchers/Admins can add drivers",
+    "access_denied_edit_drivers": "Only Dispatchers/Admins can edit drivers",
+    "access_denied_delete_drivers": "Only Admin can delete drivers",
+    "no_drivers": "No drivers registered yet.",
+    "driver_updated_success": "Driver {{name}} successfully updated!",
+    "driver_deleted_success": "Driver {{name}} has been deleted.",
+    "update_failed": "Update failed.",
+    "delete_failed": "Delete failed.",
+    "loading_drivers": "Loading drivers...",
+    "confirm_delete_driver": "Are you sure you want to delete driver {{name}}? This action is irreversible."
   }
 }

@@ -72,12 +72,12 @@ const EditShipment = () => {
             } catch (err) {
                 console.error("Greška pri učitavanju podataka:", err);
                 // Provjera je li greška 403 (pristup odbijen)
-                setError(err.message || "Greška pri učitavanju podataka pošiljke. Provjerite ovlasti.");
+                setError(err.message || t("error.general_error"));
                 setLoading(false);
             }
         };
         loadData();
-    }, [id, navigate]);
+    }, [id, navigate, t]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -92,21 +92,28 @@ const EditShipment = () => {
 
         } catch (err) {
             console.error("Greška pri spremanju:", err);
-            setError(err.message || 'Greška pri ažuriranju pošiljke.');
+            setError(err.message || t("messages.update_failed"));
         } finally {
             setSaving(false);
         }
     };
 
     if (loading) {
-        return <Spinner animation="border" variant="info" role="status" className="d-block mx-auto mt-5" />;
+        return (
+            <div className="text-center py-5">
+                <Spinner animation="border" variant="info" role="status" />
+                <p className="text-muted mt-2">{t("general.loading_data")}</p>
+            </div>
+        );
     }
 
     return (
         <Container style={{ maxWidth: '700px' }}>
             <Card className="shadow-lg border-info border-top-0 border-5 p-4">
                 <Card.Body>
-                    <h2 className="text-info fw-bold font-monospace">Uređivanje Pošiljke #{id}</h2>
+                    <h2 className="text-info fw-bold font-monospace">
+                        {t('forms.edit_shipment_title', { id })}
+                    </h2>
                     {error && <Alert variant="danger" className="font-monospace">{error}</Alert>}
                     {success && <Alert variant="success" className="font-monospace">{success}</Alert>}
 
@@ -115,12 +122,12 @@ const EditShipment = () => {
                         {/* 1. Opća polja pošiljke */}
                         <div className="row g-3 mb-4">
                             <div className="col-md-6">
-                                <FloatingLabel controlId="originAddress" label="Adresa polaska">
+                                <FloatingLabel controlId="originAddress" label={t("shipments.origin")}>
                                     <Form.Control type="text" name="originAddress" value={formData.originAddress} onChange={handleChange} required className="font-monospace" />
                                 </FloatingLabel>
                             </div>
                             <div className="col-md-6">
-                                <FloatingLabel controlId="destinationAddress" label="Adresa odredišta">
+                                <FloatingLabel controlId="destinationAddress" label={t("shipments.destination")}>
                                     <Form.Control type="text" name="destinationAddress" value={formData.destinationAddress} onChange={handleChange} required className="font-monospace" />
                                 </FloatingLabel>
                             </div>
@@ -182,7 +189,7 @@ const EditShipment = () => {
                             {saving ? (
                                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                             ) : (
-                                t("assignments.edit_button")
+                                t("general.save_changes")
                             )}
                         </Button>
                         <Button
@@ -190,7 +197,7 @@ const EditShipment = () => {
                             className="w-100 fw-bold font-monospace mt-2"
                             onClick={() => navigate('/shipments')}
                         >
-                            Odustani
+                            {t("general.cancel")}
                         </Button>
                     </Form>
                 </Card.Body>

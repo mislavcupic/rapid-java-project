@@ -93,7 +93,7 @@ const AddAssignment = () => {
         <Container style={{ maxWidth: '700px' }}>
             <Card className="shadow-lg border-info border-top-0 border-5 p-4">
                 <Card.Body>
-                    <h2 className="text-info fw-bold font-monospace">Kreiranje Nove Dodjele</h2>
+                    <h2 className="text-info fw-bold font-monospace">{t("forms.create_assignment")}</h2>
 
                     {error && <Alert variant="danger" className="font-monospace">{error}</Alert>}
                     {success && <Alert variant="success" className="font-monospace">{success}</Alert>}
@@ -103,7 +103,7 @@ const AddAssignment = () => {
                         {/* 1. ODABIR POŠILJKE - (value pretvorena u String) */}
                         <FloatingLabel controlId="shipmentId" label={t("forms.shipment_for_assignment")} className="mb-4">
                             <Form.Select name="shipmentId" value={formData.shipmentId} onChange={handleChange} required className="font-monospace">
-                                <option value="">--- Odaberite Pošiljku ---</option>
+                                <option value="">{t("general.select_shipment")}</option>
                                 {shipments.map(shipment => (
                                     // ✅ KRITIČNO: Pretvaramo ID u String za ispravnu sinkronizaciju
                                     <option key={shipment.id} value={String(shipment.id)}>
@@ -133,7 +133,7 @@ const AddAssignment = () => {
                             <div className="col-md-6">
                                 <FloatingLabel controlId="vehicleId" label={t("assignments.vehicle")}>
                                     <Form.Select name="vehicleId" value={formData.vehicleId} onChange={handleChange} required className="font-monospace">
-                                        <option value="">--- Odaberite Vozilo ---</option>
+                                        <option value="">{t("general.choose_vehicle")}</option>
                                         {vehicles.map(vehicle => (
                                             // ✅ KRITIČNO: Pretvaramo ID u String
                                             <option key={vehicle.id} value={String(vehicle.id)}>
@@ -168,7 +168,7 @@ const AddAssignment = () => {
                             className="w-100 fw-bold font-monospace mt-2"
                             onClick={() => navigate('/assignments')}
                         >
-                            Odustani
+                            {t("general.cancel")}
                         </Button>
                     </Form>
                 </Card.Body>

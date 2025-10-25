@@ -19,12 +19,19 @@
     "delete": "Supprimer",
     "cancel": "Annuler",
     "save_changes": "Enregistrer les Modifications",
-    "delete_permanently": "Supprimer Définitivement"
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "delete_permanently": "Supprimer Définitivement",
+    "actions": "Actions",
+    "view": "Voir",
+    "close": "Fermer"
   },
 
   "analytics": {
     "bulk_action_title": "ACTION EN MASSE: MARQUER EN RETARD",
-    "bulk_action_text": "AVERTISSEMENT: Cette action exécute une requête DML directe sur la base de données et est irréversible."
+    "bulk_action_text": "AVERTISSEMENT: Cette action exécute une requête DML directe sur la base de données et est irréversible.",
+    "execute_bulk_update": "Exécuter la mise à jour en masse",
+    "unassigned_vehicles": "Véhicules SANS conducteur assigné."
   },
 
   "alerts": {
@@ -44,8 +51,14 @@
     "make": "Marque",
     "model": "Modèle",
     "year": "Année",
-    "driver_name": "Nom du Conducteur",
+    "driver_name": "Nom Complet",
+    "first_name": "Prénom",
+    "last_name": "Nom",
+    "email": "Email",
+    "username": "Nom d'utilisateur",
     "license_number": "Numéro de Permis",
+    "license": "Numéro de Permis",
+    "license_expiration": "Expiration du Permis",
     "phone": "Téléphone",
     "license_expiry": "Expiration du Permis"
   },
@@ -54,7 +67,12 @@
     "origin": "Adresse de Départ",
     "destination": "Adresse de Destination",
     "expected_delivery": "Heure de Livraison Prévue",
-    "description": "Description"
+    "description": "Description",
+    "status": "Statut",
+    "tracking_number": "Numéro de Suivi",
+    "weight": "Poids (kg)",
+    "shipment_tracking": "Expédition (Suivi)",
+    "actions": "Actions"
   },
 
   "assignments": {
@@ -76,6 +94,13 @@
     "used_by": "Utilisé Par"
   },
 
+  "drivers": {
+    "driver_list": "Liste des Chauffeurs",
+    "add_driver": "Ajouter un Chauffeur",
+    "edit_driver": "Modifier le Chauffeur",
+    "driver_details": "Détails du Chauffeur"
+  },
+
   "messages": {
     "welcome_title": "Bienvenue dans le Système Logistique",
     "welcome_text": "Gérez votre flotte et vos opérations logistiques efficacement et numériquement.",
@@ -86,6 +111,19 @@
     "back_to_home": "Retour à l'accueil",
     "no_data": "Aucune donnée à afficher.",
     "delete_shipment_condition": "La suppression n'est possible que si l'expédition est au statut **PENDING**.",
-    "confirm_delete_title": "Confirmation de Suppression"
+    "confirm_delete_title": "Confirmation de Suppression",
+    "user_not_logged_in": "L'utilisateur n'est pas connecté.",
+    "error_fetching_drivers": "Erreur lors de la récupération de la liste des chauffeurs.",
+    "access_denied": "Accès refusé. Veuillez vous connecter.",
+    "access_denied_add_drivers": "Seuls les Répartiteurs/Admins peuvent ajouter des chauffeurs",
+    "access_denied_edit_drivers": "Seuls les Répartiteurs/Admins peuvent modifier les chauffeurs",
+    "access_denied_delete_drivers": "Seul l'Admin peut supprimer les chauffeurs",
+    "no_drivers": "Aucun chauffeur enregistré pour le moment.",
+    "driver_updated_success": "Chauffeur {{name}} mis à jour avec succès!",
+    "driver_deleted_success": "Le chauffeur {{name}} a été supprimé.",
+    "update_failed": "La mise à jour a échoué.",
+    "delete_failed": "La suppression a échouée.",
+    "loading_drivers": "Chargement des chauffeurs...",
+    "confirm_delete_driver": "Êtes-vous sûr de vouloir supprimer le chauffeur {{name}}? Cette action est irréversible."
   }
 }

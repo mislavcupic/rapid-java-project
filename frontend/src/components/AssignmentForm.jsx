@@ -40,7 +40,7 @@ const AssignmentForm = () => {
     useEffect(() => {
         const loadDependencies = async () => {
             if (!localStorage.getItem('accessToken')) {
-                setError("Molimo, prijavite se za pristup formi.");
+                setError(t("messages.access_denied"));
                 setLoading(false);
                 return;
             }
@@ -91,7 +91,7 @@ const AssignmentForm = () => {
         };
 
         loadDependencies();
-    }, [id, isEditMode]); // Dodajemo id i isEditMode u ovisnosti
+    }, [id, isEditMode, t]); // Dodajemo id i isEditMode u ovisnosti
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -139,7 +139,7 @@ const AssignmentForm = () => {
     }
 
     if (error && error.includes("prijavite se")) {
-        return <Alert variant="warning" className="text-center shadow font-monospace">Molimo, prijavite se.</Alert>;
+        return <Alert variant="warning" className="text-center shadow font-monospace">{t("messages.access_denied")}</Alert>;
     }
 
     // Prikaz forme
@@ -147,7 +147,9 @@ const AssignmentForm = () => {
         <Container className="d-flex justify-content-center pt-3">
             <Card className="shadow-lg w-100 border-primary border-top-0 border-5" style={{ maxWidth: '800px' }}>
                 <Card.Header className="bg-primary text-white">
-                    <h1 className="h4 mb-0 font-monospace">{isEditMode ? `Uredi Dodjelu (ID: ${id})` : 'Kreiraj Novu Dodjelu'}</h1>
+                    <h1 className="h4 mb-0 font-monospace">
+                        {isEditMode ? `${t("general.edit")} ${t("Assignments")} (ID: ${id})` : t("assignments.create_button")}
+                    </h1>
                 </Card.Header>
                 <Card.Body>
 
@@ -172,7 +174,7 @@ const AssignmentForm = () => {
                             <Col md={6}>
                                 <FloatingLabel controlId="formVehicle" label={t("assignments.vehicle")}>
                                     <Form.Select name="vehicleId" value={formData.vehicleId} onChange={handleChange} required className="font-monospace">
-                                        <option value="">Odaberi Vozilo...</option>
+                                        <option value="">{t("general.select_vehicle")}</option>
                                         {vehicles.map(v => (
                                             <option key={v.id} value={v.id}>{v.licensePlate} ({v.make})</option>
                                         ))}
@@ -184,7 +186,7 @@ const AssignmentForm = () => {
                         <Row className="mb-3">
                             {/* Select za Pošiljku */}
                             <Col md={6}>
-                                <FloatingLabel controlId="formShipment" label="Pošiljka (Status: PENDING)">
+                                <FloatingLabel controlId="formShipment" label={t("assignments.shipment")}>
                                     <Form.Select
                                         name="shipmentId"
                                         value={formData.shipmentId}
@@ -193,7 +195,7 @@ const AssignmentForm = () => {
                                         className="font-monospace"
                                         disabled={isEditMode} // Pošiljka je fiksna u Edit modu
                                     >
-                                        <option value="">Odaberi Pošiljku...</option>
+                                        <option value="">{t("general.select_shipment")}</option>
                                         {shipments.map(s => (
                                             <option key={s.id} value={s.id}>{s.trackingNumber} - ({s.status})</option>
                                         ))}
@@ -204,7 +206,7 @@ const AssignmentForm = () => {
                             {/* Prikaz Statusa (samo u EDIT modu) */}
                             {isEditMode && (
                                 <Col md={6}>
-                                    <FloatingLabel controlId="formStatus" label="Trenutni Status Dodjele">
+                                    <FloatingLabel controlId="formStatus" label={t("assignments.status")}>
                                         <Form.Control type="text" value={formData.status} disabled className="font-monospace fw-bold" />
                                     </FloatingLabel>
                                 </Col>
@@ -244,7 +246,7 @@ const AssignmentForm = () => {
                             className="w-100 fw-bold font-monospace mt-2"
                             onClick={() => navigate('/assignments')}
                         >
-                            Odustani
+                            {t("general.cancel")}
                         </Button>
                     </Form>
                 </Card.Body>
