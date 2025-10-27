@@ -22,11 +22,7 @@ public class UserController {
     private final UserService userService;
     private final DriverService driverService;
 
-    // Ovdje treba biti samo CRUD za generičke UserInfo račune (Admin, Dispečer, kreiranje usera).
-    // ... Dodajte standardni CRUD za UserInfo ovdje (npr. findAll, findById, create) ...
 
-    // ⭐ KRITIČNO: Ova metoda se mora premjestiti u DriverController,
-    // ali ako je nužno da ostane, mora KORISTITI DriverService.
     @GetMapping("/drivers")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')") // Koristim 'ROLE_DISPATCHER' umjesto 'MANAGER'
     public ResponseEntity<List<DriverResponseDTO>> getDrivers() {
@@ -34,9 +30,7 @@ public class UserController {
         // ✅ ISPRAVNO: Koristite metodu iz DriverService koja već dohvaća i mapira Driver entitete.
         List<DriverResponseDTO> driversInfo = driverService.findAllDrivers();
 
-        // Stare, neispravne linije su izbačene:
-        // List<UserInfo> drivers = userService.findDrivers();
-        // List<DriverResponseDTO> driversInfo = drivers.stream().map(DriverResponseDTO::fromDriver)...
+
 
         return ResponseEntity.ok(driversInfo);
     }

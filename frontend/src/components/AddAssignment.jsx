@@ -158,7 +158,7 @@ const AddAssignment = () => {
                             disabled={loading}
                         >
                             {loading ? (
-                                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                                <Spinner as="span" animation="border" size="sm"  aria-hidden="true" className="me-2" />
                             ) : (
                                 t("assignments.create_button")
                             )}

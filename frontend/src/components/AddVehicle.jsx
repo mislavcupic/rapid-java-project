@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createVehicle, fetchDrivers } from '../services/VehicleApi.js';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
-import { FaTruck, FaSave } from 'react-icons/fa';
+import { FaSave } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next'; // ✅ Uvoz za internacionalizaciju
 
 
@@ -206,7 +206,7 @@ const AddVehicle = () => {
                             disabled={loading}
                         >
                             {loading ? (
-                                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                                <Spinner as="span" animation="border" size="sm" aria-hidden="true" className="me-2" />
                             ) : (
                                 <><FaSave className='me-2'/> {t('forms.create_vehicle')}</>
                             )}

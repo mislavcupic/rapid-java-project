@@ -1,6 +1,6 @@
 // src/components/Analytics/AnalyticsPage.jsx (AŽURIRAN)
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner, Modal, Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import styles from '../Analytics.module.css';
@@ -129,7 +129,7 @@ const AnalyticsPage = () => {
             return;
         }
 
-        const confirmAction = window.confirm(
+        const confirmAction = globalThis.confirm( /*ovdje mi je sonarqube rekao da umjesto window koristim*/
             'Jeste li sigurni da želite OZNAČITI SVA VOZILA s PREKORAČENIM SERVISOM kao OVERDUE? Ova akcija je nepovratna!'
         );
         if (!confirmAction) return;

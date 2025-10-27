@@ -15,4 +15,6 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
     // Dohvati dodjelu po ID-u pošiljke
     Optional<Assignment> findByShipmentId(Long shipmentId);
+
+
 }
