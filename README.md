@@ -1,1 +1,1 @@
-Project Status: CI/CD Pipeline Ready. New text on feature/lo2-demonstation branch!
+Project Title: Logistics System Alpha
