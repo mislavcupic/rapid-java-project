@@ -1,1 +1,2 @@
-Project Status: CI/CD Pipeline Ready. New text on feature/lo2-demonstation branch!
+git add README.md
+git commit -m "feat: updated project name on conflict-test branch (VERSION B)"
