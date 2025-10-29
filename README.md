@@ -1,2 +1,2 @@
-Project Status: LO2 Conflict Successfully Resolved and Merged.
+Project Status: Main waits for the lo2-conflict/demonstration to cause the merging conflict :)
 
