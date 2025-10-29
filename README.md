@@ -1,2 +1,2 @@
-Project Status: Main waits for the lo2-conflict/demonstration to cause the merging conflict :)
+Project Status: LO2 Conflict Successfully Resolved by User in ADO
 
