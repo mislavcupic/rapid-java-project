@@ -1,2 +1,2 @@
-Project Status: LO2 Conflict - this line will be considered as conflict one :)
+Project Status: LO2 Conflict Successfully Resolved by User in ADO
 
