@@ -18,5 +18,5 @@ public enum ShipmentStatus {
 
     // Završni statusi
     DELIVERED,      // Uspješno isporučeno
-    CANCELED        // Otkazano
+    DELAYED, CANCELED        // Otkazano
 }

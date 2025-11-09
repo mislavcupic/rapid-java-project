@@ -23,6 +23,7 @@ import DriverForm from "./components/DriverForm.jsx";
 import DriverList from "./components/DriverList.jsx";
 import AnalyticsPage from "./components/AnalyticsPage.jsx";
 import Register from "./components/Register.jsx";
+import ShipmentDetails from "./components/ShipmentDetails.jsx";
 
 // =========================================================================
 // NAVIGACIJSKA KOMPONENTA
@@ -145,6 +146,7 @@ function App() {
                     <Route path="/drivers/add" element={<DriverForm />} />
                     <Route path="/drivers/edit/:id" element={<DriverForm />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
+                    <Route path="/shipments/details/:id" element={<ShipmentDetails />} />
                 </Routes>
             </Container>
         </div>

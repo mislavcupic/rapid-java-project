@@ -24,7 +24,14 @@
     "delete_permanently": "Delete Permanently",
     "actions": "Actions",
     "view": "View",
-    "close": "Close"
+    "close": "Close",
+    "back_to_list": "Back to the list",
+    "current_driver": "Current Driver",
+    "reg_mark": "Registry mark",
+    "vehicle": "Vehicle",
+    "capacity": "Capacity",
+    "add_vehicle": "Add New Vehicle"
+
   },
 
   "analytics": {
@@ -35,70 +42,79 @@
   },
 
   "alerts": {
-    "overdue_service": "Overdue Service",
-    "service_warning": "Service Warning",
-    "free_vehicles": "Free Vehicles",
-    "total_vehicles": "Total Vehicles",
-    "average_weight": "Average Active Shipment Weight (kg)"
+    "overdue_service": "Overdue Service - Registration: {{registration}}",
+    "low_fuel": "Low Fuel Level - Registration: {{registration}}"
   },
 
   "forms": {
-    "create_assignment": "Create Assignment",
-    "create_vehicle": "Save Vehicle",
-    "create_driver": "Create Driver",
+    "create_vehicle": "Create Vehicle",
+    "edit_vehicle": "Edit Vehicle",
     "create_shipment": "Create Shipment",
-    "license_plate": "License Plate",
-    "make": "Make",
-    "model": "Model",
-    "year": "Year",
-    "driver_name": "Full Name",
-    "first_name": "First Name",
-    "last_name": "Last Name",
-    "email": "Email",
+    "edit_driver": "Edit Driver",
+    "add_driver": "Add Driver",
     "username": "Username",
-    "license_number": "License Number",
-    "license": "License Number",
-    "license_expiration": "License Expiration",
-    "phone": "Phone Number",
-    "license_expiry": "License Expiry"
+    "firstName": "First name",
+    "lastName": "Last name",
+    "password": "Enter password",
+    "driver_name": "Driver's name",
+    "email": "Email",
+    "license": "License number",
+    "phone": "Phone number"
   },
 
   "shipments": {
-    "origin": "Origin Address",
-    "destination": "Destination Address",
-    "expected_delivery": "Expected Delivery Time",
-    "description": "Description",
-    "status": "Status",
     "tracking_number": "Tracking Number",
-    "weight": "Weight (kg)",
-    "shipment_tracking": "Shipment (Tracking)",
-    "actions": "Actions"
-  },
-
-  "assignments": {
-    "shipment": "Shipment",
-    "vehicle": "Vehicle",
-    "driver": "Driver",
-    "start_time": "Start Time",
-    "end_time": "End Time",
     "status": "Status",
-    "confirm_delete_text": "Are you sure you want to delete assignment ID **{{id}}**? This action will revert shipment **{{trackingNumber}}** to PENDING status."
-  },
-
-  "vehicles": {
-    "current_mileage": "Current Mileage (km)",
-    "next_service": "Next Service (km)",
-    "fuel_type": "Fuel Type",
-    "load_capacity": "Load Capacity (kg)",
-    "service_status": "Service Status",
-    "used_by": "Used By"
+    "origin": "Origin",
+    "destination": "Destination",
+    "description": "Description",
+    "create_title": "Create New Shipment",
+    "edit_title": "Edit Shipment",
+    "tracking_label": "Tracking Number",
+    "status_label": "Shipment Status",
+    "origin_label": "Origin Address (Coordinates)",
+    "destination_label": "Destination Address (Coordinates)",
+    "weight_label": "Weight (kg)",
+    "departure_time_label": "Departure Time",
+    "delivery_time_label": "Expected Delivery Time",
+    "description_label": "Description",
+    "map_title": "Route Visualization",
+    "error_load": "Error loading shipment.",
+    "success_create": "Shipment successfully created!",
+    "success_edit": "Shipment successfully updated!",
+    "error_general": "An error occurred while processing the shipment.",
+    "address_geocode_warning": "Please wait for addresses to be geocoded (green coordinates).",
+    "status_pending": "PENDING",
+    "status_assigned": "ASSIGNED",
+    "status_in_transit": "IN TRANSIT",
+    "status_delivered": "DELIVERED",
+    "status_cancelled": "CANCELLED",
+    "details_title": "Shipment Details",
+    "tracking_number_full": "Tracking Number",
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "departure_time": "Departure Time",
+    "expected_delivery_date": "Expected Delivery Date",
+    "weight_kg": "Weight (kg)",
+    "no_assignment": "Shipment is not assigned yet.",
+    "route_status": "Route Status",
+    "no_coordinates": "No coordinates to display the map.",
+    "back_to_list": "Back to Shipment List",
+    "details_button": "Details"
   },
 
   "drivers": {
-    "driver_list": "Driver List",
-    "add_driver": "Add Driver",
-    "edit_driver": "Edit Driver",
-    "driver_details": "Driver Details"
+    "username": "Username",
+    "password": "Password",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email": "E-mail",
+    "phone": "Phone",
+    "licence": "Licence No.",
+    "address": "Address",
+    "driver_list": "Drivers list",
+    "driver_details": "Driver Details",
+    "add_driver": "Add new driver"
   },
 
   "messages": {
@@ -112,6 +128,7 @@
     "no_data": "No data to display.",
     "delete_shipment_condition": "Deletion is only possible if the shipment is in **PENDING** status.",
     "confirm_delete_title": "Deletion Confirmation",
+    "confirm_delete_shipment_text": "Are you sure you want to permanently delete the shipment with Tracking Number: {{trackingNumber}}?",
     "user_not_logged_in": "User is not logged in.",
     "error_fetching_drivers": "Error fetching driver list.",
     "access_denied": "Access denied. Please log in.",
@@ -124,6 +141,14 @@
     "update_failed": "Update failed.",
     "delete_failed": "Delete failed.",
     "loading_drivers": "Loading drivers...",
-    "confirm_delete_driver": "Are you sure you want to delete driver {{name}}? This action is irreversible."
+    "shipment_deleted": "Shipment with Tracking Number: {{trackingNumber}} has been deleted.",
+    "shipment_delete_error": "Error deleting: {{error}}. Shipment must not be deleted if assigned (SCHEDULED) or in transit!"
+  },
+
+  "error": {
+    "fetch_shipments": "Error fetching shipments.",
+    "fetch_drivers": "Error fetching drivers.",
+    "fetch_vehicles": "Error fetching vehicles.",
+    "general_error": "General Error"
   }
 }

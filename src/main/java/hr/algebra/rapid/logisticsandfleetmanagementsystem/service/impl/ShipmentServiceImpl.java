@@ -1,12 +1,17 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Shipment;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.IssueReportDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ProofOfDeliveryDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentRequest;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentResponse;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.DuplicateResourceException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route; // NOVO
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus; // NOVO
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.AssignmentRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.ShipmentRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.RouteService; // NOVO
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.ShipmentService;
@@ -24,7 +29,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
     private final RouteService routeService;
-
+    private final AssignmentRepository assignmentRepository;
     // --- Metoda mapiranja (Entity -> Response DTO) - AŽURIRANA ---
 
     @Override
@@ -186,6 +191,128 @@ public class ShipmentServiceImpl implements ShipmentService {
             throw new ResourceNotFoundException("Shipment", "ID", id);
         }
         shipmentRepository.deleteById(id);
+    }
+    // ========================================================================
+    // NOVE METODE - Driver Workflow
+    // ========================================================================
+
+    @Override
+    @Transactional
+    public ShipmentResponse startDelivery(Long shipmentId, Long driverId) {
+        // 1. Dohvati Shipment
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+
+        // 2. Provjeri je li Shipment assigniran ovom Driver-u
+        Assignment assignment = assignmentRepository.findByShipmentId(shipmentId)
+                .orElseThrow(() -> new ConflictException("Shipment ID " + shipmentId + " is not assigned to any driver."));
+
+        if (!assignment.getDriver().getId().equals(driverId)) {
+            throw new ConflictException("Shipment ID " + shipmentId + " is not assigned to driver ID " + driverId);
+        }
+
+        // 3. Provjeri status (mora biti SCHEDULED)
+        if (!shipment.getStatus().equals(ShipmentStatus.SCHEDULED)) {
+            throw new ConflictException("Cannot start delivery. Shipment status is " + shipment.getStatus() +
+                    ". Expected SCHEDULED.");
+        }
+
+        // 4. Promijeni status
+        shipment.setStatus(ShipmentStatus.IN_TRANSIT);
+
+        // 5. Ažuriraj Assignment status (ako nije već IN_PROGRESS)
+        if (assignment.getStatus().equals("SCHEDULED")) {
+            assignment.setStatus("IN_PROGRESS");
+            assignmentRepository.save(assignment);
+        }
+
+        Shipment updatedShipment = shipmentRepository.save(shipment);
+        return mapToResponse(updatedShipment);
+    }
+
+    @Override
+    @Transactional
+    public ShipmentResponse completeDelivery(Long shipmentId, Long driverId, ProofOfDeliveryDTO pod) {
+        // 1. Dohvati Shipment
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+
+        // 2. Provjeri je li Shipment assigniran ovom Driver-u
+        Assignment assignment = assignmentRepository.findByShipmentId(shipmentId)
+                .orElseThrow(() -> new ConflictException("Shipment ID " + shipmentId + " is not assigned to any driver."));
+
+        if (!assignment.getDriver().getId().equals(driverId)) {
+            throw new ConflictException("Shipment ID " + shipmentId + " is not assigned to driver ID " + driverId);
+        }
+
+        // 3. Provjeri status (mora biti IN_TRANSIT)
+        if (!shipment.getStatus().equals(ShipmentStatus.IN_TRANSIT)) {
+            throw new ConflictException("Cannot complete delivery. Shipment status is " + shipment.getStatus() +
+                    ". Expected IN_TRANSIT.");
+        }
+
+        // 4. Promijeni status
+        shipment.setStatus(ShipmentStatus.DELIVERED);
+
+        // 5. Spremi POD podatke kao komentar (ako Shipment ima notes polje)
+        // NAPOMENA: Ako nemaš 'notes' polje, možeš zakomentirati ovaj dio ili kreirati ProofOfDelivery entitet
+        StringBuilder podNotes = new StringBuilder();
+        podNotes.append("DELIVERED by Driver ID: ").append(driverId).append("\n");
+        podNotes.append("Recipient: ").append(pod.getRecipientName()).append("\n");
+        if (pod.getNotes() != null) {
+            podNotes.append("Notes: ").append(pod.getNotes()).append("\n");
+        }
+        if (pod.getLatitude() != null && pod.getLongitude() != null) {
+            podNotes.append("GPS: ").append(pod.getLatitude()).append(", ").append(pod.getLongitude()).append("\n");
+        }
+
+        // AKO IMAŠ 'notes' polje u Shipment entitetu, odkomentiraj ovu liniju:
+        // shipment.setNotes(podNotes.toString());
+
+        Shipment updatedShipment = shipmentRepository.save(shipment);
+        return mapToResponse(updatedShipment);
+    }
+
+    @Override
+    @Transactional
+    public ShipmentResponse reportIssue(Long shipmentId, Long driverId, IssueReportDTO issue) {
+        // 1. Dohvati Shipment
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+
+        // 2. Provjeri je li Shipment assigniran ovom Driver-u
+        Assignment assignment = assignmentRepository.findByShipmentId(shipmentId)
+                .orElseThrow(() -> new ConflictException("Shipment ID " + shipmentId + " is not assigned to any driver."));
+
+        if (!assignment.getDriver().getId().equals(driverId)) {
+            throw new ConflictException("Shipment ID " + shipmentId + " is not assigned to driver ID " + driverId);
+        }
+
+        // 3. Provjeri status (mora biti IN_TRANSIT)
+        if (!shipment.getStatus().equals(ShipmentStatus.IN_TRANSIT)) {
+            throw new ConflictException("Cannot report issue. Shipment status is " + shipment.getStatus());
+        }
+
+        // 4. Označi kao DELAYED
+        shipment.setStatus(ShipmentStatus.DELAYED);
+
+        // 5. Spremi issue report kao komentar
+        StringBuilder issueNotes = new StringBuilder();
+        issueNotes.append("ISSUE REPORTED by Driver ID: ").append(driverId).append("\n");
+        issueNotes.append("Type: ").append(issue.getIssueType()).append("\n");
+        issueNotes.append("Description: ").append(issue.getDescription()).append("\n");
+        if (issue.getEstimatedDelay() != null) {
+            issueNotes.append("Estimated Delay: ").append(issue.getEstimatedDelay()).append("\n");
+        }
+        if (issue.getLatitude() != null && issue.getLongitude() != null) {
+            issueNotes.append("GPS: ").append(issue.getLatitude()).append(", ").append(issue.getLongitude()).append("\n");
+        }
+
+        // AKO IMAŠ 'notes' polje u Shipment entitetu, odkomentiraj ovu liniju:
+        // shipment.setNotes(issueNotes.toString());
+
+        Shipment updatedShipment = shipmentRepository.save(shipment);
+        return mapToResponse(updatedShipment);
     }
 }
 

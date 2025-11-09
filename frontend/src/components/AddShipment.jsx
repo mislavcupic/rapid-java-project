@@ -56,7 +56,7 @@ const AddShipment = () => {
     const [pickupAddress, setPickupAddress] = useState('Ilica 2, Zagreb');
     const [deliveryAddress, setDeliveryAddress] = useState('Glavna ulica 114, Sesvete');
     const [pickupCoords, setPickupCoords] = useState({ lat: 45.8133, lng: 15.9689 }); // Postavljene default koordinate
-    const [deliveryCoords, setDeliveryCoords] = useState({ lat: 43.5124, lng: 16.4410 }); // Postavljene default koordinate
+    const [deliveryCoords, setDeliveryCoords] = useState({ lat: 43.5124, lng: 16.441 }); // Postavljene default koordinate
 
     // Stanja za kontrolu karte
     const [mapCenter, setMapCenter] = useState(DEFAULT_COORDS);

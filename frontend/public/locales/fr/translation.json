@@ -24,7 +24,9 @@
     "delete_permanently": "Supprimer Définitivement",
     "actions": "Actions",
     "view": "Voir",
-    "close": "Fermer"
+    "close": "Fermer",
+    "back_to_list": "Retour à la liste"
+
   },
 
   "analytics": {
@@ -35,83 +37,93 @@
   },
 
   "alerts": {
-    "overdue_service": "Service en Retard",
-    "service_warning": "Avertissement de Service",
-    "free_vehicles": "Véhicules Libres",
-    "total_vehicles": "Total des Véhicules",
-    "average_weight": "Poids moyen des expéditions actives (kg)"
+    "overdue_service": "Entretien en Retard - Immatriculation: {{registration}}",
+    "low_fuel": "Niveau de Carburant Bas - Immatriculation: {{registration}}"
   },
 
   "forms": {
-    "create_assignment": "Créer une Affectation",
-    "create_vehicle": "Enregistrer le Véhicule",
-    "create_driver": "Créer le Conducteur",
-    "create_shipment": "Créer l'Expédition",
-    "license_plate": "Immatriculation",
-    "make": "Marque",
-    "model": "Modèle",
-    "year": "Année",
-    "driver_name": "Nom Complet",
-    "first_name": "Prénom",
-    "last_name": "Nom",
-    "email": "Email",
+    "create_vehicle": "Créer Véhicule",
+    "edit_vehicle": "Modifier Véhicule",
+    "create_shipment": "Créer Expédition",
+    "edit_driver": "Modifier Conducteur",
+    "add_driver": "Ajouter Conducteur",
     "username": "Nom d'utilisateur",
-    "license_number": "Numéro de Permis",
-    "license": "Numéro de Permis",
-    "license_expiration": "Expiration du Permis",
-    "phone": "Téléphone",
-    "license_expiry": "Expiration du Permis"
+    "firstName": "Prénom",
+    "lastName": "Nom de famille",
+    "password": "Mot de passe",
+    "driver_name": "Nom du conducteur",
+    "email": "Adresse e-mail",
+    "license": "Numéro de permis",
+    "phone": "Numéro de téléphone"
   },
 
   "shipments": {
-    "origin": "Adresse de Départ",
-    "destination": "Adresse de Destination",
-    "expected_delivery": "Heure de Livraison Prévue",
-    "description": "Description",
-    "status": "Statut",
     "tracking_number": "Numéro de Suivi",
-    "weight": "Poids (kg)",
-    "shipment_tracking": "Expédition (Suivi)",
-    "actions": "Actions"
-  },
-
-  "assignments": {
-    "shipment": "Expédition",
-    "vehicle": "Véhicule",
-    "driver": "Conducteur",
-    "start_time": "Début",
-    "end_time": "Fin",
     "status": "Statut",
-    "confirm_delete_text": "Êtes-vous sûr de vouloir supprimer l'affectation ID **{{id}}**? Cette action ramènera l'expédition **{{trackingNumber}}** au statut PENDING."
-  },
-
-  "vehicles": {
-    "current_mileage": "Kilométrage Actuel (km)",
-    "next_service": "Prochain Service (km)",
-    "fuel_type": "Type de Carburant",
-    "load_capacity": "Capacité de Charge (kg)",
-    "service_status": "Statut du Service",
-    "used_by": "Utilisé Par"
+    "origin": "Origine",
+    "destination": "Destination",
+    "description": "Description",
+    "create_title": "Créer Nouvelle Expédition",
+    "edit_title": "Modifier Expédition",
+    "tracking_label": "Numéro de Suivi",
+    "status_label": "Statut de l'Expédition",
+    "origin_label": "Adresse d'Origine (Coordonnées)",
+    "destination_label": "Adresse de Destination (Coordonnées)",
+    "weight_label": "Poids (kg)",
+    "departure_time_label": "Heure de Départ",
+    "delivery_time_label": "Heure de Livraison Prévue",
+    "description_label": "Description",
+    "map_title": "Visualisation de l'Itinéraire",
+    "error_load": "Erreur lors du chargement de l'expédition.",
+    "success_create": "Expédition créée avec succès!",
+    "success_edit": "Expédition mise à jour avec succès!",
+    "error_general": "Une erreur s'est produite lors du traitement de l'expédition.",
+    "address_geocode_warning": "Veuillez attendre que les adresses soient géocodées (coordonnées vertes).",
+    "status_pending": "EN ATTENTE",
+    "status_assigned": "ASSIGNÉE",
+    "status_in_transit": "EN TRANSIT",
+    "status_delivered": "LIVRÉE",
+    "status_cancelled": "ANNULÉE",
+    "details_title": "Détails de l'Expédition",
+    "tracking_number_full": "Numéro de Suivi",
+    "driver": "Conducteur",
+    "vehicle": "Véhicule",
+    "departure_time": "Heure de Départ",
+    "expected_delivery_date": "Date de Livraison Prévue",
+    "weight_kg": "Poids (kg)",
+    "no_assignment": "L'expédition n'est pas encore assignée.",
+    "route_status": "Statut de l'Itinéraire",
+    "no_coordinates": "Aucune coordonnée pour afficher la carte.",
+    "back_to_list": "Retour à la Liste des Expéditions",
+    "details_button": "Détails"
   },
 
   "drivers": {
-    "driver_list": "Liste des Chauffeurs",
-    "add_driver": "Ajouter un Chauffeur",
-    "edit_driver": "Modifier le Chauffeur",
-    "driver_details": "Détails du Chauffeur"
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "first_name": "Prénom",
+    "last_name": "Nom",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "licence": "Numéro de Permis",
+    "address": "Adresse",
+    "driver_list": "Liste des Conducteurs",
+    "driver_details": "Détails du Conducteur",
+    "add_driver": "Ajouter un nouveau pilote"
   },
 
   "messages": {
     "welcome_title": "Bienvenue dans le Système Logistique",
-    "welcome_text": "Gérez votre flotte et vos opérations logistiques efficacement et numériquement.",
+    "welcome_text": "Gérez efficacement et numériquement votre flotte et vos opérations logistiques.",
     "login_success": "Vous êtes connecté avec succès.",
     "view_fleet": "Visualiser la Flotte",
     "page_not_found": "Page Introuvable",
     "not_found_text": "Nous sommes désolés, la page que vous recherchez n'existe pas.",
     "back_to_home": "Retour à l'accueil",
     "no_data": "Aucune donnée à afficher.",
-    "delete_shipment_condition": "La suppression n'est possible que si l'expédition est au statut **PENDING**.",
+    "delete_shipment_condition": "La suppression n'est possible que si l'expédition est au statut **EN ATTENTE** (PENDING).",
     "confirm_delete_title": "Confirmation de Suppression",
+    "confirm_delete_shipment_text": "Êtes-vous sûr de vouloir supprimer définitivement l'expédition avec le Numéro de Suivi : {{trackingNumber}}?",
     "user_not_logged_in": "L'utilisateur n'est pas connecté.",
     "error_fetching_drivers": "Erreur lors de la récupération de la liste des chauffeurs.",
     "access_denied": "Accès refusé. Veuillez vous connecter.",
@@ -122,8 +134,16 @@
     "driver_updated_success": "Chauffeur {{name}} mis à jour avec succès!",
     "driver_deleted_success": "Le chauffeur {{name}} a été supprimé.",
     "update_failed": "La mise à jour a échoué.",
-    "delete_failed": "La suppression a échouée.",
-    "loading_drivers": "Chargement des chauffeurs...",
-    "confirm_delete_driver": "Êtes-vous sûr de vouloir supprimer le chauffeur {{name}}? Cette action est irréversible."
+    "delete_failed": "La suppression a échoué.",
+    "loading_drivers": "Chargement des conducteurs...",
+    "shipment_deleted": "L'expédition avec le Numéro de Suivi : {{trackingNumber}} a été supprimée.",
+    "shipment_delete_error": "Erreur de suppression : {{error}}. L'expédition ne doit pas être supprimée si elle est assignée (SCHEDULED) ou en transit!"
+  },
+
+  "error": {
+    "fetch_shipments": "Erreur lors de la récupération des expéditions.",
+    "fetch_drivers": "Erreur lors de la récupération des conducteurs.",
+    "fetch_vehicles": "Erreur lors de la récupération des véhicules.",
+    "general_error": "Erreur Générale"
   }
 }

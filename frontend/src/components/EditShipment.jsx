@@ -1,35 +1,29 @@
-// frontend/src/components/EditShipment.jsx
+// frontend/src/components/EditShipment.jsx - KRITIČNO ISPRAVLJENO: VRAĆENO POLJE estimatedDeliveryTime
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
+import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner, Row, Col } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 // =================================================================
-// 🛑 REACT LEAFLET UVEZ
+// 🛑 REACT LEAFLET UVEZ (ostaje isti)
 // =================================================================
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { geocodeAddress } from '../services/ShipmentApi';
 
-// 🛑 KRITIČNO: EKSPLICITAN UVOZ IKONA ZA LEAFLET (Rješava problem s putanjom)
+import { updateShipment, fetchShipmentById, geocodeAddress } from '../services/ShipmentApi';
+import { fetchDrivers, fetchVehicles } from '../services/VehicleApi';
+
+// 🛑 KRITIČNO: EKSPLICITAN UVOZ IKONA ZA LEAFLET (ostaje isti)
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 
-// ✅ ISPRAVAK: Uvoz shipment funkcija iz ShipmentApi.js
-import { updateShipment, fetchShipmentById } from '../services/ShipmentApi';
+// [Pomoćne funkcije: customIcon, formatDateTimeLocal, debounce, MapUpdater ostaju nepromijenjene]
 
-// ✅ ISPRAVAK: Uvoz fetchDrivers i fetchVehicles iz VehicleApi.js
-import { fetchDrivers, fetchVehicles } from '../services/VehicleApi';
-import { useTranslation } from 'react-i18next';
-
-// =================================================================
-// FIKSIRANJE IKONA (Kopirano iz AddShipment.jsx)
-// =================================================================
 const customIcon = new L.Icon({
-    // 🛑 Korištenje uvezenih resursa umjesto relativne putanje
     iconUrl: markerIcon,
     iconRetinaUrl: markerIcon2x,
     shadowUrl: markerShadow,
@@ -39,316 +33,420 @@ const customIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// DEFAULT KOORDINATE i ZUM
-const DEFAULT_COORDS = [45.815, 15.98];
-const DEFAULT_ZOOM = 7;
+const formatDateTimeLocal = (isoString) => {
+    if (!isoString) return '';
+    return isoString.slice(0, 16);
+}
 
-// =================================================================
-// 🛠 DINAMIČKA KOMPONENTA ZA PROMJENU POGLEDA KARTE (Kopirano iz AddShipment.jsx)
-// =================================================================
-function ChangeView({ center, zoom, bounds }) {
+const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        timeoutId = setTimeout(() => {
+            func.apply(null, args);
+        }, delay);
+    };
+};
+
+const MapUpdater = ({ origin, destination }) => {
     const map = useMap();
 
     useEffect(() => {
-        if (bounds) {
+        const isOriginValid = origin.lat !== 0 || origin.lng !== 0;
+        const isDestinationValid = destination.lat !== 0 || destination.lng !== 0;
+
+        if (isOriginValid && isDestinationValid) {
+            const bounds = L.latLngBounds([
+                [origin.lat, origin.lng],
+                [destination.lat, destination.lng]
+            ]);
             map.fitBounds(bounds, { padding: [50, 50] });
-        } else if (center) {
-            map.setView(center, zoom);
+        } else if (isOriginValid) {
+            map.setView([origin.lat, origin.lng], 13);
+        } else if (isDestinationValid) {
+            map.setView([destination.lat, origin.lng], 13);
         }
-    }, [map, center, zoom, bounds]);
+    }, [map, origin, destination]);
 
     return null;
-}
+};
 
 
 const EditShipment = () => {
     const { t } = useTranslation();
-    const { id } = useParams(); // ID pošiljke koju uređujemo
+    const { id } = useParams();
     const navigate = useNavigate();
 
-    // 🛑 REFERENCA ZA PRISTUP LEAFLET OBJEKTU
-    const mapRef = useRef(null);
-
-    const [loading, setLoading] = useState(true); // Za učitavanje postojećih podataka
-    const [saving, setSaving] = useState(false); // Za spremanje promjena
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
-    const [drivers, setDrivers] = useState([]); // Lista dostupnih vozača
-    const [vehicles, setVehicles] = useState([]); // Lista dostupnih vozila
+    const [drivers, setDrivers] = useState([]);
+    const [vehicles, setVehicles] = useState([]);
+    const [driversLoading, setDriversLoading] = useState(true);
+    const [vehiclesLoading, setVehiclesLoading] = useState(true);
 
-    // Stanja za kartu
-    const [pickupCoords, setPickupCoords] = useState(null);
-    const [deliveryCoords, setDeliveryCoords] = useState(null);
-    const [mapCenter, setMapCenter] = useState(DEFAULT_COORDS);
-    const [mapZoom, setMapZoom] = useState(DEFAULT_ZOOM);
-    const [mapBounds, setMapBounds] = useState(null);
-    const [mapKey, setMapKey] = useState(0); // Ključ za prisilno ponovno montiranje karte
-
-
-    // Polja DTO-u za pošiljku (ShipmentRequest)
     const [formData, setFormData] = useState({
+        trackingNumber: '',
         originAddress: '',
         destinationAddress: '',
         status: '',
-        weightKg: '',
-        // KRITIČNO: Dodana polja za Driver i Vehicle ID
-        assignedDriverId: '',
-        assignedVehicleId: '',
+        weightKg: 0,
+        // ✅ KRITIČNO: VRAĆENO JE POLJE estimatedDeliveryTime
+        estimatedDeliveryTime: '',
+        description: '',
+        originLatitude: 0.0,
+        originLongitude: 0.0,
+        destinationLatitude: 0.0,
+        destinationLongitude: 0.0,
+        currentDriverId: '',
+        currentVehicleId: '',
     });
 
-    // =================================================================
-    // 🛑 INVALDATESIZE HOOK (Reagira na promjenu adrese/reset ključa)
-    // =================================================================
-    useEffect(() => {
-        if (mapRef.current) {
-            // Dajemo mu malo više vremena (1000ms) za Bootstrap layout da se stabilizira
-            setTimeout(() => {
-                mapRef.current.invalidateSize();
-            }, 1000);
-        }
-    }, [mapKey]);
+    const [originCoords, setOriginCoords] = useState({ lat: 0, lng: 0 });
+    const [destinationCoords, setDestinationCoords] = useState({ lat: 0, lng: 0 });
+    const [geocodeLoading, setGeocodeLoading] = useState(false);
 
 
-    // =================================================================
-    // EFFECT: GEOKODIRANJE (Resetira kartu)
-    // =================================================================
-    useEffect(() => {
-        const debounceTimer = setTimeout(async () => {
-            // Koristimo adrese iz formData
-            const newPickupCoords = await geocodeAddress(formData.originAddress);
-            const newDeliveryCoords = await geocodeAddress(formData.destinationAddress);
-
-            setPickupCoords(newPickupCoords);
-            setDeliveryCoords(newDeliveryCoords);
-
-            // LOGIKA CENTRIRANJA I ZUMIRANJA
-            if (newPickupCoords && newDeliveryCoords) {
-                const bounds = new L.LatLngBounds([
-                    [newPickupCoords.lat, newPickupCoords.lng],
-                    [newDeliveryCoords.lat, newDeliveryCoords.lng]
-                ]);
-                setMapBounds(bounds);
-                setMapCenter(bounds.getCenter().toArray());
-                setMapZoom(DEFAULT_ZOOM);
-            } else if (newPickupCoords) {
-                setMapBounds(null);
-                setMapCenter([newPickupCoords.lat, newPickupCoords.lng]);
-                setMapZoom(12);
-            } else if (newDeliveryCoords) {
-                setMapBounds(null);
-                setMapCenter([newDeliveryCoords.lat, newDeliveryCoords.lng]);
-                setMapZoom(12);
-            } else {
-                setMapBounds(null);
-                setMapCenter(DEFAULT_COORDS);
-                setMapZoom(DEFAULT_ZOOM);
+    // [Logika za geocoding i debouncing ostaje ista]
+    const debouncedGeocodeOrigin = useCallback(
+        debounce(async (address) => {
+            if (!address) {
+                setOriginCoords({ lat: 0, lng: 0 });
+                setFormData(prev => ({ ...prev, originLatitude: 0.0, originLongitude: 0.0 }));
+                return;
             }
+            setGeocodeLoading(true);
+            try {
+                const coords = await geocodeAddress(address);
+                if (coords) {
+                    setOriginCoords(coords);
+                    setFormData(prev => ({
+                        ...prev,
+                        originLatitude: coords.lat,
+                        originLongitude: coords.lng
+                    }));
+                }
+            } catch (err) {
+                // Ignoriraj geocode greške
+            } finally {
+                setGeocodeLoading(false);
+            }
+        }, 1000),
+        []
+    );
 
-            // 🛑 Ažuriraj ključ za ponovno montiranje/invalidateSize
-            setMapKey(prev => prev + 1);
+    const debouncedGeocodeDestination = useCallback(
+        debounce(async (address) => {
+            if (!address) {
+                setDestinationCoords({ lat: 0, lng: 0 });
+                setFormData(prev => ({ ...prev, destinationLatitude: 0.0, destinationLongitude: 0.0 }));
+                return;
+            }
+            setGeocodeLoading(true);
+            try {
+                const coords = await geocodeAddress(address);
+                if (coords) {
+                    setDestinationCoords(coords);
+                    setFormData(prev => ({
+                        ...prev,
+                        destinationLatitude: coords.lat,
+                        destinationLongitude: coords.lng
+                    }));
+                }
+            } catch (err) {
+                // Ignoriraj geocode greške
+            } finally {
+                setGeocodeLoading(false);
+            }
+        }, 1000),
+        []
+    );
 
-        }, 800);
 
-        return () => clearTimeout(debounceTimer);
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const shipmentData = await fetchShipmentById(id);
+                const [driverList, vehicleList] = await Promise.all([
+                    fetchDrivers(),
+                    fetchVehicles(),
+                ]);
 
-    }, [formData.originAddress, formData.destinationAddress]); // Reagira na promjenu adresa
+                setDrivers(driverList);
+                setVehicles(vehicleList);
 
+                setFormData({
+                    trackingNumber: shipmentData.trackingNumber || '',
+                    originAddress: shipmentData.originAddress || '',
+                    destinationAddress: shipmentData.destinationAddress || '',
+                    status: shipmentData.status || 'PENDING',
+                    weightKg: shipmentData.weightKg || 0,
+                    // ✅ KRITIČNO: ISPRAVNO POSTAVLJANJE POSTOJEĆEG DATUMA
+                    estimatedDeliveryTime: formatDateTimeLocal(shipmentData.estimatedDeliveryTime),
+                    description: shipmentData.description || '',
+                    originLatitude: shipmentData.originLatitude || 0.0,
+                    originLongitude: shipmentData.originLongitude || 0.0,
+                    destinationLatitude: shipmentData.destinationLatitude || 0.0,
+                    destinationLongitude: shipmentData.destinationLongitude || 0.0,
+                    currentDriverId: shipmentData.driverId ? String(shipmentData.driverId) : '',
+                    currentVehicleId: shipmentData.vehicleId ? String(shipmentData.vehicleId) : '',
+                });
+
+                setOriginCoords({ lat: shipmentData.originLatitude || 0, lng: shipmentData.originLongitude || 0 });
+                setDestinationCoords({ lat: shipmentData.destinationLatitude || 0, lng: shipmentData.destinationLongitude || 0 });
+
+            } catch (err) {
+                setError(t('shipments.error_load'));
+            } finally {
+                setLoading(false);
+                setDriversLoading(false);
+                setVehiclesLoading(false);
+            }
+        };
+
+        loadData();
+    }, [id, t]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        setFormData(prev => ({
+            ...prev,
+            [name]: value,
+        }));
+
+        if (name === 'originAddress') {
+            debouncedGeocodeOrigin(value);
+        } else if (name === 'destinationAddress') {
+            debouncedGeocodeDestination(value);
+        } else if (name === 'currentDriverId' || name === 'currentVehicleId') {
+            const newDriverId = name === 'currentDriverId' ? value : formData.currentDriverId;
+            const newVehicleId = name === 'currentVehicleId' ? value : formData.currentVehicleId;
+
+            if (newDriverId && newVehicleId && formData.status === 'PENDING') {
+                setFormData(prev => ({ ...prev, status: 'ASSIGNED' }));
+            } else if (!newDriverId || !newVehicleId) {
+                setFormData(prev => ({ ...prev, status: 'PENDING' }));
+            }
+        }
     };
 
-    // Učitavanje liste vozača, vozila i podataka o pošiljci pri renderu
-    useEffect(() => {
-        const loadData = async () => {
-            if (!localStorage.getItem('accessToken')) {
-                setLoading(false);
-                return navigate('/login');
-            }
-            try {
-                // 1. Dohvaćanje listi za Dropdown (Sada rade jer je uvoz ispravan)
-                const driverList = await fetchDrivers();
-                setDrivers(driverList);
-                const vehicleList = await fetchVehicles();
-                setVehicles(vehicleList);
-
-                // 2. Dohvaćanje postojećih podataka pošiljke
-                const shipmentData = await fetchShipmentById(id);
-
-                // KRITIČNO: Mapiranje polja iz ShipmetResponse DTO-a u formData
-                setFormData({
-                    originAddress: shipmentData.originAddress,
-                    destinationAddress: shipmentData.destinationAddress,
-                    status: shipmentData.status,
-                    weightKg: shipmentData.weightKg,
-                    // Mapiranje ID-jeva (Ako su null/undefined u backend respons-u, koristimo prazan string)
-                    assignedDriverId: shipmentData.assignedDriverId || '',
-                    assignedVehicleId: shipmentData.assignedVehicleId || '',
-                });
-
-                setLoading(false);
-            } catch (err) {
-                console.error("Greška pri učitavanju podataka:", err);
-                // Provjera je li greška 403 (pristup odbijen)
-                setError(err.message || t("error.general_error"));
-                setLoading(false);
-            }
-        };
-        loadData();
-    }, [id, navigate, t]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSaving(true);
+
         setError(null);
         setSuccess(null);
+        setSaving(true);
 
         try {
-            await updateShipment(id, formData);
-            setSuccess(t('messages.shipment_updated'));
-            setTimeout(() => navigate('/shipments'), 1500);
+            if ((!formData.originLatitude && formData.originAddress) || (!formData.destinationLatitude && formData.destinationAddress)) {
+                setError(t('shipments.address_geocode_warning'));
+                setSaving(false);
+                return;
+            }
 
+            const shipmentData = {
+                ...formData,
+                weightKg: parseFloat(formData.weightKg),
+                originLatitude: parseFloat(formData.originLatitude),
+                originLongitude: parseFloat(formData.originLongitude),
+                destinationLatitude: parseFloat(formData.destinationLatitude),
+                destinationLongitude: parseFloat(formData.destinationLongitude),
+                driverId: formData.currentDriverId ? parseInt(formData.currentDriverId, 10) : null,
+                vehicleId: formData.currentVehicleId ? parseInt(formData.currentVehicleId, 10) : null,
+            };
+
+            delete shipmentData.currentDriverId;
+            delete shipmentData.currentVehicleId;
+
+
+            await updateShipment(id, shipmentData);
+            setSuccess(t('shipments.success_edit'));
+            navigate('/shipments', { state: { message: t('shipments.success_edit') } });
         } catch (err) {
-            console.error("Greška pri spremanju:", err);
-            setError(err.message || t("messages.update_failed"));
+            setError(err.message || t('shipments.error_general'));
         } finally {
             setSaving(false);
         }
     };
 
+
+    // =========================================================================
+    // RENDERIRANJE KOMPONENTE
+    // =========================================================================
     if (loading) {
         return (
-            <div className="text-center py-5">
-                <Spinner animation="border" variant="info" role="status" />
-                <p className="text-muted mt-2">{t("general.loading_data")}</p>
-            </div>
+            <Container className="my-5 d-flex justify-content-center">
+                <Spinner animation="border" variant="info" />
+            </Container>
         );
     }
 
+    const initialCenter = (originCoords.lat !== 0 || originCoords.lng !== 0) ? [originCoords.lat, originCoords.lng] :
+        [45.8150, 15.9819]; // Zagreb
+
+    const initialZoom = (originCoords.lat !== 0 && destinationCoords.lat !== 0) ? 10 : 13;
+
+
     return (
-        <Container style={{ maxWidth: '700px' }}>
-            <Card className="shadow-lg border-info border-top-0 border-5 p-4">
+        <Container className="my-5">
+            <Card className="shadow-lg p-4">
                 <Card.Body>
-                    <h2 className="text-info fw-bold font-monospace">
-                        {t('forms.edit_shipment_title', { id })}
+                    <h2 className="text-info fw-bold font-monospace mb-4">
+                        {t('shipments.edit_title')}
                     </h2>
+
                     {error && <Alert variant="danger" className="font-monospace">{error}</Alert>}
                     {success && <Alert variant="success" className="font-monospace">{success}</Alert>}
 
-                    <Form onSubmit={handleSubmit} className="mt-4">
-
-                        {/* 1. Opća polja pošiljke */}
-                        <div className="row g-3 mb-4">
-                            <div className="col-md-6">
-                                <FloatingLabel controlId="originAddress" label={t("shipments.origin")}>
-                                    <Form.Control type="text" name="originAddress" value={formData.originAddress} onChange={handleChange} required className="font-monospace" />
+                    {/* Forma se zatvara prije gumba. */}
+                    <Form id="shipment-edit-form" onSubmit={handleSubmit}>
+                        {/* 1. BROJ ZA PRAĆENJE i STATUS */}
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <FloatingLabel controlId="trackingNumber" label={t('shipments.tracking_label')}>
+                                    <Form.Control
+                                        type="text"
+                                        name="trackingNumber"
+                                        value={formData.trackingNumber}
+                                        onChange={handleChange}
+                                        required
+                                        className="font-monospace"
+                                        maxLength={50}
+                                    />
                                 </FloatingLabel>
-                                {/* 🛑 KOORDINATE MORAJU BITI IZVAN FloatingLabel */}
-                                {pickupCoords && (
-                                    <Form.Text className="text-success">
-                                        Pronađeno: Lat {pickupCoords.lat}, Lng {pickupCoords.lng}
-                                    </Form.Text>
-                                )}
-                            </div>
-                            <div className="col-md-6">
-                                <FloatingLabel controlId="destinationAddress" label={t("shipments.destination")}>
-                                    <Form.Control type="text" name="destinationAddress" value={formData.destinationAddress} onChange={handleChange} required className="font-monospace" />
-                                </FloatingLabel>
-                                {/* 🛑 KOORDINATE MORAJU BITI IZVAN FloatingLabel */}
-                                {deliveryCoords && (
-                                    <Form.Text className="text-success">
-                                        Pronađeno: Lat {deliveryCoords.lat}, Lng {deliveryCoords.lng}
-                                    </Form.Text>
-                                )}
-                            </div>
-                            <div className="col-md-6">
-                                <FloatingLabel controlId="weightKg" label={t("shipments.weight")}>
-                                    <Form.Control type="number" name="weightKg" value={formData.weightKg} onChange={handleChange} required min="1" className="font-monospace" />
-                                </FloatingLabel>
-                            </div>
-                            <div className="col-md-6">
-                                <FloatingLabel controlId="status" label={t("assignments.status")}>
-                                    <Form.Select name="status" value={formData.status} onChange={handleChange} required className="font-monospace">
-                                        <option value="">Odaberite status</option>
-                                        <option value="PENDING">PENDING</option>
-                                        <option value="IN_TRANSIT">IN_TRANSIT</option>
-                                        <option value="DELIVERED">DELIVERED</option>
-                                        <option value="CANCELLED">CANCELLED</option>
+                            </Col>
+                            <Col md={6}>
+                                <FloatingLabel controlId="status" label={t('shipments.status_label')}>
+                                    <Form.Select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleChange}
+                                        required
+                                        className="font-monospace"
+                                        disabled={formData.status === 'ASSIGNED' || formData.status === 'IN_TRANSIT' || formData.status === 'DELIVERED'}
+                                    >
+                                        <option value="PENDING">{t('shipments.status_pending')}</option>
+                                        <option value="ASSIGNED" disabled>{t('shipments.status_assigned')}</option>
+                                        <option value="IN_TRANSIT">{t('shipments.status_in_transit')}</option>
+                                        <option value="DELIVERED">{t('shipments.status_delivered')}</option>
+                                        <option value="CANCELLED">{t('shipments.status_cancelled')}</option>
                                     </Form.Select>
                                 </FloatingLabel>
-                            </div>
-                        </div>
+                            </Col>
+                        </Row>
 
-                        {/* ================================================================= */}
-                        {/* 🛑 INTEGRIRANA KARTA (MapContainer) */}
-                        {/* ================================================================= */}
-                        <div className="mb-4" style={{ border: '1px solid #ccc', overflow: 'visible' }}>
-                            <h5 className="p-2 text-center bg-light">Vizualizacija Rute (React Leaflet)</h5>
 
-                            {/* 🛑 PRISILNO RESETIRANJE (key={mapKey}) */}
-                            <MapContainer
-                                key={mapKey}
-                                id="leaflet-map-kontejner" // KLJUČNI ID za CSS fiksiranje
-                                className="leaflet-kontejner-fix" // KLASA ZA FORSIRANJE VISINE PREKO CSS-a
-                                center={mapCenter}
-                                zoom={mapZoom}
-                                scrollWheelZoom={true}
-                                ref={mapRef} // Referenca na Mapu za invalidateSize()
-
-                                // DODATNA GARANCIJA: Poziv invalidateSize odmah nakon kreiranja
-                                whenCreated={map => {
-                                    setTimeout(() => {
-                                        map.invalidateSize();
-                                    }, 500);
-                                }}
-                            >
-                                <ChangeView center={mapCenter} zoom={mapZoom} bounds={mapBounds} />
-
-                                {/* KORIŠTENJE STABILNOG TILE SERVERA (CartoDB) */}
-                                <TileLayer
-                                    attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
-                                    subdomains='abcd'
-                                />
-
-                                {pickupCoords && (
-                                    <Marker position={[pickupCoords.lat, pickupCoords.lng]} icon={customIcon}>
-                                        <Popup>{t('Polazište' )}</Popup>
-                                    </Marker>
+                        {/* 2. POLAZIŠTE i ODREDIŠTE */}
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <FloatingLabel controlId="originAddress" label={t('shipments.origin_label') + (geocodeLoading ? ' (' + t('general.loading') + ')' : '')}>
+                                    <Form.Control
+                                        type="text"
+                                        name="originAddress"
+                                        value={formData.originAddress}
+                                        onChange={handleChange}
+                                        required
+                                        className="font-monospace"
+                                        maxLength={100}
+                                    />
+                                </FloatingLabel>
+                                {originCoords.lat !== 0 && (
+                                    <Form.Text muted className="ms-2 font-monospace">
+                                        Koordinate: {originCoords.lat.toFixed(4)}, {originCoords.lng.toFixed(4)}
+                                    </Form.Text>
                                 )}
-
-                                {deliveryCoords && (
-                                    <Marker position={[deliveryCoords.lat, deliveryCoords.lng]} icon={customIcon}>
-                                        <Popup>{t('Odredište')}</Popup>
-                                    </Marker>
+                            </Col>
+                            <Col md={6}>
+                                <FloatingLabel controlId="destinationAddress" label={t('shipments.destination_label') + (geocodeLoading ? ' (' + t('general.loading') + ')' : '')}>
+                                    <Form.Control
+                                        type="text"
+                                        name="destinationAddress"
+                                        value={formData.destinationAddress}
+                                        onChange={handleChange}
+                                        required
+                                        className="font-monospace"
+                                        maxLength={100}
+                                    />
+                                </FloatingLabel>
+                                {destinationCoords.lat !== 0 && (
+                                    <Form.Text muted className="ms-2 font-monospace">
+                                        Koordinate: {destinationCoords.lat.toFixed(4)}, {destinationCoords.lng.toFixed(4)}
+                                    </Form.Text>
                                 )}
-                            </MapContainer>
-                        </div>
-                        {/* ================================================================= */}
+                            </Col>
+                        </Row>
+
+                        {/* 3. TEŽINA i VRIJEME DOSTAVE */}
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <FloatingLabel controlId="weightKg" label={t('shipments.weight_label')}>
+                                    <Form.Control
+                                        type="number"
+                                        name="weightKg"
+                                        value={formData.weightKg}
+                                        onChange={handleChange}
+                                        required
+                                        min="1"
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </Col>
+                            {/* ✅ KRITIČNO: VRAĆENO POLJE ZA DATUM */}
+                            <Col md={6}>
+                                <FloatingLabel controlId="estimatedDeliveryTime" label={t('shipments.delivery_time_label')}>
+                                    <Form.Control
+                                        type="datetime-local"
+                                        name="estimatedDeliveryTime"
+                                        value={formData.estimatedDeliveryTime}
+                                        onChange={handleChange}
+                                        required
+                                        className="font-monospace"
+                                    />
+                                </FloatingLabel>
+                            </Col>
+                        </Row>
+
+                        {/* SKRIVENA POLJA ZA KOORDINATE... */}
+                        <Form.Control type="hidden" name="originLatitude" value={formData.originLatitude} />
+                        <Form.Control type="hidden" name="originLongitude" value={formData.originLongitude} />
+                        <Form.Control type="hidden" name="destinationLatitude" value={formData.destinationLatitude} />
+                        <Form.Control type="hidden" name="destinationLongitude" value={formData.destinationLongitude} />
 
 
-                        {/* 2. DODJELA VOZAČA I VOZILA */}
-                        <hr className="my-4"/>
-                        <h5 className="text-muted font-monospace">Dodjela</h5>
-                        <div className="row g-3 mb-4">
-                            <div className="col-md-6">
-                                <FloatingLabel controlId="assignedDriverId" label={t("forms.assigned_driver")}>
-                                    <Form.Select name="assignedDriverId" value={formData.assignedDriverId} onChange={handleChange} className="font-monospace">
-                                        <option value="">Nije dodijeljen</option>
+                        {/* 5. DODJELA (ASSIGNMENT) - VOZAČ I VOZILO */}
+                        <Row className="mb-4">
+                            <Col md={6}>
+                                <FloatingLabel controlId="currentDriverId" label={t('assignments.driver_label') + (driversLoading ? ' (' + t('general.loading') + ')' : '')}>
+                                    <Form.Select
+                                        name="currentDriverId"
+                                        value={formData.currentDriverId}
+                                        onChange={handleChange}
+                                        className="font-monospace"
+                                    >
+                                        <option value="">{t('general.select')}</option>
                                         {drivers.map(driver => (
                                             <option key={driver.id} value={driver.id}>
-                                                {driver.firstName} {driver.lastName} ({driver.email})
+                                                {driver.firstName} {driver.lastName} - ({driver.userInfo.username})
                                             </option>
                                         ))}
                                     </Form.Select>
                                 </FloatingLabel>
-                            </div>
-                            <div className="col-md-6">
-                                <FloatingLabel controlId="assignedVehicleId" label={t("forms.assigned_vehicle")}>
-                                    <Form.Select name="assignedVehicleId" value={formData.assignedVehicleId} onChange={handleChange} className="font-monospace">
-                                        <option value="">{t("vehicles.unassigned")}</option>
+                            </Col>
+                            <Col md={6}>
+                                <FloatingLabel controlId="currentVehicleId" label={t('assignments.vehicle_label') + (vehiclesLoading ? ' (' + t('general.loading') + ')' : '')}>
+                                    <Form.Select
+                                        name="currentVehicleId"
+                                        value={formData.currentVehicleId}
+                                        onChange={handleChange}
+                                        className="font-monospace"
+                                    >
+                                        <option value="">{t('general.select')}</option>
                                         {vehicles.map(vehicle => (
                                             <option key={vehicle.id} value={vehicle.id}>
                                                 {vehicle.make} {vehicle.model} - {vehicle.licensePlate}
@@ -356,30 +454,91 @@ const EditShipment = () => {
                                         ))}
                                     </Form.Select>
                                 </FloatingLabel>
-                            </div>
-                        </div>
+                            </Col>
+                        </Row>
+
+                        {/* 7. OPIS (ZADNJE POLJE FORME) */}
+                        <Row className="mb-4">
+                            <Col>
+                                <FloatingLabel controlId="description" label={t('shipments.description_label')}>
+                                    <Form.Control
+                                        as="textarea"
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className="font-monospace"
+                                        style={{ height: '100px' }}
+                                    />
+                                </FloatingLabel>
+                            </Col>
+                        </Row>
+
+                    </Form> {/* 🛑 FORMA JE ZATVORENA! */}
+
+                    {/* =================================================================
+                    ✅ GUMBI ZA AKCIJU - ODMAH ISPOD ZATVORENOG FORM TAGA
+                    ================================================================= */}
+                    <Button
+                        onClick={handleSubmit}
+                        variant="outline-primary"
+                        className="w-100 fw-bold font-monospace mt-3"
+                        disabled={saving}
+                    >
+                        {saving ? (
+                            <Spinner as="span" animation="border" size="sm"  aria-hidden="true" className="me-2" />
+                        ) : (
+                            t("general.save_changes")
+                        )}
+                    </Button>
+                    <Button
+                        variant="outline-secondary"
+                        className="w-100 fw-bold font-monospace mt-2 mb-4"
+                        onClick={() => navigate('/shipments')}
+                    >
+                        {t('general.cancel')}
+                    </Button>
 
 
-                        <Button
-                            type="submit"
-                            variant="outline-success"
-                            className="w-100 fw-bold font-monospace"
-                            disabled={saving}
+                    {/* =================================================================
+                    ✅ MAPA (PRIKAZ) - POSLJEDNJI ELEMENT
+                    ================================================================= */}
+                    <hr className="my-4 border-info" />
+                    <div className="p-3 border rounded shadow-sm">
+                        <h5 className="text-dark fw-bold font-monospace mb-3">{t('shipments.map_title')}</h5>
+
+                        <MapContainer
+                            center={initialCenter}
+                            zoom={initialZoom}
+                            scrollWheelZoom={false}
+                            className="leaflet-container"
+                            style={{ height: '400px', width: '100%' }}
                         >
-                            {saving ? (
-                                <Spinner as="span" animation="border" size="sm"  aria-hidden="true" className="me-2" />
-                            ) : (
-                                t("general.save_changes")
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+
+                            <MapUpdater origin={originCoords} destination={destinationCoords} />
+
+                            {originCoords.lat !== 0 && (
+                                <Marker position={originCoords} icon={customIcon}>
+                                    <Popup>
+                                        **{t("shipments.origin_label")}:** <br/> {formData.originAddress}
+                                    </Popup>
+                                </Marker>
                             )}
-                        </Button>
-                        <Button
-                            variant="outline-secondary"
-                            className="w-100 fw-bold font-monospace mt-2"
-                            onClick={() => navigate('/shipments')}
-                        >
-                            {t("general.cancel")}
-                        </Button>
-                    </Form>
+
+                            {destinationCoords.lat !== 0 && (
+                                <Marker position={destinationCoords} icon={customIcon}>
+                                    <Popup>
+                                        **{t("shipments.destination_label")}:** <br/> {formData.destinationAddress}
+                                    </Popup>
+                                </Marker>
+                            )}
+
+                        </MapContainer>
+                    </div>
+
                 </Card.Body>
             </Card>
         </Container>

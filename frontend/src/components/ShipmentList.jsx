@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { fetchShipments, deleteShipment } from '../services/ShipmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+// ✅ PROMJENA: Dodan FaEye za Detalje
+import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 const ShipmentList = () => {
@@ -160,6 +161,18 @@ const ShipmentList = () => {
 
                                         <td className="text-center text-nowrap">
                                             <div className="d-flex justify-content-center">
+
+                                                {/* ✅ NOVO: Gumb Detalji */}
+                                                <Button
+                                                    variant="outline-info" // Koristimo 'info' boju
+                                                    size="sm"
+                                                    className="me-2 font-monospace fw-bold"
+                                                    onClick={() => navigate(`/shipments/details/${s.id}`)}
+                                                    title={t("shipments.details_button") || "Detalji"}
+                                                >
+                                                    <FaEye className="me-1"/> {t("shipments.details_button") || "Detalji"}
+                                                </Button>
+
                                                 <Button
                                                     variant="outline-primary"
                                                     size="sm"

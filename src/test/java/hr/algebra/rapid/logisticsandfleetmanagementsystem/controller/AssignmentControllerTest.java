@@ -57,7 +57,7 @@ class AssignmentControllerTest {
         requestDTO.setDriverId(1L);
         requestDTO.setVehicleId(2L);
         requestDTO.setShipmentId(3L);
-        requestDTO.setStartTime(LocalDateTime.of(2025, 1, 15, 8, 0));
+        requestDTO.setStartTime(LocalDateTime.of(2025, 11, 15, 8, 0));
     }
 
     @Test
@@ -89,6 +89,7 @@ class AssignmentControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
     }
+
 
     @Test
     void getAssignmentById_WhenAssignmentExists_ShouldReturnAssignment() {
