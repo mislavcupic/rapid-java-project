@@ -50,6 +50,8 @@
     "username": "Nom d'utilisateur",
     "firstName": "Prénom",
     "lastName": "Nom de famille",
+    "first_name": "Prénom",
+    "last_name": "Nom de famille",
     "password": "Mot de passe",
     "driver_name": "Nom du conducteur",
     "email": "Adresse e-mail",

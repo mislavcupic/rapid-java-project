@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("driverService")
 @RequiredArgsConstructor
 public class DriverServiceImpl implements DriverService {
 

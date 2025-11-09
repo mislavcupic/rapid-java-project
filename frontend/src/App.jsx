@@ -24,6 +24,9 @@ import DriverList from "./components/DriverList.jsx";
 import AnalyticsPage from "./components/AnalyticsPage.jsx";
 import Register from "./components/Register.jsx";
 import ShipmentDetails from "./components/ShipmentDetails.jsx";
+import DriverAssignmentDetails from "./components/DriverAssignmentDetails.jsx";
+import DriverDashboard from "./components/DriverDashboard.jsx";
+import DeliveryConfirmationModal from "./components/DeliveryConfirmationModal.jsx";
 
 // =========================================================================
 // NAVIGACIJSKA KOMPONENTA
@@ -60,6 +63,7 @@ const AppNavbar = () => {
                             <>
                                 <Nav.Link as={Link} to="/vehicles">{t('Vehicles')}</Nav.Link>
                                 <Nav.Link as={Link} to="/drivers">{t('Drivers')}</Nav.Link>
+                                <Nav.Link as={Link} to="/driver/dashboard">{t('DriverDashboard')}</Nav.Link>
                                 <Nav.Link as={Link} to="/shipments">{t('Shipments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/assignments">{t('Assignments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
@@ -147,6 +151,9 @@ function App() {
                     <Route path="/drivers/edit/:id" element={<DriverForm />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
                     <Route path="/shipments/details/:id" element={<ShipmentDetails />} />
+                    <Route path="/driver/assignment/:id" element={<DriverAssignmentDetails />} />
+                    <Route path="/driver/dashboard" element={<DriverDashboard />} />
+                    <Route path="deliveryconfirmation" element={<DeliveryConfirmationModal />} />
                 </Routes>
             </Container>
         </div>

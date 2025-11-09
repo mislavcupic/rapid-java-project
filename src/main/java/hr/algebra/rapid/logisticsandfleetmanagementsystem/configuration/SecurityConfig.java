@@ -43,7 +43,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .allowCredentials(true);
     }
 
-    // --- 2. Security Filter Chain (Pravila) - Korigirano ---
+    // --- 2. Security Filter Chain (Pravila) - AŽURIRANO s Driver Dashboard ---
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -51,59 +51,95 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((auth) -> auth
 
-                        // A. Javno Dostupne Rute (PermitAll) - ZADRŽANO DA BI LOGIN RADIO!
+                        // ================================================================
+                        // A. JAVNO DOSTUPNE RUTE (PermitAll)
+                        // ================================================================
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/auth/login", "/auth/register").permitAll() // Login i registracija
+                        .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/welcome").permitAll()
 
-                        // B. Rute za KORISNIKE/VOZAČE - ISPRAVLJENE PUTANJE
-                        .requestMatchers(HttpMethod.GET, "/api/drivers/my-info").hasAnyRole("REGISTERED", "DRIVER") // Uklonjen v1
-                        .requestMatchers(HttpMethod.PUT, "/api/drivers/{id}").hasAnyRole("REGISTERED", "DRIVER") // Uklonjen v1
+                        // ================================================================
+                        // B. DRIVER RUTE - ✅ NOVO za Driver Dashboard
+                        // ================================================================
 
-                        // C. DODANE RUTE ZA DISPATCHER I ADMINISTRATORA
+                        // Driver Dashboard - dohvat svojih Assignment-a
+                        .requestMatchers(HttpMethod.GET, "/api/assignments/my-schedule").hasRole("DRIVER")
 
-                        // 1. DISPATCHER: Potrebne liste za Assignment Form (GET)
-                        // /api/users/drivers je KRITIČNA putanja za frontend
+                        // Driver može vidjeti svoje Assignment-e i Shipment-e (dodatna @PreAuthorize provjera u Controllerima)
+                        .requestMatchers(HttpMethod.GET, "/api/assignments/{id}").hasAnyRole("ADMIN", "DISPATCHER", "DRIVER")
+                        .requestMatchers(HttpMethod.GET, "/api/shipments/{id}").hasAnyRole("ADMIN", "DISPATCHER", "DRIVER")
+
+                        // Driver - Akcije za Assignment
+                        .requestMatchers(HttpMethod.PUT, "/api/assignments/{id}/start").hasRole("DRIVER")
+                        .requestMatchers(HttpMethod.PUT, "/api/assignments/{id}/complete").hasRole("DRIVER")
+
+                        // Driver - Akcije za Shipment
+                        .requestMatchers(HttpMethod.PUT, "/api/shipments/{id}/start").hasRole("DRIVER")
+                        .requestMatchers(HttpMethod.POST, "/api/shipments/{id}/complete").hasRole("DRIVER")
+                        .requestMatchers(HttpMethod.PUT, "/api/shipments/{id}/report-issue").hasRole("DRIVER")
+
+                        // Driver - vlastiti profil
+                        .requestMatchers(HttpMethod.GET, "/api/drivers/my-info").hasAnyRole("REGISTERED", "DRIVER")
+                        .requestMatchers(HttpMethod.PUT, "/api/drivers/{id}").hasAnyRole("REGISTERED", "DRIVER")
+
+                        // ================================================================
+                        // C. DISPATCHER RUTE
+                        // ================================================================
+
+                        // Liste za kreiranje Assignment-a (potrebne za dropdown-e)
                         .requestMatchers(HttpMethod.GET, "/api/users/drivers").hasAnyRole("ADMIN", "DISPATCHER")
-                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").hasAnyRole("ADMIN", "DISPATCHER") // Čitanje vozila
-                        .requestMatchers(HttpMethod.GET, "/api/shipments/**").hasAnyRole("ADMIN", "DISPATCHER") // Čitanje pošiljaka
-                        .requestMatchers(HttpMethod.GET, "/api/drivers/**").hasAnyRole("ADMIN", "DISPATCHER") // Čitanje svih Driver profila
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.GET, "/api/shipments/**").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.GET, "/api/drivers/**").hasAnyRole("ADMIN", "DISPATCHER")
 
-                        // 2. DISPATCHER/ADMIN CRUD
-                        .requestMatchers("/api/assignments/**").hasAnyRole("ADMIN", "DISPATCHER")
-                        .requestMatchers(HttpMethod.POST, "/api/shipments").hasAnyRole("ADMIN", "DISPATCHER")
-                        .requestMatchers(HttpMethod.PUT, "/api/shipments/edit/**").hasRole("DISPATCHER")
+                        // Assignment CRUD (Dispatcher kreira i upravlja Assignment-ima)
+                        .requestMatchers(HttpMethod.GET, "/api/assignments").hasAnyRole("ADMIN", "DISPATCHER")
+                        .requestMatchers(HttpMethod.POST, "/api/assignments").hasRole("DISPATCHER")
+                        .requestMatchers(HttpMethod.PUT, "/api/assignments/{id}").hasRole("DISPATCHER")
 
-                        // 🌟 3. ANALITIKA RUTE (DODANO) 🌟
+                        // Shipment CRUD (Dispatcher kreira i upravlja Shipment-ima)
+                        .requestMatchers(HttpMethod.POST, "/api/shipments").hasRole("DISPATCHER")
+                        .requestMatchers(HttpMethod.PUT, "/api/shipments/{id}").hasRole("DISPATCHER")
+
+                        // ================================================================
+                        // D. ANALITIKA RUTE
+                        // ================================================================
                         .requestMatchers(HttpMethod.GET, "/api/analytics/shipments/average-active-weight").hasAnyRole("ADMIN", "DISPATCHER")
                         .requestMatchers(HttpMethod.POST, "/api/analytics/shipments/mark-overdue").hasRole("ADMIN")
 
-                        // 4. ADMIN Rute (Puna kontrola) - ISPRAVLJENE PUTANJE
-                        // Sve što nije izričito dozvoljeno DISPATCHER-u ili DRIVER-u spada ovdje (npr. DELETE, update role, routes, reports)
-                      // Eksplicitno s ID-om
-                        .requestMatchers("/api/vehicles/**").hasRole("ADMIN") // Općenita PUT/POST/DELETE vozila
+                        // ================================================================
+                        // E. ADMIN RUTE (Puna kontrola)
+                        // ================================================================
+
+                        // Brisanje (samo Admin)
+                        .requestMatchers(HttpMethod.DELETE, "/api/assignments/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/shipments/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/drivers/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasRole("ADMIN")
+
+                        // Ostale Admin rute
                         .requestMatchers("/api/routes/**").hasRole("ADMIN")
-                        .requestMatchers("/api/drivers/**").hasRole("ADMIN")
                         .requestMatchers("/api/reports/**").hasRole("ADMIN")
                         .requestMatchers("/auth/update-role/**").hasRole("ADMIN")
 
-                        // D. Sve ostalo zahtijeva autentifikaciju
+                        // ================================================================
+                        // F. SVE OSTALO - Zahtijeva autentifikaciju
+                        // ================================================================
                         .anyRequest().authenticated()
                 )
-                // Dodajemo naš custom JWT filter PRIJE standardnog Spring Security filtera
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling.authenticationEntryPoint(authenticationEntryPoint())
                                 .accessDeniedHandler(accessDeniedHandler()))
-                // KLJUČNO: Ostavljeno kao u Vašem originalu da bi CORS radio
                 .cors(httpSecurityCorsConfigurer -> {});
 
         return http.build();
     }
-    // --- 3. Exception Handlers, AuthenticationManager, PasswordEncoder ostaju isti ---
-    // ...
+
+    // --- 3. Exception Handlers (OSTALO ISTO) ---
+
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
@@ -112,7 +148,6 @@ public class SecurityConfig implements WebMvcConfigurer {
         };
     }
 
-    // ...
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -121,13 +156,11 @@ public class SecurityConfig implements WebMvcConfigurer {
         };
     }
 
-    // ...
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // ...
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
