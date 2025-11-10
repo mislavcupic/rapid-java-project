@@ -8,7 +8,7 @@ on:
     paths-ignore:
       - '**.md'
 
-# DODANO: Puni set dozvola na razini cijelog Workflowa
+# Puni set dozvola na razini cijelog Workflowa
 permissions:
   contents: write
   packages: write
@@ -28,16 +28,11 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3 # Stabilnija verzija
 
-      # POPRAVAK #1: Dodan enable-check: true za rješavanje "repository not found"
+      # Logiranje na GHCR preko RUN komande (Najrobusniji način za prevazilaženje greške s "repository not found")
       - name: Log into Container Registry (GHCR)
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          enable-check: true # Rješava "repository not found"
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Extract Metadata (Tags)
         id: meta
@@ -69,20 +64,16 @@ jobs:
   e2e_tests:
     name: 2. Run E2E Tests (Playwright) - LO8
     runs-on: ubuntu-latest
-    needs: build_and_push # Vraćen needs: da Job čeka build (Problem preskakanja)
-    if: always()          # Zadržano da Job prikaže status
+    needs: build_and_push # Vraća zavisnost
+    if: always()          # Forsira prikaz statusa
 
     steps:
-      # POPRAVAK #2: Dodana prijava na GHCR unutar Joba 2 (Rješava "denied" pri pullu)
-      - name: Log into Container Registry (GHCR)
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # Prijava na GHCR unutar Joba 2 (Rješava "denied" pri pullu)
+      - name: Log into Container Registry (GHCR) for Pull
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
 
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       # 1. Start Containers for Testing
       - name: Start Containers for Testing
