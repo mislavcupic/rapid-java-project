@@ -1,3 +1,3 @@
 Project Status: LO2 Conflict Successfully Resolved by User in ADO
 
-Ne! Ili Da?
+Ne! Ili Da? Ili ne?
