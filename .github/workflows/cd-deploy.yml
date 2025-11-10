@@ -10,7 +10,8 @@ on:
 jobs:
   deploy:
     name: Deploy App
-    runs-on: ubuntu-latest
+    # 1. PROMJENA: Ciljanje Vašeg laptopa (mislav007)
+    runs-on: [self-hosted, linux, mislav007]
 
     environment: Prototype
     permissions:
@@ -21,13 +22,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure SSH
-        # Koristi SSH_PRIVATE_KEY Secret
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      # 2. PROMJENA: UKLONJEN BLOK 'Configure SSH'
 
-      - name: Deploy via SSH and Podman Compose
+      - name: Deploy via Podman Compose
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_TAG: ${{ github.sha }}
@@ -37,31 +34,24 @@ jobs:
           PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
 
         run: |
-          echo "Povezivanje na ${{ secrets.SSH_HOST }}..."
+          # 3. PROMJENA: SSH wrapper i nepotrebna cd putanja su uklonjeni.
           
-          # SSH Login i izvršavanje naredbi na udaljenom serveru
-          # Potrebno je imati 'docker-compose.yml' na serveru u /home/$USER/logistics-app/
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          # Prijava na GHCR
+          echo ${{ env.GHCR_TOKEN }} | podman login ghcr.io -u $USER --password-stdin
           
-            # Prijava na GHCR
-            echo ${{ env.GHCR_TOKEN }} | podman login ghcr.io -u $USER --password-stdin
+          # EXPORT TAJNIH VARIJABLI
+          export DB_USER=${{ env.PROD_DB_USER }}
+          export DB_PASSWORD=${{ env.PROD_DB_PASSWORD }}
+          export DB_NAME=${{ env.PROD_DB_NAME }}
           
-            cd /home/$USER/logistics-app/ 
+          # Ažuriranje image tagova u docker-compose.yml (zamjenjuje :latest sa SHA)
+          sed -i "s|backend:.*|backend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
+          sed -i "s|frontend:.*|frontend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
           
-            # EXPORT TAJNIH VARIJABLI
-            export DB_USER=${{ env.PROD_DB_USER }}
-            export DB_PASSWORD=${{ env.PROD_DB_PASSWORD }}
-            export DB_NAME=${{ env.PROD_DB_NAME }}
+          # Povlačenje i deployment
+          echo "Povlačenje novih slika..."
+          podman compose pull
+          echo "Pokretanje deploymenta s Podman Compose..."
+          podman compose up -d --force-recreate
           
-            # Ažuriranje image tagova u docker-compose.yml (zamjenjuje :latest sa SHA)
-            sed -i "s|backend:.*|backend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
-            sed -i "s|frontend:.*|frontend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
-          
-            # Povlačenje i deployment
-            echo "Povlačenje novih slika..."
-            podman compose pull
-            echo "Pokretanje deploymenta s Podman Compose..."
-            podman compose up -d --force-recreate
-          
-            echo "Deployment dovršen."
-          EOF
+          echo "Deployment dovršen."
