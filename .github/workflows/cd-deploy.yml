@@ -52,6 +52,6 @@ jobs:
           echo "Povlačenje novih slika..."
           podman compose pull
           echo "Pokretanje deploymenta s Podman Compose..."
-          podman compose up -d --force-recreate
+          sudo podman compose up -d --force-recreate
           
           echo "Deployment dovršen."
