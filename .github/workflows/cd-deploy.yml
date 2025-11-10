@@ -11,7 +11,7 @@ jobs:
   deploy:
     name: Deploy App
     # 1. PROMJENA: Ciljanje Vašeg laptopa (mislav007)
-    runs-on: [self-hosted, linux, mislav007]
+    runs-on: [self-hosted, linux, x64]
 
     environment: Prototype
     permissions:
