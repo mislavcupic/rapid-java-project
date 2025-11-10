@@ -25,20 +25,19 @@ jobs:
   build_and_push:
     name: 1. Build & Push Images
     runs-on: ubuntu-latest
-    # OVDJE JE UKLONJENA SEKCIJA permissions: JER JE DEFINIRANA GORE
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Logiranje riješava "repository not found" i omogućuje Jobu 2 korištenje GHCR-a
+      # POPRAVAK #1: Dodan enable-check: true za rješavanje "repository not found"
       - name: Log into Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          enable-check: true # Dodano za rješavanje "repository not found" greške
+          enable-check: true # Rješava "repository not found"
 
       - name: Extract Metadata (Tags)
         id: meta
@@ -70,11 +69,11 @@ jobs:
   e2e_tests:
     name: 2. Run E2E Tests (Playwright) - LO8
     runs-on: ubuntu-latest
-    needs: build_and_push # Vraćeno da bi Job čekao build (Problem preskakanja)
-    if: always()          # Zadržano da bi prikazalo status
+    needs: build_and_push # Vraćen needs: da Job čeka build (Problem preskakanja)
+    if: always()          # Zadržano da Job prikaže status
 
     steps:
-      # Ponavljamo prijavu na GHCR jer Jobovi ne dijele sesiju (Rješava "denied" u Jobu 2)
+      # POPRAVAK #2: Dodana prijava na GHCR unutar Joba 2 (Rješava "denied" pri pullu)
       - name: Log into Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
