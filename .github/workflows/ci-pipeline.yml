@@ -28,38 +28,31 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3 # Stabilnija verzija
+        uses: actions/checkout@v3
 
-      # Logiranje na GHCR preko RUN komande (Najrobusniji način za prevazilaženje greške s "repository not found")
+      # Logiranje na GHCR preko RUN komande (Rješava "repository not found")
       - name: Log into Container Registry (GHCR)
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
 
-      - name: Extract Metadata (Tags)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend
-            ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=sha,format=long
+      # Natavno Buildanje i Push Backend slike (zamjenjuje docker/build-and-push-action)
+      - name: Build and Push Backend Docker Image (Native)
+        run: |
+          VERSION_TAG=${{ github.sha }}
+          # Izgradnja i Tagiranje
+          docker build -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest ${{ env.BACKEND_CONTEXT }}
+          # Guranje slika
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG}
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest
 
-      - name: Build and Push Backend Docker Image
-        uses: docker/build-and-push-action@v5
-        with:
-          context: ${{ env.BACKEND_CONTEXT }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Build and Push Frontend Docker Image
-        uses: docker/build-and-push-action@v5
-        with:
-          context: ${{ env.FRONTEND_CONTEXT }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      # Natavno Buildanje i Push Frontend slike (zamjenjuje docker/build-and-push-action)
+      - name: Build and Push Frontend Docker Image (Native)
+        run: |
+          VERSION_TAG=${{ github.sha }}
+          # Izgradnja i Tagiranje
+          docker build -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:latest ${{ env.FRONTEND_CONTEXT }}
+          # Guranje slika
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${VERSION_TAG}
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:latest
 
   e2e_tests:
     name: 2. Run E2E Tests (Playwright) - LO8
