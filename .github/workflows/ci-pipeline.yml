@@ -1,3 +1,5 @@
+#name: 01 - CI: Build, Test, Dockerize & Publish
+
 on:
   push:
     branches:
@@ -45,7 +47,7 @@ jobs:
             type=sha,format=short,prefix=
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
-      - name: Build and Push Backend Docker Image (Native)
+      - name: Build and Push Backend Docker Image
         uses: docker/build-and-push-action@v5
         with:
           context: ${{ env.BACKEND_CONTEXT }}
@@ -74,10 +76,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Log into Container Registry (GHCR) for Pull
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
+
       - name: Start Containers for Testing
-        run: |
-          cat docker-compose.yml | awk '/^version:|^services:|^  db:|^  backend:|^  frontend:/,/^[^ ]/' > docker-compose-e2e.yml
-          docker compose -f docker-compose-e2e.yml up -d
+        # POPRAVAK: Eksplicitno pokretanje samo db, backend i frontend servisa. Izbjegava Prometheus grešku.
+        run: docker compose up -d db backend frontend
         env:
           DB_USER: ${{ secrets.CI_DB_USER }}
           DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
@@ -98,4 +102,12 @@ jobs:
           cd frontend
           npm install @playwright/test
           npx playwright install --with-deps
-          npx playwright test --reporter=junit,html --timeout=60000
+          # DODAN GLOBALNI TIMEOUT ZA VEĆU ROBUSTNOST
+          npx playwright test --reporter=junit,html --timeout=60000 
+
+      - name: Publish Playwright Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-html-report
+          path: frontend/playwright-report/
