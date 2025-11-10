@@ -21,6 +21,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # DODAJTE OVU LINIJU:
+      actions: read
 
     steps:
       - name: Checkout Code
