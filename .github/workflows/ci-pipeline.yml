@@ -33,16 +33,26 @@ jobs:
       # Logiranje na GHCR preko RUN komande (Rješava "repository not found")
       - name: Log into Container Registry (GHCR)
         run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
-          
-          # Backend Build i Push (ZAMJENA)
-               - name: Build and Push Backend Docker Image (Native)
-               run: |
-                 VERSION_TAG=${{ github.sha }}
-                 # Izgradnja i Tagiranje - Dodali smo --progress=plain za kompletan ispis loga
-                 docker build --progress=plain -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest ${{ env.BACKEND_CONTEXT }}
-                 # Guranje slika
-                 docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG}
-                 docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest
+
+      # Backend Build i Push (ZAMJENA - ISPRAVNO UVLAČENJE)
+      - name: Build and Push Backend Docker Image (Native)
+        run: |
+          VERSION_TAG=${{ github.sha }}
+          # Izgradnja i Tagiranje - Dodali smo --progress=plain za kompletan ispis loga
+          docker build --progress=plain -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest ${{ env.BACKEND_CONTEXT }}
+          # Guranje slika
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG}
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest
+
+      # Frontend Build i Push (ZAMJENA - DODANO I ISPRAVNO UVLAČENJE)
+      - name: Build and Push Frontend Docker Image (Native)
+        run: |
+          VERSION_TAG=${{ github.sha }}
+          # Izgradnja i Tagiranje
+          docker build --progress=plain -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:latest ${{ env.FRONTEND_CONTEXT }}
+          # Guranje slika
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${VERSION_TAG}
+          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:latest
 
   e2e_tests:
     name: 2. Run E2E Tests (Playwright) - LO8
