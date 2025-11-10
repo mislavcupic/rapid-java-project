@@ -23,6 +23,7 @@ jobs:
       packages: write
       # DODAJTE OVU LINIJU:
       actions: read
+      id-token: write
 
     steps:
       - name: Checkout Code
