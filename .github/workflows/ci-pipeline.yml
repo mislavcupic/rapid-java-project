@@ -68,7 +68,7 @@ jobs:
   e2e_tests:
     name: 2. Run E2E Tests (Playwright) - LO8
     runs-on: ubuntu-latest
-    needs: build_and_push
+    if: always()
     # OVDJE JE UKLONJENA SEKCIJA permissions: JER JE DEFINIRANA GORE
 
     steps:
