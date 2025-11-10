@@ -1,5 +1,3 @@
-#name: 01 - CI: Build, Test, Dockerize & Publish
-
 on:
   push:
     branches:
@@ -8,7 +6,6 @@ on:
     paths-ignore:
       - '**.md'
 
-# Puni set dozvola na razini cijelog Workflowa
 permissions:
   contents: write
   packages: write
@@ -28,50 +25,59 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Logiranje na GHCR preko RUN komande (Rješava "repository not found")
       - name: Log into Container Registry (GHCR)
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Backend Build i Push (ZAMJENA - ISPRAVNO UVLAČENJE)
+      - name: Extract Metadata (Tags)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend
+            ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend
+          tags: |
+            type=sha,format=short,prefix=
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
       - name: Build and Push Backend Docker Image (Native)
-        run: |
-          VERSION_TAG=${{ github.sha }}
-          # Izgradnja i Tagiranje - Dodali smo --progress=plain za kompletan ispis loga
-          docker build --progress=plain -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest ${{ env.BACKEND_CONTEXT }}
-          # Guranje slika
-          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${VERSION_TAG}
-          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:latest
+        uses: docker/build-and-push-action@v5
+        with:
+          context: ${{ env.BACKEND_CONTEXT }}
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION_TAG=${{ steps.meta.outputs.version }}
+          file: ./Dockerfile
 
-      # Frontend Build i Push (ZAMJENA - DODANO I ISPRAVNO UVLAČENJE)
-      - name: Build and Push Frontend Docker Image (Native)
-        run: |
-          VERSION_TAG=${{ github.sha }}
-          # Izgradnja i Tagiranje
-          docker build --progress=plain -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${VERSION_TAG} -t ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:latest ${{ env.FRONTEND_CONTEXT }}
-          # Guranje slika
-          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${VERSION_TAG}
-          docker push ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:latest
+      - name: Build and Push Frontend Docker Image
+        uses: docker/build-and-push-action@v5
+        with:
+          context: ${{ env.FRONTEND_CONTEXT }}
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          file: ./frontend/Dockerfile
 
   e2e_tests:
     name: 2. Run E2E Tests (Playwright) - LO8
     runs-on: ubuntu-latest
-    needs: build_and_push # Vraća zavisnost
-    if: always()          # Forsira prikaz statusa
+    if: always()
 
     steps:
-      # Prijava na GHCR unutar Joba 2 (Rješava "denied" pri pullu)
-      - name: Log into Container Registry (GHCR) for Pull
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.DOCKER_REGISTRY }} -u ${{ github.actor }} --password-stdin
-
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 1. Start Containers for Testing
       - name: Start Containers for Testing
-        # Koristi CI Secrets za bazu podataka
-        run: docker compose up -d
+        run: |
+          cat docker-compose.yml | awk '/^version:|^services:|^  db:|^  backend:|^  frontend:/,/^[^ ]/' > docker-compose-e2e.yml
+          docker compose -f docker-compose-e2e.yml up -d
         env:
           DB_USER: ${{ secrets.CI_DB_USER }}
           DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
@@ -92,11 +98,4 @@ jobs:
           cd frontend
           npm install @playwright/test
           npx playwright install --with-deps
-          npx playwright test --reporter=junit,html 
-
-      - name: Publish Playwright Reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-html-report
-          path: frontend/playwright-report/
+          npx playwright test --reporter=junit,html --timeout=60000
