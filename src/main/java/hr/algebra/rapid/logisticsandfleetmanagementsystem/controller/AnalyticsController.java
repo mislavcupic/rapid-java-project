@@ -10,11 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Kontroler za izlaganje funkcionalnosti analitike i masovnih operacija
- * pomoću JdbcTemplate-a.
- * Ove operacije su obično rezervirane za Administraciju i Dispečere.
- */
+
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
@@ -22,15 +18,7 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
-    // -----------------------------------------------------------------
-    // ANALITIKA (READ)
-    // -----------------------------------------------------------------
 
-    /**
-     * Dohvaća prosječnu težinu svih aktivnih pošiljaka.
-     * Samo Admin i Dispečer imaju pristup.
-     * @return Prosječna težina u kilogramima.
-     */
     @GetMapping("/shipments/average-active-weight")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<Double> getAverageActiveShipmentWeight() {
@@ -38,16 +26,7 @@ public class AnalyticsController {
         return ResponseEntity.ok(averageWeight);
     }
 
-    // -----------------------------------------------------------------
-    // BULK OPERACIJE (WRITE)
-    // -----------------------------------------------------------------
 
-    /**
-     * Masovno ažurira status svih pošiljaka kojima je istekao očekivani rok isporuke
-     * i postavlja im status na 'OVERDUE'.
-     * Samo Admin ima pravo izvoditi masovne WRITE operacije.
-     * @return Broj pogođenih (ažuriranih) redaka.
-     */
     @PostMapping("/shipments/mark-overdue")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> bulkMarkOverdue() {

@@ -120,7 +120,8 @@
     "address": "Adresa",
     "driver_list": "Popis Vozača",
     "driver_details": "Detalji Vozača",
-    "add_driver": "Dodaj novog vozača"
+    "add_driver": "Dodaj novog vozača",
+    "scheduled": "Zakazano"
   },
 
   "messages": {
@@ -156,5 +157,10 @@
     "fetch_drivers": "Greška pri dohvaćanju vozača.",
     "fetch_vehicles": "Greška pri dohvaćanju vozila.",
     "general_error": "Opća Greška"
+  },
+
+  "vehicles": {
+    "vehicle_list": "Lista vozila",
+    "add_vehicle": "Dodaj novo vozilo"
   }
 }

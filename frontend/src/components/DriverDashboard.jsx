@@ -48,7 +48,7 @@ const DriverDashboard = () => {
             case 'PENDING':
                 return <Badge bg="secondary">Čeka</Badge>;
             case 'SCHEDULED':
-                return <Badge bg="warning" text="dark">Zakazano</Badge>;
+                return <Badge bg="warning" text="dark">{t('drivers.scheduled')}</Badge>;
             case 'IN_TRANSIT':
                 return <Badge bg="info">U dostavi</Badge>;
             case 'DELIVERED':

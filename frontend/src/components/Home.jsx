@@ -39,7 +39,7 @@ const Home = () => {
                         <Button
                             as={Link}
                             to="/login"
-                            variant="outline-success" // Standardni gumb za prijavu
+                            variant="outline-info"
                             size="lg"
                             className="fw-bold shadow-sm font-monospace"
                         >

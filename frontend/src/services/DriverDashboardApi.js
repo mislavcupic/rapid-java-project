@@ -1,4 +1,4 @@
-const getToken = () => localStorage.getItem('accessToken'); // ✅ ISPRAVLJENO (bilo je getToken)
+const getToken = () => localStorage.getItem('accessToken');
 const BASE_URL = 'http://localhost:8080/api';
 
 // Pomoćna funkcija za obradu grešaka
@@ -12,12 +12,12 @@ const handleResponse = async (response) => {
         }
         throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
     }
-    return response.status !== 204 ? response.json() : null;
+    return response.status === 204 ? null : response.json();
 };
 
-// ========================================================================
+
 // DRIVER DASHBOARD - Dohvaćanje svojih Assignment-a
-// ========================================================================
+
 
 /**
  * Dohvaća listu Assignment-a za trenutno ulogiranog Driver-a

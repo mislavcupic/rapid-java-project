@@ -114,7 +114,8 @@
     "address": "Address",
     "driver_list": "Drivers list",
     "driver_details": "Driver Details",
-    "add_driver": "Add new driver"
+    "add_driver": "Add new driver",
+    "scheduled": "Scheduled"
   },
 
   "messages": {
@@ -150,5 +151,10 @@
     "fetch_drivers": "Error fetching drivers.",
     "fetch_vehicles": "Error fetching vehicles.",
     "general_error": "General Error"
-  }
+  },
+
+  "vehicles": {
+  "vehicle_list": "Vehicle list",
+    "add_vehicle": "Add new vehicle"
+}
 }

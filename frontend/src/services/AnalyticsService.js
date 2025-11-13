@@ -9,9 +9,9 @@ const handleResponse = async (response) => {
         try {
             const errorDetail = await response.json();
             throw new Error(errorDetail.message || `HTTP error! Status: ${response.status}`);
-        } catch (e) {
-            // Ako nije JSON
-            throw new Error(errorText || `HTTP error! Status: ${response.status}`);
+        } catch (parseError) {
+            // Response nije JSON format, koristi raw text
+            throw new Error(errorText || `HTTP error! Status: ${response.status}. Parse error: ${parseError.message}`);
         }
     }
     return response;

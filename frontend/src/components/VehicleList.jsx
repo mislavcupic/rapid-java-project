@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchVehicles, deleteVehicle } from '../services/VehicleApi';
 import { Table, Alert, Button, Card, Spinner, Modal, Container } from 'react-bootstrap';
-import { useNavigate, Link } from 'react-router-dom';
+import {  Link } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -18,11 +18,10 @@ const VehicleList = () => {
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
     const [deleteSuccess, setDeleteSuccess] = useState(null);
 
-    const navigate = useNavigate();
 
     const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole && userRole.includes('ROLE_ADMIN');
-    const isDispatcherOrAdmin = isAdmin || (userRole && userRole.includes('ROLE_DISPATCHER'));
+    const isAdmin=  userRole?.includes('ROLE_ADMIN');
+    const isDispatcherOrAdmin = isAdmin || userRole?.includes('ROLE_DISPATCHER');
 
     const loadVehicles = useCallback(async () => {
         if (!isAuthenticated) return;
@@ -92,11 +91,11 @@ const VehicleList = () => {
             <Container className='mt-5'>
                 <Card className='shadow-lg font-monospace'>
                     <Card.Header className='d-flex justify-content-between align-items-center bg-info text-white'>
-                        <h4 className='mb-0'>Vozni Park</h4>
+                        <h4 className='mb-0'>{t('vehicles.vehicle_list')}</h4>
                         {isDispatcherOrAdmin && (
                             <Link to="/vehicles/add">
                                 <Button variant="light" className="fw-bold">
-                                    <FaPlus className="me-1" /> {t("general.add_vehicle")}
+                                    <FaPlus className="me-1" /> {t("vehicles.add_vehicle")}
                                 </Button>
                             </Link>
                         )}

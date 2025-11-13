@@ -16,7 +16,7 @@ const handleResponse = async (response) => {
         // Vraća poruku od Backenda ili generičku poruku
         throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
     }
-    return response.status !== 204 ? response.json() : null;
+    return response.status === 204 ?  null : response.json();
 };
 
 // =================================================================
@@ -63,8 +63,8 @@ export const geocodeAddress = async (address) => {
         if (data && data.length > 0) {
             const result = data[0];
             return {
-                lat: parseFloat(result.lat),
-                lng: parseFloat(result.lon)
+                lat: Number.parseFloat(result.lat),
+                lng: Number.parseFloat(result.lon)
             };
         }
 

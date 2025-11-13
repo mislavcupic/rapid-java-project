@@ -134,7 +134,9 @@ export const fetchDrivers = async () => {
     // Filtriramo listu da zadrži samo valjane objekte s 'id' i 'fullName'
     if (!data || !Array.isArray(data)) return [];
 
-    return data.filter(driver => driver && driver.id && driver.fullName);
+    //return data.filter(driver => driver && driver.id && driver.fullName);
+    // Poslije (SonarQube preporuka)
+    return data.filter(driver => driver?.id && driver?.fullName);
 };
 
 // =========================================================================

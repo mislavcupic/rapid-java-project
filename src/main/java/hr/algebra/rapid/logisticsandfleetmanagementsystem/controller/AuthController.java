@@ -7,7 +7,9 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.JwtService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,85 +19,97 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")// Omogući CORS za sve izvore (prilagodi u produkciji)
+@RequestMapping("/auth")
+@RequiredArgsConstructor // ✅ Lombok generiše konstruktor
 public class AuthController {
 
-    @Autowired
-    private UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired
-    private JwtService jwtService;
+    // ✅ Final polja - immutable dependencije
+    private final UserService userService;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    // ✅ Konstruktor više ne trebaš pisati - @RequiredArgsConstructor to radi automatski!
 
     /**
-     * 🆕 REGISTER ENDPOINT
+     * REGISTER ENDPOINT
      * POST /auth/register
      * Body: { username, password, firstName, lastName, email }
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequestDTO registerRequest) {
+    public ResponseEntity<AuthResponseDTO> registerUser(@Valid @RequestBody RegisterRequestDTO registerRequest) {
         try {
-            // 1. Registriraj korisnika kroz service
             UserInfo newUser = userService.registerUser(registerRequest);
-            
-            // 2. Generiraj JWT token za novog korisnika (automatska prijava nakon registracije)
             String accessToken = jwtService.generateToken(newUser.getUsername());
-            
-            // 3. Vrati response s tokenom
+
             AuthResponseDTO response = AuthResponseDTO.builder()
                     .accessToken(accessToken)
                     .username(newUser.getUsername())
                     .message("Registracija uspješna! Dobrodošli, " + newUser.getFirstName() + "!")
                     .build();
-            
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
+
         } catch (IllegalArgumentException e) {
-            // Username ili email već postoji
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ErrorResponse(e.getMessage()));
+            logger.warn("Registration failed: {}", e.getMessage());
+
+            AuthResponseDTO errorResponse = AuthResponseDTO.builder()
+                    .message(e.getMessage())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse("Greška pri registraciji: " + e.getMessage()));
+            logger.error("Registration error", e);
+
+            AuthResponseDTO errorResponse = AuthResponseDTO.builder()
+                    .message("Greška pri registraciji: " + e.getMessage())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     /**
-     * LOGIN ENDPOINT (postojeći)
+     * LOGIN ENDPOINT
      * POST /auth/login
      * Body: { username, password }
      */
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateAndGetToken(@RequestBody AuthRequestDTO authRequest) {
+    public ResponseEntity<AuthResponseDTO> authenticateAndGetToken(@RequestBody AuthRequestDTO authRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            authRequest.getUsername(), 
+                            authRequest.getUsername(),
                             authRequest.getPassword()
                     )
             );
 
             if (authentication.isAuthenticated()) {
                 String accessToken = jwtService.generateToken(authRequest.getUsername());
-                
+
                 AuthResponseDTO response = AuthResponseDTO.builder()
                         .accessToken(accessToken)
                         .username(authRequest.getUsername())
                         .message("Prijava uspješna!")
                         .build();
-                
+
                 return ResponseEntity.ok(response);
             } else {
                 throw new UsernameNotFoundException("Neispravni kredencijali!");
             }
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ErrorResponse("Neuspješna prijava: " + e.getMessage()));
+            logger.warn("Login failed for user: {} - Reason: {}",
+                    authRequest.getUsername(),
+                    e.getMessage());
+
+            AuthResponseDTO errorResponse = AuthResponseDTO.builder()
+                    .message("Neuspješna prijava: " + e.getMessage())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
     }
-
-    // DTO za error response
-    private record ErrorResponse(String message) {}
 }

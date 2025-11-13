@@ -18,7 +18,8 @@ const handleResponse = async (response) => {
         throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
     }
     // DELETE često vraća 204 No Content
-    return response.status !== 204 ? response.json() : null;
+   // return response.status !== 204 ? response.json() : null;
+    return response.status === 204 ? null : response.json();
 };
 
 // 1. DOHVAĆANJE SVIH DODJELA (GET)

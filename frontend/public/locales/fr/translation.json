@@ -111,7 +111,8 @@
     "address": "Adresse",
     "driver_list": "Liste des Conducteurs",
     "driver_details": "Détails du Conducteur",
-    "add_driver": "Ajouter un nouveau pilote"
+    "add_driver": "Ajouter un nouveau pilote",
+    "scheduled": "Programme"
   },
 
   "messages": {
@@ -147,5 +148,10 @@
     "fetch_drivers": "Erreur lors de la récupération des conducteurs.",
     "fetch_vehicles": "Erreur lors de la récupération des véhicules.",
     "general_error": "Erreur Générale"
+  },
+
+  "vehicles": {
+    "vehicle_list": "Liste des véhicules",
+    "add_vehicle": "Ajouter un nouveau véhicule"
   }
 }
