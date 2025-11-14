@@ -37,7 +37,7 @@ public class I18nConfig implements WebMvcConfigurer {
     public LocaleResolver localeResolver() {
         CookieLocaleResolver localeResolver = new CookieLocaleResolver("lang");
 
-        localeResolver.setDefaultLocale(new Locale("hr"));
+        localeResolver.setDefaultLocale(Locale.of("hr"));
         localeResolver.setCookieMaxAge(Duration.ofHours(1)); // Trajanje cookieja (u sekundama, ovdje 1 sat)
         return localeResolver;
     }

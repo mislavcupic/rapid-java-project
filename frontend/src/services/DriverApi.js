@@ -13,12 +13,13 @@ const handleResponse = async (response) => {
         try {
             errorDetail = await response.json();
         } catch (e) {
+            console.error(e);
             errorDetail.message = response.statusText;
         }
         // Baci grešku s porukom backenda ili generičkom porukom
         throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
     }
-    return response.status !== 204 ? response.json() : null;
+        return response.status ===204 ? null : response.json();
 };
 
 //drivers

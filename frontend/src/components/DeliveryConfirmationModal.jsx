@@ -1,8 +1,7 @@
-// frontend/src/components/DeliveryConfirmationModal.jsx
-
 import React, { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { FaSignature, FaCamera, FaMapMarkerAlt } from 'react-icons/fa';
+import PropTypes from 'prop-types'; // 🛑 RJEŠENJE 1: Uvoz za validaciju propova
 
 const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
     const [podData, setPodData] = useState({
@@ -15,6 +14,7 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
     });
 
     const [gettingLocation, setGettingLocation] = useState(false);
+    const [message, setMessage] = useState(null); // 🛑 RJEŠENJE 2: State za poruke korisniku (umjesto alert)
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -22,8 +22,10 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
     };
 
     const handleGetLocation = () => {
+        setMessage(null); // Očisti prethodne poruke
+
         if (!navigator.geolocation) {
-            alert('Geolokacija nije podržana u tvom pregledniku.');
+            setMessage({ variant: 'danger', text: 'Geolokacija nije podržana u tvom pregledniku.' });
             return;
         }
 
@@ -36,9 +38,11 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
                     longitude: position.coords.longitude
                 }));
                 setGettingLocation(false);
+                setMessage({ variant: 'success', text: 'Lokacija uspješno zabilježena!' });
             },
             (error) => {
-                alert('Greška pri dohvaćanju lokacije: ' + error.message);
+                // 🛑 RJEŠENJE 2: Zamijenjen alert s Modal.Body porukom
+                setMessage({ variant: 'danger', text: 'Greška pri dohvaćanju lokacije: ' + error.message });
                 setGettingLocation(false);
             }
         );
@@ -46,9 +50,11 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setMessage(null);
 
         if (!podData.recipientName) {
-            alert('Molimo unesite ime primatelja!');
+            // 🛑 RJEŠENJE 2: Zamijenjen alert s Modal.Body porukom
+            setMessage({ variant: 'warning', text: 'Molimo unesite ime primatelja!' });
             return;
         }
 
@@ -73,9 +79,16 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <Alert variant="info">
+                <Alert variant="info" className="rounded-3">
                     Unesi podatke o dostavi kako bi je označio kao završenu.
                 </Alert>
+
+                {/* 🛑 RJEŠENJE 2: Prikaz poruka (umjesto alert()) */}
+                {message && (
+                    <Alert variant={message.variant} className="rounded-3">
+                        {message.text}
+                    </Alert>
+                )}
 
                 <Form onSubmit={handleSubmit}>
                     {/* Ime primatelja */}
@@ -178,6 +191,13 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit }) => {
             </Modal.Body>
         </Modal>
     );
+};
+
+// 🛑 RJEŠENJE 1: Dodavanje validacije propova
+DeliveryConfirmationModal.propTypes = {
+    show: PropTypes.bool.isRequired,
+    onHide: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
 };
 
 export default DeliveryConfirmationModal;

@@ -65,7 +65,7 @@ class DriverTest {
     void setAndGetCurrentVehicle_ShouldWork() {
         driver.setCurrentVehicle(vehicle);
         assertThat(driver.getCurrentVehicle()).isPresent();
-        assertThat(driver.getCurrentVehicle().get()).isEqualTo(vehicle);
+        assertThat(driver.getCurrentVehicle()).contains(vehicle);
     }
 
     @Test

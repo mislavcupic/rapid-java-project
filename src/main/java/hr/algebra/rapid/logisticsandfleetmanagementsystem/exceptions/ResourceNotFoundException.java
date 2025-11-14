@@ -3,6 +3,8 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.io.Serializable;
+
 /**
  * Custom iznimka koja se baca kada traženi resurs (poput Vozila ili Korisnika) nije pronađen.
  * @ResponseStatus(value = HttpStatus.NOT_FOUND) osigurava da Spring automatski

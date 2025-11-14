@@ -1,24 +1,17 @@
-// src/components/Analytics/AnalyticsPage.jsx (AŽURIRAN)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Spinner, Modal, Table } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import styles from '../Analytics.module.css';
 
-// Uvoz service funkcija za ANALITIKU (za brojeve)
 import {
     getAverageActiveShipmentWeight,
     bulkMarkOverdue,
 } from '../services/AnalyticsService.js';
 
-// 🆕 Uvoz service funkcija za DETALJNE LISTE (iz VehicleApi.js)
 import {
     fetchOverdueVehicles,
     fetchWarningVehicles,
     fetchFreeVehiclesDetails
 } from '../services/VehicleApi.js';
-
-// --- POMOĆNE FUNKCIJE OSTALE ISTE ---
 
 const getAuthData = () => {
     try {
@@ -31,6 +24,7 @@ const getAuthData = () => {
             user: null
         };
     } catch (e) {
+        console.error("Greška pri dohvaćanju auth podataka iz localStorage:", e);
         return { token: null, roles: [], user: null };
     }
 };
@@ -40,40 +34,27 @@ const formatNumber = (num, unit = '') => {
     return value.toLocaleString('hr-HR', { maximumFractionDigits: 2 }) + unit;
 };
 
-// =================================================================
-// 🚀 GLAVNA KOMPONENTA
-// =================================================================
-
 const AnalyticsPage = () => {
     const { t } = useTranslation();
 
-    // --- STANJE ZA AGREGIRANE VRIJEDNOSTI ---
-    const [auth, setAuth] = useState(getAuthData());
+    const [auth] = useState(getAuthData());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [avgWeight, setAvgWeight] = useState(0);
     const [analytics, setAnalytics] = useState({ overdue: 0, warning: 0, free: 0, total: 0 });
 
-    // --- STANJE ZA BULK OPERACIJE ---
     const [isLoading, setIsLoading] = useState(false);
     const [overdueMessage, setOverdueMessage] = useState('');
 
-    // --- 🆕 STANJE ZA DETALJNE LISTE ---
     const [overdueList, setOverdueList] = useState([]);
     const [warningList, setWarningList] = useState([]);
     const [freeList, setFreeList] = useState([]);
 
-    // --- STANJE ZA MODALE ---
     const [showModal, setShowModal] = useState(null);
 
-    // --- UTILITY MEMO VRIJEDNOSTI ---
     const canViewAnalytics = auth.roles.includes('ROLE_ADMIN') || auth.roles.includes('ROLE_DISPATCHER');
     const isAdmin = auth.roles.includes('ROLE_ADMIN');
     const token = auth.token;
-
-    // =================================================================
-    // 📄 UČITAVANJE PODATAKA
-    // =================================================================
 
     const loadData = useCallback(async () => {
         if (!canViewAnalytics || !token) {
@@ -84,11 +65,9 @@ const AnalyticsPage = () => {
         try {
             setLoading(true);
 
-            // Dohvat prosječne težine
             const weight = await getAverageActiveShipmentWeight(token);
             setAvgWeight(weight);
 
-            // 🆕 Dohvat detaljnih listi
             const [ovList, waList, frList] = await Promise.all([
                 fetchOverdueVehicles(),
                 fetchWarningVehicles(),
@@ -99,7 +78,6 @@ const AnalyticsPage = () => {
             setWarningList(waList);
             setFreeList(frList);
 
-            // ⭐ Postavi brojeve za kartice na temelju stvarnih podataka
             setAnalytics({
                 overdue: ovList.length,
                 warning: waList.length,
@@ -120,16 +98,13 @@ const AnalyticsPage = () => {
         loadData();
     }, [loadData]);
 
-    // =================================================================
-    // 🚀 BULK ACTION: Označi overdue
-    // =================================================================
     const handleBulkMarkOverdue = async () => {
         if (!isAdmin) {
             alert('Samo ADMINISTRATOR smije izvršiti ovu akciju.');
             return;
         }
 
-        const confirmAction = globalThis.confirm( /*ovdje mi je sonarqube rekao da umjesto window koristim*/
+        const confirmAction = globalThis.confirm(
             'Jeste li sigurni da želite OZNAČITI SVA VOZILA s PREKORAČENIM SERVISOM kao OVERDUE? Ova akcija je nepovratna!'
         );
         if (!confirmAction) return;
@@ -268,9 +243,9 @@ const AnalyticsPage = () => {
         );
     }
 
-    // --- ✅ ISPRAVLJENA DEFINICIJA KARTICA SA t() ---
     const cards = [
         {
+            id: 'overdue_service',
             title: t('alerts.overdue_service'),
             count: analytics.overdue,
             variant: 'danger',
@@ -278,6 +253,7 @@ const AnalyticsPage = () => {
             onClick: () => openModalForList('overdue'),
         },
         {
+            id: 'service_warning',
             title: t('alerts.service_warning'),
             count: analytics.warning,
             variant: 'warning',
@@ -285,6 +261,7 @@ const AnalyticsPage = () => {
             onClick: () => openModalForList('warning'),
         },
         {
+            id: 'free_vehicles',
             title: t('alerts.free_vehicles'),
             count: analytics.free,
             variant: 'success',
@@ -292,6 +269,7 @@ const AnalyticsPage = () => {
             onClick: () => openModalForList('free'),
         },
         {
+            id: 'total_vehicles',
             title: t('alerts.total_vehicles'),
             count: analytics.total,
             variant: 'info',
@@ -299,6 +277,7 @@ const AnalyticsPage = () => {
             onClick: null,
         },
         {
+            id: 'average_weight',
             title: t('alerts.average_weight'),
             count: formatNumber(avgWeight, ' kg'),
             variant: 'primary',
@@ -318,10 +297,9 @@ const AnalyticsPage = () => {
                 </Col>
             </Row>
 
-            {/* Klikabilne Kartice */}
             <Row className="mb-4 g-4">
-                {cards.map((card, idx) => (
-                    <Col key={idx} xs={12} md={6} lg={4}>
+                {cards.map((card) => (
+                    <Col key={card.id} xs={12} md={6} lg={4}>
                         <Card
                             className={`shadow-sm border-${card.variant} h-100 ${
                                 card.onClick ? 'cursor-pointer hover-shadow' : ''
@@ -345,7 +323,6 @@ const AnalyticsPage = () => {
                 ))}
             </Row>
 
-            {/* Bulk Action Section (samo ADMIN) */}
             {isAdmin && (
                 <Row className="mb-4">
                     <Col>
@@ -376,7 +353,6 @@ const AnalyticsPage = () => {
                 </Row>
             )}
 
-            {/* Render Modal */}
             {renderModal()}
         </Container>
     );

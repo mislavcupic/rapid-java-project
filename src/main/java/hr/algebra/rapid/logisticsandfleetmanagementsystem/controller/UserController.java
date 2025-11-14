@@ -1,6 +1,5 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;

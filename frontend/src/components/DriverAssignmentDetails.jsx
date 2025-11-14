@@ -55,7 +55,7 @@ const DriverAssignmentDetails = () => {
     // ========================================================================
 
     const handleStartAssignment = async () => {
-        if (!window.confirm('Želiš li započeti ovaj Assignment?')) return;
+        if (!globalThis.confirm('Želiš li započeti ovaj Assignment?')) return;
 
         setActionLoading(true);
         try {
@@ -93,7 +93,7 @@ const DriverAssignmentDetails = () => {
     // ========================================================================
 
     const handleStartDelivery = async (shipmentId) => {
-        if (!window.confirm('Želiš li započeti dostavu ove pošiljke?')) return;
+        if (!globalThis.confirm('Želiš li započeti dostavu ove pošiljke?')) return;
 
         setActionLoading(true);
         try {

@@ -1,4 +1,5 @@
 // frontend/src/components/AssignmentList.jsx (KONAČNA VERZIJA)
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAssignments, deleteAssignment } from '../services/AssignmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
@@ -22,12 +23,10 @@ const AssignmentList = () => {
 
     // =========================================================================
     // ✅ PROVJERE ULOGA
-    // Pretpostavka: Admin i Dispečer smiju raditi sve s dodjelama
     // =========================================================================
     const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole && userRole.includes('ROLE_ADMIN');
-    // Svi CRUD-ovi su dostupni Adminu i Dispečeru
-    const isDispatcherOrAdmin = isAdmin || (userRole && userRole.includes('ROLE_DISPATCHER'));
+    const isAdmin = userRole?.includes('ROLE_ADMIN');
+    const isDispatcherOrAdmin = isAdmin || ( userRole?.includes('ROLE_DISPATCHER'));
     // =========================================================================
 
     const loadAssignments = useCallback(async () => {
@@ -49,7 +48,7 @@ const AssignmentList = () => {
     useEffect(() => {
         loadAssignments();
         if (message) {
-            window.history.replaceState({}, document.title);
+            globalThis.history.replaceState({}, document.title);
         }
     }, [loadAssignments, message]);
 
@@ -83,6 +82,8 @@ const AssignmentList = () => {
         navigate('/assignments/new');
     };
 
+    // 🛑 RJEŠENJE SONARQUBE PROBLEMA ZA NEGAICJU (preokretanje logike)
+    // Ako nije autentificiran, returnaj Alert
     if (!isAuthenticated) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
@@ -90,11 +91,13 @@ const AssignmentList = () => {
             </Alert>
         );
     }
+    // Ako je autentificiran, nastavlja se na loading/error provjere
+
 
     if (loading) {
         return (
             <div className="text-center py-5">
-                <Spinner animation="border" variant="info" role="status" />
+                <Spinner animation="border" variant="info"  />
                 <p className="text-muted mt-2">{t("assignments.loading_assignments")}</p>
             </div>
         );
@@ -117,7 +120,6 @@ const AssignmentList = () => {
                         variant="light"
                         onClick={handleAddAssignment}
                         className="font-monospace fw-bold text-primary"
-                        // ✅ GUMB DODAJ: Aktivan za Admina i Dispečera
                         disabled={!isDispatcherOrAdmin}
                         title={!isDispatcherOrAdmin ? t("messages.access_denied_add_drivers") : t("assignments.create_button")}
                     >
@@ -162,7 +164,6 @@ const AssignmentList = () => {
                                                     size="sm"
                                                     className="me-2 font-monospace fw-bold"
                                                     onClick={() => navigate(`/assignments/edit/${a.id}`)}
-                                                    // ✅ GUMB UREDI: Aktivan za Admina i Dispečera
                                                     disabled={!isDispatcherOrAdmin}
                                                     title={!isDispatcherOrAdmin ? t("messages.access_denied_edit_drivers") : t("general.edit")}
                                                 >
@@ -173,7 +174,6 @@ const AssignmentList = () => {
                                                     size="sm"
                                                     className="font-monospace fw-bold"
                                                     onClick={() => handleDeleteClick(a)}
-                                                    // ✅ GUMB IZBRIŠI: Aktivan za Admina i Dispečera
                                                     disabled={!isDispatcherOrAdmin}
                                                     title={!isDispatcherOrAdmin ? t("messages.access_denied_delete_drivers") : t("general.delete")}
                                                 >

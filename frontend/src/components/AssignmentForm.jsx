@@ -1,13 +1,15 @@
-// frontend/src/components/AssignmentForm.jsx (Koristi se i za Create i za Edit)
+// frontend/src/components/AssignmentForm.jsx (AŽURIRAN)
 
 import React, { useState, useEffect } from 'react';
 import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAssignmentById, createAssignment, updateAssignment } from '../services/AssignmentApi';
-import { fetchDrivers, fetchVehicles } from '../services/VehicleApi'; // Reupotreba servisa
-// Pretpostavljeni API za Pošiljke (MORATE ga implementirati u src/services/ShipmentApi.js)
+import { fetchDrivers, fetchVehicles } from '../services/VehicleApi';
 import { fetchShipments } from '../services/ShipmentApi';
 import { useTranslation } from 'react-i18next';
+
+
+const ALLOWED_SHIPMENT_STATUSES = new Set(['PENDING']);
 
 
 const AssignmentForm = () => {
@@ -22,7 +24,6 @@ const AssignmentForm = () => {
         shipmentId: '',
         startTime: '',
         endTime: '',
-        // U edit modu, dohvaćamo status za prikaz (iako se ne šalje u DTO)
         status: 'SCHEDULED'
     });
 
@@ -32,9 +33,6 @@ const AssignmentForm = () => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-
-    // Statusi pošiljke koje dopuštamo za dodjelu (PENDING)
-    const ALLOWED_SHIPMENT_STATUSES = ['PENDING'];
 
 
     useEffect(() => {
@@ -46,11 +44,10 @@ const AssignmentForm = () => {
             }
 
             try {
-                // 1. Dohvaćanje vanjskih FK podataka (Vozači, Vozila, Pošiljke)
                 const [driversRes, vehiclesRes, shipmentsRes] = await Promise.all([
                     fetchDrivers(),
                     fetchVehicles(),
-                    fetchShipments() // Pretpostavljena funkcija!
+                    fetchShipments()
                 ]);
 
                 setDrivers(driversRes);
@@ -58,29 +55,24 @@ const AssignmentForm = () => {
 
                 let shipmentOptions = shipmentsRes;
 
-                // 2. Dohvaćanje podataka za uređivanje (ako je Edit Mode)
                 if (isEditMode) {
                     const data = await fetchAssignmentById(id);
 
-                    // U Edit modu, moramo osigurati da je trenutna pošiljka (koja je SCHEDULED) dostupna u dropdownu
                     if (data.shipment && !shipmentOptions.some(s => s.id === data.shipment.id)) {
                         shipmentOptions.push(data.shipment);
                     }
 
-                    // Postavljanje podataka
                     setFormData({
                         driverId: data.driver.id.toString(),
                         vehicleId: data.vehicle.id.toString(),
                         shipmentId: data.shipment.id.toString(),
-                        // Formatiranje za input type="datetime-local"
                         startTime: data.startTime ? data.startTime.substring(0, 16) : '',
                         endTime: data.endTime ? data.endTime.substring(0, 16) : '',
-                        status: data.assignmentStatus // Dohvaća status za prikaz
+                        status: data.assignmentStatus
                     });
                 }
 
-                // Filtriramo pošiljke: samo PENDING (i trenutno dodijeljena u EDIT modu)
-                setShipments(shipmentOptions.filter(s => ALLOWED_SHIPMENT_STATUSES.includes(s.status) || (isEditMode && s.id === formData.shipmentId)));
+                setShipments(shipmentOptions.filter(s => ALLOWED_SHIPMENT_STATUSES.has(s.status) || (isEditMode && s.id === formData.shipmentId)));
 
             } catch (err) {
                 console.error("Greška pri učitavanju referentnih podataka:", err);
@@ -91,7 +83,7 @@ const AssignmentForm = () => {
         };
 
         loadDependencies();
-    }, [id, isEditMode, t]); // Dodajemo id i isEditMode u ovisnosti
+    }, [id, isEditMode, t]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -103,11 +95,10 @@ const AssignmentForm = () => {
         setSaving(true);
         setError(null);
 
-        // Priprema podataka za DTO (ID-evi moraju biti brojevi, endTime se šalje null ako je prazan)
         const dataToSend = {
-            driverId: parseInt(formData.driverId, 10),
-            vehicleId: parseInt(formData.vehicleId, 10),
-            shipmentId: parseInt(formData.shipmentId, 10),
+            driverId: Number.parseInt(formData.driverId, 10),
+            vehicleId: Number.parseInt(formData.vehicleId, 10),
+            shipmentId: Number.parseInt(formData.shipmentId, 10),
             startTime: formData.startTime,
             endTime: formData.endTime || null
         };
@@ -132,17 +123,23 @@ const AssignmentForm = () => {
     if (loading) {
         return (
             <div className="text-center py-5">
-                <Spinner animation="border" variant="primary" role="status" />
+                <Spinner animation="border" variant="primary"  />
                 <p className="text-muted mt-2">{t("general.loading_form")}</p>
             </div>
         );
     }
 
-    if (error && error.includes("prijavite se")) {
+    // 🛑 Riješen problem s optional chainingom (iz prethodnog razgovora)
+    if (error?.includes("prijavite se")) {
         return <Alert variant="warning" className="text-center shadow font-monospace">{t("messages.access_denied")}</Alert>;
     }
 
-    // Prikaz forme
+    // 🛑 RJEŠENJE PROBLEMA SGNJEŽĐENOG TERNARNOG IZRAZA (S6717)
+    const buttonText = isEditMode
+        ? t("assignments.edit_button")
+        : t("assignments.create_button");
+
+
     return (
         <Container className="d-flex justify-content-center pt-3">
             <Card className="shadow-lg w-100 border-primary border-top-0 border-5" style={{ maxWidth: '800px' }}>
@@ -158,7 +155,6 @@ const AssignmentForm = () => {
                     <Form onSubmit={handleSubmit} className="p-1">
 
                         <Row className="mb-3">
-                            {/* Select za Vozača */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formDriver" label={t("assignments.driver")}>
                                     <Form.Select name="driverId" value={formData.driverId} onChange={handleChange} required className="font-monospace">
@@ -170,7 +166,6 @@ const AssignmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* Select za Vozilo */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formVehicle" label={t("assignments.vehicle")}>
                                     <Form.Select name="vehicleId" value={formData.vehicleId} onChange={handleChange} required className="font-monospace">
@@ -184,7 +179,6 @@ const AssignmentForm = () => {
                         </Row>
 
                         <Row className="mb-3">
-                            {/* Select za Pošiljku */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formShipment" label={t("assignments.shipment")}>
                                     <Form.Select
@@ -193,7 +187,7 @@ const AssignmentForm = () => {
                                         onChange={handleChange}
                                         required
                                         className="font-monospace"
-                                        disabled={isEditMode} // Pošiljka je fiksna u Edit modu
+                                        disabled={isEditMode}
                                     >
                                         <option value="">{t("general.select_shipment")}</option>
                                         {shipments.map(s => (
@@ -203,7 +197,6 @@ const AssignmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* Prikaz Statusa (samo u EDIT modu) */}
                             {isEditMode && (
                                 <Col md={6}>
                                     <FloatingLabel controlId="formStatus" label={t("assignments.status")}>
@@ -214,14 +207,12 @@ const AssignmentForm = () => {
                         </Row>
 
                         <Row className="mb-4">
-                            {/* Datum Početka */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formStartTime" label={t("assignments.start_time")}>
                                     <Form.Control type="datetime-local" name="startTime" value={formData.startTime} onChange={handleChange} required className="font-monospace" />
                                 </FloatingLabel>
                             </Col>
 
-                            {/* Datum Završetka */}
                             <Col md={6}>
                                 <FloatingLabel controlId="formEndTime" label={t("assignments.end_time")}>
                                     <Form.Control type="datetime-local" name="endTime" value={formData.endTime} onChange={handleChange} className="font-monospace" />
@@ -236,9 +227,10 @@ const AssignmentForm = () => {
                             disabled={saving}
                         >
                             {saving ? (
-                                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                                // 🛑 Uklonjena 'role="status"' da se riješi S6702 upozorenje
+                                <Spinner as="span" animation="border" size="sm" aria-hidden="true" className="me-2" />
                             ) : (
-                                isEditMode ? t("assignments.edit_button") : t("assignments.create_button")
+                                buttonText // 🛑 Korištena izdvojena varijabla
                             )}
                         </Button>
                         <Button

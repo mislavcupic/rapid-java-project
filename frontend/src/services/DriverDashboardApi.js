@@ -8,6 +8,7 @@ const handleResponse = async (response) => {
         try {
             errorDetail = await response.json();
         } catch (e) {
+            console.error(e);
             errorDetail.message = response.statusText;
         }
         throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);

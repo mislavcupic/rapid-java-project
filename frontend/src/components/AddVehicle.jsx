@@ -39,6 +39,7 @@ const AddVehicle = () => {
                 const driverList = await fetchDrivers();
                 setDrivers(driverList);
             } catch (err) {
+                console.error("Greška pri dohvaćanju vozača (AddVehicle):", err);
                 setError(t('error.fetch_drivers'));
             } finally {
                 setDriversLoading(false);

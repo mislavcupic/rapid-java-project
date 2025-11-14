@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ShipmentServiceImpl implements ShipmentService {
 
+    public static final String SHIPMENT = "Shipment";
+    public static final String SHIPMENT_ID = "Shipment ID ";
     private final ShipmentRepository shipmentRepository;
     private final RouteService routeService;
     private final AssignmentRepository assignmentRepository;
@@ -133,7 +135,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponse updateShipment(Long id, ShipmentRequest request) {
         // 1. Pronađi pošiljku
         Shipment shipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", id));
+                .orElseThrow(() -> new ResourceNotFoundException(SHIPMENT, "ID", id));
 
         // 2. Provjera jedinstvenosti za update
         Optional<Shipment> existingShipment = shipmentRepository.findByTrackingNumber(request.getTrackingNumber());
@@ -188,7 +190,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Transactional
     public void deleteShipment(Long id) {
         if (!shipmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Shipment", "ID", id);
+            throw new ResourceNotFoundException(SHIPMENT, "ID", id);
         }
         shipmentRepository.deleteById(id);
     }
@@ -201,14 +203,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponse startDelivery(Long shipmentId, Long driverId) {
         // 1. Dohvati Shipment
         Shipment shipment = shipmentRepository.findById(shipmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(SHIPMENT, "ID", shipmentId));
 
         // 2. Provjeri je li Shipment assigniran ovom Driver-u
         Assignment assignment = assignmentRepository.findByShipmentId(shipmentId)
-                .orElseThrow(() -> new ConflictException("Shipment ID " + shipmentId + " is not assigned to any driver."));
+                .orElseThrow(() -> new ConflictException(SHIPMENT_ID + shipmentId + " is not assigned to any driver."));
 
         if (!assignment.getDriver().getId().equals(driverId)) {
-            throw new ConflictException("Shipment ID " + shipmentId + " is not assigned to driver ID " + driverId);
+            throw new ConflictException(SHIPMENT_ID + shipmentId + " is not assigned to driver ID " + driverId);
         }
 
         // 3. Provjeri status (mora biti SCHEDULED)
@@ -235,14 +237,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponse completeDelivery(Long shipmentId, Long driverId, ProofOfDeliveryDTO pod) {
         // 1. Dohvati Shipment
         Shipment shipment = shipmentRepository.findById(shipmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(SHIPMENT, "ID", shipmentId));
 
         // 2. Provjeri je li Shipment assigniran ovom Driver-u
         Assignment assignment = assignmentRepository.findByShipmentId(shipmentId)
-                .orElseThrow(() -> new ConflictException("Shipment ID " + shipmentId + " is not assigned to any driver."));
+                .orElseThrow(() -> new ConflictException(SHIPMENT_ID + shipmentId + " is not assigned to any driver."));
 
         if (!assignment.getDriver().getId().equals(driverId)) {
-            throw new ConflictException("Shipment ID " + shipmentId + " is not assigned to driver ID " + driverId);
+            throw new ConflictException(SHIPMENT_ID + shipmentId + " is not assigned to driver ID " + driverId);
         }
 
         // 3. Provjeri status (mora biti IN_TRANSIT)
@@ -278,14 +280,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponse reportIssue(Long shipmentId, Long driverId, IssueReportDTO issue) {
         // 1. Dohvati Shipment
         Shipment shipment = shipmentRepository.findById(shipmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(SHIPMENT, "ID", shipmentId));
 
         // 2. Provjeri je li Shipment assigniran ovom Driver-u
         Assignment assignment = assignmentRepository.findByShipmentId(shipmentId)
-                .orElseThrow(() -> new ConflictException("Shipment ID " + shipmentId + " is not assigned to any driver."));
+                .orElseThrow(() -> new ConflictException(SHIPMENT_ID + shipmentId + " is not assigned to any driver."));
 
         if (!assignment.getDriver().getId().equals(driverId)) {
-            throw new ConflictException("Shipment ID " + shipmentId + " is not assigned to driver ID " + driverId);
+            throw new ConflictException(SHIPMENT_ID + shipmentId + " is not assigned to driver ID " + driverId);
         }
 
         // 3. Provjeri status (mora biti IN_TRANSIT)

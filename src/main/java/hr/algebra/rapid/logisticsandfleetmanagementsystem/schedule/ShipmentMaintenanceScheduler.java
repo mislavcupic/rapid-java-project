@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j // Anotacija koja automatski stvara: private static final Logger log = LoggerFactory.getLogger(ShipmentMaintenanceScheduler.class);
+@Slf4j
 public class ShipmentMaintenanceScheduler {
 
     private final AnalyticsService analyticsService;

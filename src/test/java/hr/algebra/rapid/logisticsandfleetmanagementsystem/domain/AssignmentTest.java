@@ -194,9 +194,10 @@ class AssignmentTest {
         String result = assignment.toString();
 
         // Assert
-        assertThat(result).contains("Assignment");
-        assertThat(result).contains("id=1");
-        assertThat(result).contains("status=ACTIVE");
+        assertThat(result)
+                .contains("ASSIGNMENT")
+                .contains("id=1")
+                .contains("status=ACTIVE");
     }
 
     @Test
@@ -212,8 +213,7 @@ class AssignmentTest {
         assignment3.setId(2L);
 
         // Act & Assert
-        assertThat(assignment1).isEqualTo(assignment2);
-        assertThat(assignment1).isNotEqualTo(assignment3);
+        assertThat(assignment1).isEqualTo(assignment2).isNotEqualTo(assignment3);
     }
 
     @Test
@@ -226,6 +226,6 @@ class AssignmentTest {
         assignment2.setId(1L);
 
         // Act & Assert
-        assertThat(assignment1.hashCode()).isEqualTo(assignment2.hashCode());
+        assertThat(assignment1.hashCode()).hasSameHashCodeAs(assignment2.hashCode());
     }
 }

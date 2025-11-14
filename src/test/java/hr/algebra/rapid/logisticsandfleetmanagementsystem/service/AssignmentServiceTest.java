@@ -107,8 +107,7 @@ class AssignmentServiceTest {
         List<AssignmentResponseDTO> result = assignmentService.findAll();
 
         // Assert
-        assertThat(result).isNotEmpty();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotEmpty().hasSize(1);
         verify(assignmentRepository, times(1)).findAll();
     }
 
@@ -279,8 +278,7 @@ class AssignmentServiceTest {
         List<AssignmentResponseDTO> result = assignmentService.findAssignmentsByDriver(1L);
 
         // Assert
-        assertThat(result).isNotEmpty();
-        assertThat(result).hasSize(1);
+        assertThat(result).isNotEmpty().hasSize(1);
         verify(assignmentRepository, times(1)).findByDriverId(1L);
     }
 

@@ -8,6 +8,8 @@ class LogisticsAndFleetManagementSystemApplicationTests {
 
 	@Test
 	void contextLoads() {
+		//objašnjenje zašto je prazna
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 }

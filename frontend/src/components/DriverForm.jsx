@@ -1,5 +1,3 @@
-// frontend/src/components/DriverForm.jsx
-
 import React, { useState, useEffect } from 'react';
 import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -30,6 +28,12 @@ const DriverForm = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [success, setSuccess] = useState(null);
+
+    // 🛑 RJEŠENJE S6717: Izdvajanje logike teksta gumba prije return bloka
+    const buttonText = isEditMode
+        ? t("assignments.edit_button")
+        : 'Kreiraj Vozača';
+
 
     // Učitavanje podataka za uređivanje
     useEffect(() => {
@@ -220,7 +224,8 @@ const DriverForm = () => {
 
 
                         <Button type="submit" variant="outline-success" className="w-100 fw-bold font-monospace" disabled={saving}>
-                            {saving ? <Spinner as="span" animation="border" size="sm" className="me-2" /> : (isEditMode ? t("assignments.edit_button") : 'Kreiraj Vozača')}
+                            {/* 🛑 RJEŠENJE S6717: Koristi izdvojenu varijablu buttonText */}
+                            {saving ? <Spinner as="span" animation="border" size="sm" className="me-2" /> : buttonText}
                         </Button>
                         <Button variant="outline-secondary" className="w-100 fw-bold font-monospace mt-2" onClick={() => navigate('/drivers')}>
                             Odustani

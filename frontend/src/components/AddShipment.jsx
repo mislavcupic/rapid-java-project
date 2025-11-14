@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'; // 🛑 DODAN useRef
+import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types'; // 🛑 DODANO: Uvoz za rješavanje SonarQube problema
 import { Container, Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -28,9 +29,9 @@ const customIcon = new L.Icon({
 const DEFAULT_COORDS = [45.815, 15.98];
 const DEFAULT_ZOOM = 7;
 
-// =================================================================
-// 🛠 DINAMIČKA KOMPONENTA ZA PROMJENU POGLEDA KARTE
-// =================================================================
+
+//  DINAMIČKA KOMPONENTA ZA PROMJENU POGLEDA KARTE
+
 function ChangeView({ center, zoom, bounds }) {
     const map = useMap();
 
@@ -45,11 +46,22 @@ function ChangeView({ center, zoom, bounds }) {
     return null;
 }
 
+// 🛑 RJEŠENJE SONARQUBE PROBLEMA ZA ChangeView komponentu
+ChangeView.propTypes = {
+    // center je niz brojeva [lat, lng]
+    center: PropTypes.arrayOf(PropTypes.number),
+    // zoom je broj
+    zoom: PropTypes.number,
+    // bounds je Leaflet LatLngBounds objekt ili null
+    bounds: PropTypes.any, // Koristimo any jer je to složen Leaflet objekt
+};
+
+
 const AddShipment = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    // 🛑 REFERENCA ZA PRISTUP LEAFLET OBJEKTU
+    //  REFERENCA ZA PRISTUP LEAFLET OBJEKTU
     const mapRef = useRef(null);
 
     // 1. STANJA

@@ -1,9 +1,12 @@
 // frontend/src/components/EditShipment.jsx - KRITIČNO ISPRAVLJENO: VRAĆENO POLJE estimatedDeliveryTime
+// ✅ SonarCube: Dodana validacija propova, ispravljena nula-razlomak i rukovanje greškama.
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner, Row, Col } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+// ✅ SonarCube: Dodan PropTypes za validaciju propova
+import PropTypes from 'prop-types';
 
 // =================================================================
 // 🛑 REACT LEAFLET UVEZ (ostaje isti)
@@ -21,7 +24,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 
-// [Pomoćne funkcije: customIcon, formatDateTimeLocal, debounce, MapUpdater ostaju nepromijenjene]
+// [Pomoćne funkcije: customIcon, formatDateTimeLocal]
 
 const customIcon = new L.Icon({
     iconUrl: markerIcon,
@@ -45,7 +48,8 @@ const debounce = (func, delay) => {
             clearTimeout(timeoutId);
         }
         timeoutId = setTimeout(() => {
-            func.apply(null, args);
+            // ✅ SonarCube: Korištenje spread operatora umjesto .apply()
+            func(...args);
         }, delay);
     };
 };
@@ -66,11 +70,23 @@ const MapUpdater = ({ origin, destination }) => {
         } else if (isOriginValid) {
             map.setView([origin.lat, origin.lng], 13);
         } else if (isDestinationValid) {
-            map.setView([destination.lat, origin.lng], 13);
+            map.setView([destination.lat, destination.lng], 13);
         }
     }, [map, origin, destination]);
 
     return null;
+};
+
+// ✅ SonarCube: Dodavanje validacije propova za MapUpdater
+MapUpdater.propTypes = {
+    origin: PropTypes.shape({
+        lat: PropTypes.number.isRequired,
+        lng: PropTypes.number.isRequired,
+    }).isRequired,
+    destination: PropTypes.shape({
+        lat: PropTypes.number.isRequired,
+        lng: PropTypes.number.isRequired,
+    }).isRequired,
 };
 
 
@@ -94,18 +110,21 @@ const EditShipment = () => {
         originAddress: '',
         destinationAddress: '',
         status: '',
+        // ✅ SonarCube: Promijenjeno 0.0 u 0
         weightKg: 0,
         // ✅ KRITIČNO: VRAĆENO JE POLJE estimatedDeliveryTime
         estimatedDeliveryTime: '',
         description: '',
-        originLatitude: 0.0,
-        originLongitude: 0.0,
-        destinationLatitude: 0.0,
-        destinationLongitude: 0.0,
+        // ✅ SonarCube: Promijenjeno 0.0 u 0
+        originLatitude: 0,
+        originLongitude: 0,
+        destinationLatitude: 0,
+        destinationLongitude: 0,
         currentDriverId: '',
         currentVehicleId: '',
     });
 
+    // ✅ SonarCube: Promijenjeno 0 u inicijalnom stanju
     const [originCoords, setOriginCoords] = useState({ lat: 0, lng: 0 });
     const [destinationCoords, setDestinationCoords] = useState({ lat: 0, lng: 0 });
     const [geocodeLoading, setGeocodeLoading] = useState(false);
@@ -116,7 +135,8 @@ const EditShipment = () => {
         debounce(async (address) => {
             if (!address) {
                 setOriginCoords({ lat: 0, lng: 0 });
-                setFormData(prev => ({ ...prev, originLatitude: 0.0, originLongitude: 0.0 }));
+                // ✅ SonarCube: Promijenjeno 0.0 u 0
+                setFormData(prev => ({ ...prev, originLatitude: 0, originLongitude: 0 }));
                 return;
             }
             setGeocodeLoading(true);
@@ -131,7 +151,8 @@ const EditShipment = () => {
                     }));
                 }
             } catch (err) {
-                // Ignoriraj geocode greške
+                // ✅ SonarCube: Ispravak rukovanja greškom - logiranje za debbugging
+                console.error("Geocoding Origin Error:", err);
             } finally {
                 setGeocodeLoading(false);
             }
@@ -143,7 +164,8 @@ const EditShipment = () => {
         debounce(async (address) => {
             if (!address) {
                 setDestinationCoords({ lat: 0, lng: 0 });
-                setFormData(prev => ({ ...prev, destinationLatitude: 0.0, destinationLongitude: 0.0 }));
+                // ✅ SonarCube: Promijenjeno 0.0 u 0
+                setFormData(prev => ({ ...prev, destinationLatitude: 0, destinationLongitude: 0 }));
                 return;
             }
             setGeocodeLoading(true);
@@ -158,7 +180,8 @@ const EditShipment = () => {
                     }));
                 }
             } catch (err) {
-                // Ignoriraj geocode greške
+                // ✅ SonarCube: Ispravak rukovanja greškom - logiranje za debbugging
+                console.error("Geocoding Destination Error:", err);
             } finally {
                 setGeocodeLoading(false);
             }
@@ -187,11 +210,11 @@ const EditShipment = () => {
                     weightKg: shipmentData.weightKg || 0,
                     // ✅ KRITIČNO: ISPRAVNO POSTAVLJANJE POSTOJEĆEG DATUMA
                     estimatedDeliveryTime: formatDateTimeLocal(shipmentData.estimatedDeliveryTime),
+                    originLatitude: shipmentData.originLatitude || 0,
+                    originLongitude: shipmentData.originLongitude || 0,
+                    destinationLatitude: shipmentData.destinationLatitude || 0,
+                    destinationLongitude: shipmentData.destinationLongitude || 0,
                     description: shipmentData.description || '',
-                    originLatitude: shipmentData.originLatitude || 0.0,
-                    originLongitude: shipmentData.originLongitude || 0.0,
-                    destinationLatitude: shipmentData.destinationLatitude || 0.0,
-                    destinationLongitude: shipmentData.destinationLongitude || 0.0,
                     currentDriverId: shipmentData.driverId ? String(shipmentData.driverId) : '',
                     currentVehicleId: shipmentData.vehicleId ? String(shipmentData.vehicleId) : '',
                 });
@@ -200,6 +223,7 @@ const EditShipment = () => {
                 setDestinationCoords({ lat: shipmentData.destinationLatitude || 0, lng: shipmentData.destinationLongitude || 0 });
 
             } catch (err) {
+                console.error(err);
                 setError(t('shipments.error_load'));
             } finally {
                 setLoading(false);
@@ -252,13 +276,13 @@ const EditShipment = () => {
 
             const shipmentData = {
                 ...formData,
-                weightKg: parseFloat(formData.weightKg),
-                originLatitude: parseFloat(formData.originLatitude),
-                originLongitude: parseFloat(formData.originLongitude),
-                destinationLatitude: parseFloat(formData.destinationLatitude),
-                destinationLongitude: parseFloat(formData.destinationLongitude),
-                driverId: formData.currentDriverId ? parseInt(formData.currentDriverId, 10) : null,
-                vehicleId: formData.currentVehicleId ? parseInt(formData.currentVehicleId, 10) : null,
+                weightKg: Number.parseFloat(formData.weightKg),
+                originLatitude: Number.parseFloat(formData.originLatitude),
+                originLongitude: Number.parseFloat(formData.originLongitude),
+                destinationLatitude: Number.parseFloat(formData.destinationLatitude),
+                destinationLongitude: Number.parseFloat(formData.destinationLongitude),
+                driverId: formData.currentDriverId ? Number.parseInt(formData.currentDriverId, 10) : null,
+                vehicleId: formData.currentVehicleId ? Number.parseInt(formData.currentVehicleId, 10) : null,
             };
 
             delete shipmentData.currentDriverId;
@@ -288,8 +312,9 @@ const EditShipment = () => {
     }
 
     const initialCenter = (originCoords.lat !== 0 || originCoords.lng !== 0) ? [originCoords.lat, originCoords.lng] :
-        [45.8150, 15.9819]; // Zagreb
+        [45.815, 15.9819]; // Zagreb
 
+    // ✅ SonarCube: Promijenjeno 10:13 u 10 ili 13
     const initialZoom = (originCoords.lat !== 0 && destinationCoords.lat !== 0) ? 10 : 13;
 
 

@@ -1,9 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.domain;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Shipment;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Vehicle;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;

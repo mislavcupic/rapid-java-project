@@ -10,8 +10,9 @@ const handleResponse = async (response) => {
         try {
             // Pokušaj parsirati grešku kao JSON (za ConflictException ili Validation)
             errorDetail = await response.json();
-        } catch (e) {
+        } catch (err) {
             // Ako nije JSON, koristi tekst ili status
+            console.error("Greška pri dohvaćanju dodjele:", err);
             errorDetail.message = response.statusText;
         }
         // Bacamo grešku s detaljnom porukom

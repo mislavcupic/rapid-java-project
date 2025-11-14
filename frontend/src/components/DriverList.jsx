@@ -34,11 +34,11 @@ const DriverList = () => {
     const [editSuccess, setEditSuccess] = useState(null);
     const [saving, setSaving] = useState(false);
 
-    const navigate = useNavigate();
+    //const navigate = useNavigate();
 
     const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole && userRole.includes('ROLE_ADMIN');
-    const isDispatcherOrAdmin = isAdmin || (userRole && userRole.includes('ROLE_DISPATCHER'));
+    const isAdmin = userRole?.includes('ROLE_ADMIN');
+    const isDispatcherOrAdmin = isAdmin || (userRole?.includes('ROLE_DISPATCHER'));
 
     const loadDrivers = useCallback(async () => {
         if (!isAuthenticated) {
@@ -149,7 +149,7 @@ const DriverList = () => {
     if (loading) {
         return (
             <div className="text-center py-5">
-                <Spinner animation="border" variant="success" role="status" />
+                <Spinner animation="border" variant="success"  />
                 <p className="text-muted mt-2">{t('messages.loading_drivers')}</p>
             </div>
         );
