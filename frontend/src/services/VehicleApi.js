@@ -14,6 +14,7 @@ const handleResponse = async (response) => {
             throw new Error(errorJson.message || `HTTP greška! Status: ${response.status}`);
         } catch (e) {
             // Ako nije JSON, pročitaj tekst i baci grešku
+            console.error('Error getting access token', e);
             const errorText = await response.text();
             throw new Error(errorText || `HTTP greška! Status: ${response.status}`);
         }

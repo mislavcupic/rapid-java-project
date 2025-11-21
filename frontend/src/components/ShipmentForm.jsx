@@ -204,7 +204,7 @@ const ShipmentForm = () => {
                     setDestinationCoords({ lat: data.destinationLatitude || 0, lng: data.destinationLongitude || 0 });
 
                 } catch (err) {
-                    console.error("Shipments err", err);
+                    console.error("Shipping error for origin address:", err);
                     setError(t('shipments.error_load'));
                 } finally {
                     setLoading(false);
@@ -499,7 +499,7 @@ const ShipmentForm = () => {
                             disabled={saving}
                         >
                             {saving ? (
-                                <Spinner as="span" animation="border" size="sm" aria-hidden="true" className="me-2" />
+                                <Spinner as="span" animation="border" size="sm"  aria-hidden="true" className="me-2" />
                             ) : (
                                 t('shipments.create_button') || 'Kreiraj Pošiljku'
                             )}

@@ -87,7 +87,7 @@ const VehicleList = () => {
 
 
     return (
-        <>
+
             <Container className='mt-5'>
                 <Card className='shadow-lg font-monospace'>
                     <Card.Header className='d-flex justify-content-between align-items-center bg-info text-white'>
@@ -197,7 +197,7 @@ const VehicleList = () => {
                 </Modal>
             </Container>
 
-        </>
+
     );
 };
 
