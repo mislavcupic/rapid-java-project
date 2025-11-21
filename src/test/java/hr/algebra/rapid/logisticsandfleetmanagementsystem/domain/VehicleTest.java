@@ -98,6 +98,7 @@ class VehicleTest {
         vehicle.setCurrentDriver(driver);
         assertThat(vehicle.getCurrentDriverOptional()).isPresent();
         assertThat(vehicle.getCurrentDriverOptional().get()).isEqualTo(driver);
+
     }
 
     @Test

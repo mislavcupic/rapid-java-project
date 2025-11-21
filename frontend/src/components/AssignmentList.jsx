@@ -121,7 +121,7 @@ const AssignmentList = () => {
                         onClick={handleAddAssignment}
                         className="font-monospace fw-bold text-primary"
                         disabled={!isDispatcherOrAdmin}
-                        title={!isDispatcherOrAdmin ? t("messages.access_denied_add_drivers") : t("assignments.create_button")}
+                        title={isDispatcherOrAdmin ? t( "assignments.create_button") : t( "messages.access_denied_add_drivers")}
                     >
                         <FaPlus className="me-1" /> {t("assignments.create_button")}
                     </Button>
@@ -165,7 +165,7 @@ const AssignmentList = () => {
                                                     className="me-2 font-monospace fw-bold"
                                                     onClick={() => navigate(`/assignments/edit/${a.id}`)}
                                                     disabled={!isDispatcherOrAdmin}
-                                                    title={!isDispatcherOrAdmin ? t("messages.access_denied_edit_drivers") : t("general.edit")}
+                                                    title={isDispatcherOrAdmin ? t("general.edit"):t("messages.access_denied_edit_drivers")}
                                                 >
                                                     <FaEdit className="me-1"/> {t("general.edit")}
                                                 </Button>
@@ -175,7 +175,7 @@ const AssignmentList = () => {
                                                     className="font-monospace fw-bold"
                                                     onClick={() => handleDeleteClick(a)}
                                                     disabled={!isDispatcherOrAdmin}
-                                                    title={!isDispatcherOrAdmin ? t("messages.access_denied_delete_drivers") : t("general.delete")}
+                                                    title={isDispatcherOrAdmin ? t("general.delete") : t("messages.access_denied_delete_drivers") }
                                                 >
                                                     <FaTrash className="me-1"/> {t("general.delete")}
                                                 </Button>

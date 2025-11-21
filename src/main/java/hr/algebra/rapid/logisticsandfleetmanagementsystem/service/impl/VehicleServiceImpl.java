@@ -83,7 +83,7 @@ public class VehicleServiceImpl implements VehicleService {
     public List<VehicleResponse> findAllVehicles() {
         return vehicleRepository.findAll().stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -231,7 +231,7 @@ public class VehicleServiceImpl implements VehicleService {
                 .map(this::mapToResponse)
                 // Logika: remainingKmToService < 0
                 .filter(response -> response.getRemainingKmToService() != null && response.getRemainingKmToService() < 0L)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -243,7 +243,7 @@ public class VehicleServiceImpl implements VehicleService {
                 .filter(response -> response.getRemainingKmToService() != null
                         && response.getRemainingKmToService() > 0L // KRITIČNA PROMJENA: Mora biti > 0
                         && response.getRemainingKmToService() <= warningThresholdKm)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -252,6 +252,6 @@ public class VehicleServiceImpl implements VehicleService {
         return vehicleRepository.findAll().stream()
                 .filter(vehicle -> vehicle.getCurrentDriver() == null)
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

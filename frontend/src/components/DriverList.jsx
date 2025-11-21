@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchDrivers, deleteDriver, updateDriver } from '../services/DriverApi';
 import { Table, Alert, Button, Card, Spinner, Modal, Container, Form, FloatingLabel } from 'react-bootstrap';
-import { useNavigate, Link } from 'react-router-dom';
+import {  Link } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -33,8 +33,6 @@ const DriverList = () => {
     const [deleteSuccess, setDeleteSuccess] = useState(null);
     const [editSuccess, setEditSuccess] = useState(null);
     const [saving, setSaving] = useState(false);
-
-    //const navigate = useNavigate();
 
     const userRole = localStorage.getItem('userRole');
     const isAdmin = userRole?.includes('ROLE_ADMIN');
@@ -175,7 +173,7 @@ const DriverList = () => {
                         className="fw-bold font-monospace"
                         size="sm"
                         disabled={!isDispatcherOrAdmin}
-                        title={!isDispatcherOrAdmin ? t('messages.access_denied_add_drivers') : t('drivers.add_driver')}
+                        title={isDispatcherOrAdmin ? t('drivers.add_driver') : t('messages.access_denied_add_drivers') }
                     >
                         <FaPlus className="me-2" />
                         {t('drivers.add_driver')}
@@ -225,7 +223,7 @@ const DriverList = () => {
                                                     variant="outline-primary"
                                                     size="sm"
                                                     onClick={() => handleEditClick(driver)}
-                                                    title={!isDispatcherOrAdmin ? t('messages.access_denied_edit_drivers') : t('general.edit')}
+                                                    title={isDispatcherOrAdmin ? t('general.edit'):t('messages.access_denied_edit_drivers') }
                                                     disabled={!isDispatcherOrAdmin}
                                                 >
                                                     <FaEdit />
@@ -235,7 +233,7 @@ const DriverList = () => {
                                                     variant="outline-danger"
                                                     size="sm"
                                                     onClick={() => handleDeleteClick(driver)}
-                                                    title={!isAdmin ? t('messages.access_denied_delete_drivers') : t('general.delete')}
+                                                    title={isAdmin ? t('general.delete') : t('messgaes.access_denied_delete_drivers') }
                                                     disabled={!isAdmin}
                                                 >
                                                     <FaTrash />

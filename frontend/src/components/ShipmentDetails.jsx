@@ -47,38 +47,30 @@ const formatDisplayDateTime = (isoString, t) => {
             minute: '2-digit',
             hour12: false
         }) + 'h';
-    } catch (e) {
-        return t('general.invalid_date') || 'Neispravan datum';
-    }
+    }  catch (e) {
+    console.error('Greška pri formatiranju datuma:', e);
+    return t('general.invalid_date') || 'Neispravan datum';
+}
 }
 
 // Pomoćna komponenta za određivanje boje statusa
 const getStatusBadge = (status, t) => {
-    let variant = 'secondary';
-    switch (status) {
-        case 'PENDING':
-            variant = 'warning';
-            break;
-        case 'ASSIGNED':
-            variant = 'primary';
-            break;
-        case 'IN_TRANSIT':
-            variant = 'info';
-            break;
-        case 'DELIVERED':
-            variant = 'success';
-            break;
-        case 'CANCELLED':
-            variant = 'danger';
-            break;
-        default:
-            variant = 'secondary';
-    }
+    const statusVariants = {
+        'PENDING': 'warning',
+        'ASSIGNED': 'primary',
+        'IN_TRANSIT': 'info',
+        'DELIVERED': 'success',
+        'CANCELLED': 'danger'
+    };
+
+    const variant = statusVariants[status] || 'secondary';
+
     return (
         <Badge bg={variant} className="py-2 px-3 fw-bold font-monospace">
             {t(`shipments.status_${status.toLowerCase()}`) || status}
         </Badge>
     );
+
 };
 
 
@@ -97,7 +89,8 @@ const ShipmentDetails = () => {
                 const data = await fetchShipmentById(id);
                 setShipment(data);
             } catch (err) {
-                setError(t('shipments.error_load_details') || 'Greška pri učitavanju detalja pošiljke.');
+                console.error('Greška pri učitavanju shipment detalja:', err);
+                setError(t( 'shipments.error_load_details') || 'Greška pri učitavanju detalja pošiljke');
             } finally {
                 setLoading(false);
             }
@@ -150,7 +143,7 @@ const ShipmentDetails = () => {
     const isMapValid = (originCoords.lat !== 0 || originCoords.lng !== 0) || (destinationCoords.lat !== 0 || destinationCoords.lng !== 0);
     const initialCenter = (originCoords.lat !== 0 || originCoords.lng !== 0) ?
         [originCoords.lat, originCoords.lng] :
-        [45.8150, 15.9819];
+        [45.815, 15.9819];
     const initialZoom = isMapValid ? 13 : 8;
 
 

@@ -1,149 +1,38 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// frontend/src/components/ShipmentForm.jsx - KOMPLETNO RJEŠENJE S ISPRAVKOM ZA SONARQUBE (PropTypes i Catch blokovi)
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Card, Button, Container, Row, Col, Alert, FloatingLabel, Spinner } from 'react-bootstrap';
-// Iako useParams i useNavigate dolaze iz react-router-dom, ostavljam ih kao dio React okruženja
-// U ovom okruženju, navigacija će biti simulirana (alert)
 import { useParams, useNavigate } from 'react-router-dom';
+import { fetchShipmentById, createShipment, updateShipment, geocodeAddress } from '../services/ShipmentApi';
+import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
 
 // =================================================================
-// 🛑 SAMOSTALNE (MOCK) IMPLEMENTACIJE ZBOG OGRANIČENJA JEDNE DATOTEKE
-// Uklonjeni importi: 'react-i18next', 'react-leaflet', 'leaflet'
+// 🛑 UVEZI: LEAFLET
 // =================================================================
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-// 1. MOCK ZA I18N (Prevođenje)
-const t = (key) => {
-    const translations = {
-        'shipments.tracking_label': 'Broj za praćenje',
-        'shipments.status_label': 'Status',
-        'shipments.origin_label': 'Polazište',
-        'shipments.destination_label': 'Odredište',
-        'shipments.weight_label': 'Težina (kg)',
-        'shipments.departure_time_label': 'Vrijeme polaska',
-        'shipments.delivery_time_label': 'Očekivani dolazak',
-        'shipments.description_label': 'Opis pošiljke',
-        'shipments.edit_title': 'Uredi pošiljku',
-        'shipments.create_title': 'Kreiraj novu pošiljku',
-        'shipments.error_load': 'Greška pri učitavanju pošiljke. Koriste se mock podaci.',
-        'shipments.success_edit': 'Pošiljka uspješno ažurirana (MOCK).',
-        'shipments.success_create': 'Nova pošiljka uspješno kreirana (MOCK).',
-        'shipments.address_geocode_warning': 'Adresa nije geokodirana. Molimo pričekajte ili ispravite adresu.',
-        'shipments.status_pending': 'Na čekanju',
-        'shipments.status_assigned': 'Dodijeljeno',
-        'shipments.status_in_transit': 'U tranzitu',
-        'shipments.status_delivered': 'Isporučeno',
-        'shipments.status_cancelled': 'Otkazano',
-        'shipments.details_button': 'Detalji',
-        'shipments.map_title': 'Lokacija na mapi',
-        'general.loading': 'Učitavanje...',
-        'general.save_changes': 'Spremi promjene',
-        'general.cancel': 'Odustani',
-        'shipments.create_button': 'Kreiraj Pošiljku',
-        'shipments.error_general': 'Došlo je do opće greške prilikom spremanja.',
-    };
-    return translations[key] || key;
-};
-
-// 2. MOCK ZA API SERVISE
-const MOCK_SHIPMENT_DATA = {
-    trackingNumber: 'TRK12345',
-    originAddress: 'Avenija Dubrovnik 15, Zagreb',
-    destinationAddress: 'Trg bana Josipa Jelačića 1, Zagreb',
-    status: 'IN_TRANSIT',
-    weightKg: 5.5,
-    departureTime: new Date(Date.now() - 86400000).toISOString(),
-    expectedDeliveryDate: new Date(Date.now() + 86400000).toISOString(),
-    description: 'Hitna dokumentacija',
-    originLatitude: 45.7772,
-    originLongitude: 15.9757,
-    destinationLatitude: 45.8129,
-    destinationLongitude: 15.9770,
-};
-
-const fetchShipmentById = async (id) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    if (id) return MOCK_SHIPMENT_DATA;
-    return null;
-};
-const createShipment = async (data) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    console.log('Mock Create Shipment:', data);
-    return { id: 'NEW123', ...data };
-};
-const updateShipment = async (id, data) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    console.log(`Mock Update Shipment ${id}:`, data);
-};
-const geocodeAddress = async (address) => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (address.toLowerCase().includes('zagreb') && address.toLowerCase().includes('dubrovnik')) return { lat: 45.7772, lng: 15.9757 };
-    if (address.toLowerCase().includes('zagreb') && address.toLowerCase().includes('jelačić')) return { lat: 45.8129, lng: 15.9770 };
-    if (address.toLowerCase().includes('rijeka')) return { lat: 45.3271, lng: 14.4422 };
-    return null;
-};
+// 🛑 KRITIČNO: EKSPLICITAN UVOZ IKONA ZA LEAFLET
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 
 // =================================================================
-// 🛑 KOMPLETAN LEAFLET KOD (IN-LINE)
-// Koristimo CDN uvoz, ali moramo osigurati da React ne pokušava riješiti import
-// Stoga ćemo sve Leaflet objekte i komponente generirati SAMOSTALNO.
-// Budući da react-leaflet NE MOŽE biti uvezen, zamijenit ćemo MapContainer
-// jednostavnom HTML div komponentom.
+// POMOĆNE FUNKCIJE I KOMPONENTE
 // =================================================================
-
-// 3. INLINED CSS ZA LEAFLET (Zamjenjuje 'leaflet/dist/leaflet.css')
-const LEAFLET_STYLE = `
-.leaflet-container {
-    height: 100%;
-    width: 100%;
-    border-radius: 0.5rem;
-}
-.map-placeholder {
-    height: 400px;
-    width: 100%;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-    font-family: monospace;
-    text-align: center;
-    border-radius: 0.5rem;
-}
-`;
-// 4. BASE64 IKONA ZA LEAFLET (Isto kao prije)
-const LEAFLET_MARKER_BASE64 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzODQgNTEyIj48cGF0aCBmaWxsPSJyZWQiIGQ9Ik0xNzIuMSA0MjEuMzY3QzE3Mi4xIDQyMS43ODkgMjAzIDUxMiAyMDMgNTEyQzIwMyA1MTIgMjMzLjkgNDIxLjc4OSAyMzMuOSA0MjEuMzY3QzI2NS42OTUgMzEzLjIyNyAzNzMgMjYzLjA0NSAzNzMgMTc1LjY0NEMzNzMgNzguNDg4IDI5OC4yNDYgMCAxOTkgMCAxMDAuNzU0IDAgMjYgNzguNDg4IDI2IDE3NS42NDRDMjYgMjYzLjA0NSAxMzMuMzI1IDMxMy4yMjcgMTY1LjA5NSA0MjEuMzY3TDE3Mi4xIDQyMS4zNjdNMjIwLjQgMjM0LjIzNUSyMjAuNCAyNjguODg3IDE5OSAyNjguODg3IDE5OSAyNjguODg3QzE3Ny42IDI2OC44ODcgMTU2LjIgMjI3LjA5MSAxNTYuMiAxOTkuNjM5QzE1Ni4yIDE3Mi4xODcgMTc3LjYgMTQ3Ljc4NiAxOTkgMTQ3Ljc4NkN0MjAuNCAxNDcuNzg2IDIyMC40IDE3Mi4xODcgMjIwLjQgMjI3LjA5MVYyMzQuMjM1WiIvPjwvc3ZnPg==';
-
-/**
- * Komponenta Placeholder za Mapu
- * Budući da ne možemo uvesti react-leaflet, zamjenjujemo je vizualnim placeholderom.
- */
-const MapPlaceholder = React.memo(({ origin, destination }) => {
-    // Prikazujemo koordinate unutar placeholder-a
-    const hasOrigin = origin.lat !== 0;
-    const hasDestination = destination.lat !== 0;
-
-    return (
-        <div className="map-placeholder">
-            <div>
-                <p className="fw-bold">Prikaz mape je onemogućen</p>
-                <small>(Zbog ograničenja okruženja, vanjska biblioteka "react-leaflet" ne može biti učitana)</small>
-                {hasOrigin && (
-                    <p className="mt-3 mb-0">Polazište: {origin.lat.toFixed(4)}, {origin.lng.toFixed(4)}</p>
-                )}
-                {hasDestination && (
-                    <p>Odredište: {destination.lat.toFixed(4)}, {destination.lng.toFixed(4)}</p>
-                )}
-                {!hasOrigin && !hasDestination && (
-                    <p className="mt-3">Unesite adrese za prikaz koordinata.</p>
-                )}
-            </div>
-        </div>
-    );
+const customIcon = new L.Icon({
+    iconUrl: markerIcon,
+    iconRetinaUrl: markerIcon2x,
+    shadowUrl: markerShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
-MapPlaceholder.displayName = 'MapPlaceholder';
 
-
-// Funkcija za formatiranje datuma/vremena
 const formatDateTimeLocal = (isoString) => {
     if (!isoString) {
         return new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
@@ -151,7 +40,6 @@ const formatDateTimeLocal = (isoString) => {
     return isoString.slice(0, 16);
 }
 
-// Funkcija za debouncing
 const debounce = (func, delay) => {
     let timeoutId;
     return (...args) => {
@@ -159,16 +47,48 @@ const debounce = (func, delay) => {
             clearTimeout(timeoutId);
         }
         timeoutId = setTimeout(() => {
-            func.apply(null, args);
+            func(...args);
         }, delay);
     };
 };
 
-// =================================================================
-// GLAVNA KOMPONENTA
-// =================================================================
+const MapUpdater = ({ origin, destination }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        const isOriginValid = origin.lat !== 0 || origin.lng !== 0;
+        const isDestinationValid = destination.lat !== 0 || destination.lng !== 0;
+
+        if (isOriginValid && isDestinationValid) {
+            const bounds = L.latLngBounds([
+                [origin.lat, origin.lng],
+                [destination.lat, destination.lng]
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        } else if (isOriginValid) {
+            map.setView([origin.lat, origin.lng], 13);
+        } else if (isDestinationValid) {
+            map.setView([destination.lat, destination.lng], 13);
+        }
+    }, [map, origin, destination]);
+
+    return null;
+};
+
+MapUpdater.propTypes = {
+    origin: PropTypes.shape({
+        lat: PropTypes.number.isRequired,
+        lng: PropTypes.number.isRequired
+    }).isRequired,
+    destination: PropTypes.shape({
+        lat: PropTypes.number.isRequired,
+        lng: PropTypes.number.isRequired
+    }).isRequired
+};
+
 
 const ShipmentForm = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
@@ -197,73 +117,76 @@ const ShipmentForm = () => {
     const [destinationCoords, setDestinationCoords] = useState({ lat: 0, lng: 0 });
     const [geocodeLoading, setGeocodeLoading] = useState(false);
 
-    // =================================================================
-    // Geocoding logika
-    // =================================================================
 
-    const geocodeHandler = useCallback(async (address, setCoords, setFormStateUpdater) => {
-        if (!address) {
-            setCoords({ lat: 0, lng: 0 });
-            setFormStateUpdater({ lat: 0, lng: 0});
-            return;
-        }
-        setGeocodeLoading(true);
-        try {
-            const coords = await geocodeAddress(address);
-            if (coords) {
-                setCoords(coords);
-                setFormStateUpdater(coords);
-            } else {
-                setCoords({ lat: 0, lng: 0 });
-                setFormStateUpdater({ lat: 0, lng: 0 });
-            }
-        } catch (err) {
-            console.error("Geocoding failed:", err);
-            setCoords({ lat: 0, lng: 0 });
-            setFormStateUpdater({ lat: 0, lng: 0 });
-        } finally {
-            setGeocodeLoading(false);
-        }
-    }, []);
-
-    const debouncedGeocodeOrigin = useMemo(() => debounce((address) => {
-        geocodeHandler(
-            address,
-            setOriginCoords,
-            (coords) => setFormData(prev => ({
-                ...prev,
-                originLatitude: coords.lat,
-                originLongitude: coords.lng
-            }))
-        );
-    }, 1000), [geocodeHandler]);
-
-    const debouncedGeocodeDestination = useMemo(() => debounce((address) => {
-        geocodeHandler(
-            address,
-            setDestinationCoords,
-            (coords) => setFormData(prev => ({
-                ...prev,
-                destinationLatitude: coords.lat,
-                destinationLongitude: coords.lng
-            }))
-        );
-    }, 1000), [geocodeHandler]);
-
-
-    // Učitavanje pošiljke
-    useEffect(() => {
-        const loadShipment = async () => {
-            if (!isEditMode) {
-                setLoading(false);
+    const debouncedGeocodeOrigin = useCallback(
+        debounce(async (address) => {
+            if (!address) {
+                setOriginCoords({ lat: 0, lng: 0 });
+                setFormData(prev => ({ ...prev, originLatitude: 0, originLongitude: 0 }));
                 return;
             }
-
+            setGeocodeLoading(true);
             try {
-                const data = await fetchShipmentById(id);
+                const coords = await geocodeAddress(address);
+                if (coords) {
+                    setOriginCoords(coords);
+                    setFormData(prev => ({
+                        ...prev,
+                        originLatitude: coords.lat,
+                        originLongitude: coords.lng
+                    }));
+                } else {
+                    setOriginCoords({ lat: 0, lng: 0 });
+                    setFormData(prev => ({ ...prev, originLatitude: 0, originLongitude: 0 }));
+                }
+            } catch (err) {
+                // ✅ SONARQUBE FIX: Bilježenje greške umjesto praznog catch bloka
+                console.error("Geocoding error for origin address:", err);
+            } finally {
+                setGeocodeLoading(false);
+            }
+        }, 1000),
+        []
+    );
 
-                if (data) {
-                    const newFormData = {
+    const debouncedGeocodeDestination = useCallback(
+        debounce(async (address) => {
+            if (!address) {
+                setDestinationCoords({ lat: 0, lng: 0 });
+                setFormData(prev => ({ ...prev, destinationLatitude: 0, destinationLongitude: 0 }));
+                return;
+            }
+            setGeocodeLoading(true);
+            try {
+                const coords = await geocodeAddress(address);
+                if (coords) {
+                    setDestinationCoords(coords);
+                    setFormData(prev => ({
+                        ...prev,
+                        destinationLatitude: coords.lat,
+                        destinationLongitude: coords.lng
+                    }));
+                } else {
+                    setDestinationCoords({ lat: 0, lng: 0 });
+                    setFormData(prev => ({ ...prev, destinationLatitude: 0, destinationLongitude: 0 }));
+                }
+            } catch (err) {
+                // ✅ SONARQUBE FIX: Bilježenje greške umjesto praznog catch bloka
+                console.error("Geocoding error for destination address:", err);
+            } finally {
+                setGeocodeLoading(false);
+            }
+        }, 1000),
+        []
+    );
+
+
+    useEffect(() => {
+        const loadShipment = async () => {
+            if (isEditMode) {
+                try {
+                    const data = await fetchShipmentById(id);
+                    setFormData({
                         trackingNumber: data.trackingNumber || '',
                         originAddress: data.originAddress || '',
                         destinationAddress: data.destinationAddress || '',
@@ -276,26 +199,26 @@ const ShipmentForm = () => {
                         originLongitude: data.originLongitude || 0,
                         destinationLatitude: data.destinationLatitude || 0,
                         destinationLongitude: data.destinationLongitude || 0,
-                    };
-
-                    setFormData(newFormData);
+                    });
                     setOriginCoords({ lat: data.originLatitude || 0, lng: data.originLongitude || 0 });
                     setDestinationCoords({ lat: data.destinationLatitude || 0, lng: data.destinationLongitude || 0 });
-                } else {
-                    setError(t('shipments.error_load'));
-                }
 
-            } catch (err) {
-                setError(t('shipments.error_load'));
-            } finally {
+                } catch (err) {
+                    console.error("Shipments err", err);
+                    setError(t('shipments.error_load'));
+                } finally {
+                    setLoading(false);
+                }
+            } else {
                 setLoading(false);
             }
         };
 
         loadShipment();
-    }, [id, isEditMode]);
+    }, [id, isEditMode, t]);
 
-    const handleChange = useCallback((e) => {
+
+    const handleChange = (e) => {
         const { name, value } = e.target;
 
         setFormData(prev => ({
@@ -308,19 +231,18 @@ const ShipmentForm = () => {
         } else if (name === 'destinationAddress') {
             debouncedGeocodeDestination(value);
         }
-    }, [debouncedGeocodeOrigin, debouncedGeocodeDestination]);
+    };
 
 
-    const handleSubmit = useCallback(async (e) => {
-        if (e) e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
         setError(null);
         setSuccess(null);
         setSaving(true);
 
         try {
-            // Provjera da li su adrese geokodirane prije slanja
-            if ((formData.originAddress && !formData.originLatitude) || (formData.destinationAddress && !formData.destinationLatitude)) {
+            if ((!formData.originLatitude && formData.originAddress) || (!formData.destinationLatitude && formData.destinationAddress)) {
                 setError(t('shipments.address_geocode_warning'));
                 setSaving(false);
                 return;
@@ -329,7 +251,6 @@ const ShipmentForm = () => {
             const shipmentData = {
                 ...formData,
                 weightKg: Number.parseFloat(formData.weightKg),
-                // Koordinate se uvijek tretiraju kao brojevi
                 originLatitude: Number.parseFloat(formData.originLatitude),
                 originLongitude: Number.parseFloat(formData.originLongitude),
                 destinationLatitude: Number.parseFloat(formData.destinationLatitude),
@@ -343,7 +264,6 @@ const ShipmentForm = () => {
                 await createShipment(shipmentData);
                 setSuccess(t('shipments.success_create'));
 
-                // Očisti formu nakon uspješnog kreiranja
                 setFormData({
                     trackingNumber: '',
                     originAddress: '',
@@ -363,39 +283,37 @@ const ShipmentForm = () => {
             }
 
             if (isEditMode) {
-                // Mock navigacija
-                alert(`Mock: Navigacija na listu pošiljaka s porukom: ${t('shipments.success_edit')}`);
-                // navigate('/shipments', { state: { message: t('shipments.success_edit') } });
+                navigate('/shipments', { state: { message: t('shipments.success_edit') } });
             }
         } catch (err) {
+            // ✅ SONARQUBE FIX: Ovaj catch blok je već ispravno rukovao greškom (prikazivao ju je korisniku),
+            // pa ga nije trebalo mijenjati. Greške su bile u geokodiranju.
             setError(err.message || t('shipments.error_general'));
         } finally {
             setSaving(false);
         }
-    }, [formData, isEditMode, id, navigate]);
+    };
 
 
-    // Nema više potrebe za mapProps jer nema react-leaflet
-    // const mapProps = useMemo(() => { ... }, [originCoords, destinationCoords]);
-
-
+    // =========================================================================
+    // RENDERIRANJE KOMPONENTE
+    // =========================================================================
     if (loading) {
         return (
             <Container className="my-5 d-flex justify-content-center">
-                {/* Ugrađeni stilovi za React Bootstrap Spinner */}
-                <style>{`
-                    .spinner-border-info { border-color: #17a2b8; border-right-color: transparent; }
-                `}</style>
-                <Spinner animation="border" variant="info" className="spinner-border-info" />
+                <Spinner animation="border" variant="info" />
             </Container>
         );
     }
 
+    const initialCenter = (originCoords.lat !== 0 || originCoords.lng !== 0) ? [originCoords.lat, originCoords.lng] :
+        [45.815, 15.9819];
+
+    const initialZoom = (originCoords.lat !== 0 && destinationCoords.lat !== 0) ? 10 : 13;
+
+
     return (
         <Container className="my-5">
-            {/* Ugrađeni stilovi za Leaflet mapu Placeholder */}
-            <style>{LEAFLET_STYLE}</style>
-
             <Card className="shadow-lg p-4">
                 <Card.Body>
                     <h2 className="text-info fw-bold font-monospace mb-4">
@@ -407,7 +325,7 @@ const ShipmentForm = () => {
 
 
                     <Form id="shipment-form" onSubmit={handleSubmit}>
-                        {/* 1. BROJ ZA PRAĆENJE i STATUS */}
+                        {/* ... ostatak JSX koda ostaje nepromijenjen ... */}
                         <Row className="mb-4">
                             <Col md={6}>
                                 <FloatingLabel controlId="trackingNumber" label={t('shipments.tracking_label')}>
@@ -445,7 +363,6 @@ const ShipmentForm = () => {
                         </Row>
 
 
-                        {/* 2. POLAZIŠTE i ODREDIŠTE */}
                         <Row className="mb-4">
                             <Col md={6}>
                                 <FloatingLabel controlId="originAddress" label={t('shipments.origin_label') + (geocodeLoading ? ' (' + t('general.loading') + ')' : '')}>
@@ -485,7 +402,6 @@ const ShipmentForm = () => {
                             </Col>
                         </Row>
 
-                        {/* 3. TEŽINA i DATUMI */}
                         <Row className="mb-4">
                             <Col md={4}>
                                 <FloatingLabel controlId="weightKg" label={t('shipments.weight_label')}>
@@ -501,7 +417,6 @@ const ShipmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* POLJE: Datum Polaska */}
                             <Col md={4}>
                                 <FloatingLabel controlId="departureTime" label={t('shipments.departure_time_label')}>
                                     <Form.Control
@@ -515,7 +430,6 @@ const ShipmentForm = () => {
                                 </FloatingLabel>
                             </Col>
 
-                            {/* POLJE: expectedDeliveryDate */}
                             <Col md={4}>
                                 <FloatingLabel controlId="expectedDeliveryDate" label={t('shipments.delivery_time_label')}>
                                     <Form.Control
@@ -530,14 +444,12 @@ const ShipmentForm = () => {
                             </Col>
                         </Row>
 
-                        {/* 4. SKRIVENA POLJA ZA KOORDINATE */}
                         <Form.Control type="hidden" name="originLatitude" value={formData.originLatitude} />
                         <Form.Control type="hidden" name="originLongitude" value={formData.originLongitude} />
                         <Form.Control type="hidden" name="destinationLatitude" value={formData.destinationLatitude} />
                         <Form.Control type="hidden" name="destinationLongitude" value={formData.destinationLongitude} />
 
 
-                        {/* 5. OPIS */}
                         <Row className="mb-4">
                             <Col>
                                 <FloatingLabel controlId="description" label={t('shipments.description_label')}>
@@ -556,22 +468,16 @@ const ShipmentForm = () => {
 
                     </Form>
 
-                    {/* GRUPA GUMBA ZA AKCIJU (Uključuje Detalji gumb) */}
-
                     {isEditMode ? (
-                        // EDIT MODE: Prikaz Detalji i Spremi
                         <div className="d-grid gap-2 d-md-flex justify-content-md-between mt-3">
-                            {/* Gumb 1: Detalji (PRIKAZUJE SE SAMO U EDIT MODU) */}
                             <Button
                                 variant="outline-info"
                                 className="fw-bold font-monospace flex-grow-1 me-md-2"
-                                // Mock navigacija
-                                onClick={() => alert(`Mock: Navigacija na detalje pošiljke ID: ${id}`)}
+                                onClick={() => navigate(`/shipments/details/${id}`)}
                             >
                                 {t('shipments.details_button') || 'Detalji'}
                             </Button>
 
-                            {/* Gumb 2: Spremi promjene */}
                             <Button
                                 onClick={handleSubmit}
                                 variant="outline-primary"
@@ -579,14 +485,13 @@ const ShipmentForm = () => {
                                 disabled={saving}
                             >
                                 {saving ? (
-                                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                                    <Spinner as="span" animation="border" size="sm"  aria-hidden="true" className="me-2" />
                                 ) : (
                                     t("general.save_changes") || 'Spremi promjene'
                                 )}
                             </Button>
                         </div>
                     ) : (
-                        // CREATE MODE: Prikaz samo Kreiraj
                         <Button
                             onClick={handleSubmit}
                             variant="outline-primary"
@@ -594,31 +499,59 @@ const ShipmentForm = () => {
                             disabled={saving}
                         >
                             {saving ? (
-                                <Spinner as="span" animation="border" size="sm"  aria-hidden="true" className="me-2" />
+                                <Spinner as="span" animation="border" size="sm" aria-hidden="true" className="me-2" />
                             ) : (
                                 t('shipments.create_button') || 'Kreiraj Pošiljku'
                             )}
                         </Button>
                     )}
 
-                    {/* Gumb za Odustani (Uvijek prisutan) */}
                     <Button
                         variant="outline-secondary"
                         className="w-100 fw-bold font-monospace mt-2 mb-4"
-                        // Mock navigacija
-                        onClick={() => alert('Mock: Navigacija na listu pošiljaka /shipments')}
+                        onClick={() => navigate('/shipments')}
                     >
                         {t('general.cancel') || 'Odustani'}
                     </Button>
 
 
-                    {/* MAPA (PRIKAZ) */}
                     <hr className="my-4 border-info" />
                     <div className="p-3 border rounded shadow-sm">
                         <h5 className="text-dark fw-bold font-monospace mb-3">{t('shipments.map_title')}</h5>
 
-                        {/* ZAMJENA ZA MAPCONTAINER */}
-                        <MapPlaceholder origin={originCoords} destination={destinationCoords} />
+                        <MapContainer
+                            center={initialCenter}
+                            zoom={initialZoom}
+                            scrollWheelZoom={false}
+                            className="leaflet-container"
+                            style={{ height: '400px', width: '100%' }}
+                        >
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+
+                            <MapUpdater origin={originCoords} destination={destinationCoords} />
+
+                            {originCoords.lat !== 0 && (
+                                <Marker position={originCoords} icon={customIcon}>
+                                    <Popup>
+                                        **{t("shipments.origin_label" )}:**
+                                        {formData.originAddress}
+                                    </Popup>
+                                </Marker>
+                            )}
+
+                            {destinationCoords.lat !== 0 && (
+                                <Marker position={destinationCoords} icon={customIcon}>
+                                    <Popup>
+                                        **{t("shipments.destination_label")}:**
+                                        {formData.destinationAddress}
+                                    </Popup>
+                                </Marker>
+                            )}
+
+                        </MapContainer>
                     </div>
 
                 </Card.Body>

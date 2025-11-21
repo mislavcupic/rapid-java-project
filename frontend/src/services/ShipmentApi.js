@@ -11,8 +11,10 @@ const handleResponse = async (response) => {
             // Pokušaj parsiranja JSON-a za detalje greške iz Backenda
             errorDetail = await response.json();
         } catch (e) {
-            errorDetail.message = response.statusText;
-        }
+        log.error(e);
+        errorDetail.message = response.statusText;
+        throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
+    }
         // Vraća poruku od Backenda ili generičku poruku
         throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
     }

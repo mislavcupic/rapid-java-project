@@ -3,7 +3,7 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import java.io.Serializable;
+
 
 /**
  * Custom iznimka koja se baca kada traženi resurs (poput Vozila ili Korisnika) nije pronađen.
@@ -13,9 +13,9 @@ import java.io.Serializable;
 @ResponseStatus(value = HttpStatus.NOT_FOUND)
 public class ResourceNotFoundException extends RuntimeException {
 
-    private String resourceName;
-    private String fieldName;
-    private Object fieldValue;
+    private final String resourceName; //promijenio u final
+    private final transient String fieldName;
+    private final transient Object fieldValue;
 
     /**
      * Konstruktor koji kreira opisnu poruku greške.

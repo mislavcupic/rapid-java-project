@@ -39,7 +39,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         userService = new UserServiceImpl(userRepository, userRoleRepository, passwordEncoder);
-        
+
         userInfo = new UserInfo();
         userInfo.setId(1L);
         userInfo.setUsername("testuser");
@@ -73,17 +73,4 @@ class UserServiceTest {
         assertThat(result).isNotNull();
     }
 
-//    @Test
-//    void existsByUsername_WhenExists_ShouldReturnTrue() {
-//        when(userRepository.existsByUsername("testuser")).thenReturn(true);
-//        boolean result = userService.existsByUsername("testuser");
-//        assertThat(result).isTrue();
-//    }
-//
-//    @Test
-//    void existsByEmail_WhenExists_ShouldReturnTrue() {
-//        when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
-//        boolean result = userService.existsByEmail("test@example.com");
-//        assertThat(result).isTrue();
-//    }
 }

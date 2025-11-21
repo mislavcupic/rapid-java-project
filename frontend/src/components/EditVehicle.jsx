@@ -24,8 +24,11 @@ const EditVehicle = () => {
         nextServiceMileageKm: 0,
         fuelConsumptionLitersPer100Km: 0,
     });
-
-    useEffect(() => {
+    const getModelYear = (data) => {
+        if (data.modelYear) return String(data.modelYear);
+        if (data.year) return String(data.year);
+        return '';
+    };    useEffect(() => {
         const loadData = async () => {
             if (!localStorage.getItem('accessToken')) {
                 setError("Molimo, prijavite se za uređivanje vozila.");
@@ -42,7 +45,7 @@ const EditVehicle = () => {
                     licensePlate: data.licensePlate || '',
                     make: data.make || '',
                     model: data.model || '',
-                    modelYear: data.modelYear ? String(data.modelYear) : (data.year ? String(data.year) : ''),
+                    modelYear: getModelYear(data),
                     loadCapacityKg: data.loadCapacityKg ? String(data.loadCapacityKg) : '',
                     currentDriverId: data.currentDriver ? String(data.currentDriver.id) : '',
                     currentMileageKm: data.currentMileageKm || 0,
@@ -86,8 +89,8 @@ const EditVehicle = () => {
             licensePlate: formData.licensePlate,
             make: formData.make,
             model: formData.model,
-            modelYear: parseInt(formData.modelYear, 10),
-            loadCapacityKg: parseInt(formData.loadCapacityKg, 10),
+            modelYear: Number.parseInt(formData.modelYear, 10),
+            loadCapacityKg: Number.parseInt(formData.loadCapacityKg, 10),
             currentDriverId: formData.currentDriverId === '' ? null : formData.currentDriverId,
             currentMileageKm: Number(formData.currentMileageKm),
             nextServiceMileageKm: Number(formData.nextServiceMileageKm),
@@ -113,13 +116,13 @@ const EditVehicle = () => {
     if (loading) {
         return (
             <div className="text-center py-5">
-                <Spinner animation="border" variant="info" role="status" />
+                <Spinner animation="border" variant="info"  />
                 <p className="text-muted mt-2">Učitavanje podataka o vozilu...</p>
             </div>
         );
     }
 
-    if (error && error.includes("prijavite se")) {
+    if ( error?.includes("prijavite se")) {
         return (
             <Alert variant="warning" className="text-center shadow font-monospace">
                 Molimo, prijavite se za uređivanje vozila.
@@ -252,7 +255,7 @@ const EditVehicle = () => {
                             disabled={saving}
                         >
                             {saving ? (
-                                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                                <Spinner as="span" animation="border" size="sm" aria-hidden="true" className="me-2" />
                             ) : (
                                 'Spremi Promjene'
                             )}
