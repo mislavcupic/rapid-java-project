@@ -2,207 +2,209 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentResponseDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AssignmentService;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Unit testovi za AssignmentController
- * Testira sve endpoint metode koje STVARNO POSTOJE u controlleru
- */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AssignmentController Tests")
 class AssignmentControllerTest {
 
     @Mock
     private AssignmentService assignmentService;
 
     @Mock
-    private UserDetails userDetails;
+    private DriverService driverService;
 
     @InjectMocks
     private AssignmentController assignmentController;
 
-    private AssignmentResponseDTO responseDTO;
-    private AssignmentRequestDTO requestDTO;
+    private MockMvc mockMvc;
+    private AssignmentResponseDTO testAssignmentResponse;
 
     @BeforeEach
     void setUp() {
-        // Setup response DTO
-        responseDTO = new AssignmentResponseDTO();
-        responseDTO.setId(1L);
-        responseDTO.setStartTime(LocalDateTime.of(2025, 1, 15, 8, 0));
-        responseDTO.setAssignmentStatus("ACTIVE");
+        mockMvc = MockMvcBuilders.standaloneSetup(assignmentController).build();
 
-        // Setup request DTO
-        requestDTO = new AssignmentRequestDTO();
-        requestDTO.setDriverId(1L);
-        requestDTO.setVehicleId(2L);
-        requestDTO.setShipmentId(3L);
-        requestDTO.setStartTime(LocalDateTime.of(2025, 11, 15, 8, 0));
+        testAssignmentResponse = new AssignmentResponseDTO();
+        testAssignmentResponse.setId(1L);
     }
 
-    @Test
-    void getAllAssignments_ShouldReturnListOfAssignments() {
-        // Arrange
-        List<AssignmentResponseDTO> assignments = Arrays.asList(responseDTO);
-        when(assignmentService.findAll()).thenReturn(assignments);
+    @Nested
+    @DisplayName("GET /api/assignments")
+    class GetAllAssignments {
 
-        // Act
-        ResponseEntity<List<AssignmentResponseDTO>> response = assignmentController.getAllAssignments();
+        @Test
+        @DisplayName("Should return all assignments")
+        void getAllAssignments_ShouldReturnList() throws Exception {
+            List<AssignmentResponseDTO> assignments = Arrays.asList(testAssignmentResponse);
+            when(assignmentService.findAll()).thenReturn(assignments);
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody()).hasSize(1);
-        assertThat(response.getBody().get(0).getId()).isEqualTo(1L);
-        verify(assignmentService, times(1)).findAll();
+            mockMvc.perform(get("/api/assignments"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(1));
+
+            verify(assignmentService).findAll();
+        }
     }
 
-    @Test
-    void getAllAssignments_WhenNoAssignments_ShouldReturnEmptyList() {
-        // Arrange
-        when(assignmentService.findAll()).thenReturn(Arrays.asList());
+    @Nested
+    @DisplayName("GET /api/assignments/{id}")
+    class GetAssignmentById {
 
-        // Act
-        ResponseEntity<List<AssignmentResponseDTO>> response = assignmentController.getAllAssignments();
+        @Test
+        @DisplayName("Should return assignment when exists")
+        void getAssignmentById_WhenExists_ShouldReturnAssignment() throws Exception {
+            when(assignmentService.findById(1L)).thenReturn(Optional.of(testAssignmentResponse));
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEmpty();
+            mockMvc.perform(get("/api/assignments/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1));
+
+            verify(assignmentService).findById(1L);
+        }
+
+        @Test
+        @DisplayName("Should return 404 when assignment not found")
+        void getAssignmentById_WhenNotFound_ShouldReturn404() throws Exception {
+            when(assignmentService.findById(999L)).thenReturn(Optional.empty());
+
+            mockMvc.perform(get("/api/assignments/999"))
+                    .andExpect(status().isNotFound());
+        }
     }
 
+    @Nested
+    @DisplayName("POST /api/assignments")
+    class CreateAssignment {
 
-    @Test
-    void getAssignmentById_WhenAssignmentExists_ShouldReturnAssignment() {
-        // Arrange
-        when(assignmentService.findById(1L)).thenReturn(Optional.of(responseDTO));
+        @Test
+        @DisplayName("Should create assignment")
+        void createAssignment_ShouldReturnCreated() throws Exception {
+            when(assignmentService.createAssignment(any(AssignmentRequestDTO.class)))
+                    .thenReturn(testAssignmentResponse);
 
-        // Act
-        ResponseEntity<AssignmentResponseDTO> response = assignmentController.getAssignmentById(1L);
+            String json = """
+                {
+                    "driverId": 1,
+                    "vehicleId": 1,
+                    "shipmentId": 1
+                }
+                """;
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(1L);
-        verify(assignmentService, times(1)).findById(1L);
+            mockMvc.perform(post("/api/assignments")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(1));
+
+            verify(assignmentService).createAssignment(any(AssignmentRequestDTO.class));
+        }
     }
 
-    @Test
-    void getAssignmentById_WhenAssignmentNotFound_ShouldThrowException() {
-        // Arrange
-        when(assignmentService.findById(999L)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("PUT /api/assignments/{id}")
+    class UpdateAssignment {
 
-        // Act & Assert
-        assertThatThrownBy(() -> assignmentController.getAssignmentById(999L))
-            .isInstanceOf(ResourceNotFoundException.class)
-            .hasMessageContaining("Assignment")
-            .hasMessageContaining("999");
+        @Test
+        @DisplayName("Should update assignment")
+        void updateAssignment_ShouldReturnUpdated() throws Exception {
+            when(assignmentService.updateAssignment(eq(1L), any(AssignmentRequestDTO.class)))
+                    .thenReturn(testAssignmentResponse);
 
-        verify(assignmentService, times(1)).findById(999L);
+            String json = """
+                {
+                    "driverId": 1,
+                    "vehicleId": 2
+                }
+                """;
+
+            mockMvc.perform(put("/api/assignments/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isOk());
+
+            verify(assignmentService).updateAssignment(eq(1L), any(AssignmentRequestDTO.class));
+        }
     }
 
-    @Test
-    void createAssignment_WhenValidRequest_ShouldReturnCreatedAssignment() {
-        // Arrange
-        when(assignmentService.createAssignment(any(AssignmentRequestDTO.class)))
-            .thenReturn(responseDTO);
+    @Nested
+    @DisplayName("DELETE /api/assignments/{id}")
+    class DeleteAssignment {
 
-        // Act
-        ResponseEntity<AssignmentResponseDTO> response = assignmentController.createAssignment(requestDTO);
+        @Test
+        @DisplayName("Should delete assignment")
+        void deleteAssignment_ShouldReturnNoContent() throws Exception {
+            doNothing().when(assignmentService).deleteAssignment(1L);
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(1L);
-        verify(assignmentService, times(1)).createAssignment(requestDTO);
+            mockMvc.perform(delete("/api/assignments/1"))
+                    .andExpect(status().isNoContent());
+
+            verify(assignmentService).deleteAssignment(1L);
+        }
     }
 
-    @Test
-    void updateAssignment_WhenValidRequest_ShouldReturnUpdatedAssignment() {
-        // Arrange
-        AssignmentResponseDTO updatedResponse = new AssignmentResponseDTO();
-        updatedResponse.setId(1L);
-        updatedResponse.setAssignmentStatus("COMPLETED");
+    @Nested
+    @DisplayName("Driver Dashboard Endpoints")
+    class DriverDashboard {
 
-        when(assignmentService.updateAssignment(eq(1L), any(AssignmentRequestDTO.class)))
-            .thenReturn(updatedResponse);
+        @Test
+        @DisplayName("GET /api/assignments/my-schedule - should return driver schedule")
+        void getDriverSchedule_ShouldReturnList() throws Exception {
+            when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
+            when(assignmentService.findAssignmentsByDriver(1L))
+                    .thenReturn(Arrays.asList(testAssignmentResponse));
 
-        // Act
-        ResponseEntity<AssignmentResponseDTO> response = assignmentController.updateAssignment(1L, requestDTO);
+            mockMvc.perform(get("/api/assignments/my-schedule"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(1));
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(1L);
-        assertThat(response.getBody().getAssignmentStatus()).isEqualTo("COMPLETED");
-        verify(assignmentService, times(1)).updateAssignment(1L, requestDTO);
-    }
+            verify(assignmentService).findAssignmentsByDriver(1L);
+        }
 
-    @Test
-    void deleteAssignment_WhenAssignmentExists_ShouldReturnNoContent() {
-        // Arrange
-        doNothing().when(assignmentService).deleteAssignment(1L);
+        @Test
+        @DisplayName("PUT /api/assignments/{id}/start - should start assignment")
+        void startAssignment_ShouldReturnUpdated() throws Exception {
+            when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
+            when(assignmentService.startAssignment(eq(1L), eq(1L)))
+                    .thenReturn(testAssignmentResponse);
 
-        // Act
-        ResponseEntity<Void> response = assignmentController.deleteAssignment(1L);
+            mockMvc.perform(put("/api/assignments/1/start"))
+                    .andExpect(status().isOk());
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        assertThat(response.getBody()).isNull();
-        verify(assignmentService, times(1)).deleteAssignment(1L);
-    }
+            verify(assignmentService).startAssignment(eq(1L), eq(1L));
+        }
 
-    @Test
-    void getDriverSchedule_WhenCalled_ShouldReturnDriverAssignments() {
-        // Arrange
-        List<AssignmentResponseDTO> driverAssignments = Arrays.asList(responseDTO);
-        when(assignmentService.findAssignmentsByDriver(any(Long.class)))
-            .thenReturn(driverAssignments);
-        when(userDetails.getUsername()).thenReturn("testdriver");
+        @Test
+        @DisplayName("PUT /api/assignments/{id}/complete - should complete assignment")
+        void completeAssignment_ShouldReturnCompleted() throws Exception {
+            when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
+            when(assignmentService.completeAssignment(eq(1L), eq(1L)))
+                    .thenReturn(testAssignmentResponse);
 
-        // Act
-        ResponseEntity<List<AssignmentResponseDTO>> response = 
-            assignmentController.getDriverSchedule(userDetails);
+            mockMvc.perform(put("/api/assignments/1/complete"))
+                    .andExpect(status().isOk());
 
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody()).hasSize(1);
-        verify(assignmentService, times(1)).findAssignmentsByDriver(any(Long.class));
-    }
-
-    @Test
-    void getDriverSchedule_WhenNoAssignments_ShouldReturnEmptyList() {
-        // Arrange
-        when(assignmentService.findAssignmentsByDriver(any(Long.class)))
-            .thenReturn(Arrays.asList());
-        when(userDetails.getUsername()).thenReturn("testdriver");
-
-        // Act
-        ResponseEntity<List<AssignmentResponseDTO>> response = 
-            assignmentController.getDriverSchedule(userDetails);
-
-        // Assert
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEmpty();
+            verify(assignmentService).completeAssignment(eq(1L), eq(1L));
+        }
     }
 }

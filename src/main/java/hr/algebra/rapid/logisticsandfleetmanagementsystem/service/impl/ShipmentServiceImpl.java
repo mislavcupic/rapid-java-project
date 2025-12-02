@@ -9,13 +9,15 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentResponse;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.DuplicateResourceException;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route; // NOVO
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus; // NOVO
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.AssignmentRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.ShipmentRepository;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.RouteService; // NOVO
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.RouteService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +32,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public static final String SHIPMENT = "Shipment";
     public static final String SHIPMENT_ID = "Shipment ID ";
     public static final String IS_NOT_ASSIGNED_TO_ANY_DRIVER = " is not assigned to any driver.";
+
+    private static final Logger logger = LoggerFactory.getLogger(ShipmentServiceImpl.class);
+
     private final ShipmentRepository shipmentRepository;
     private final RouteService routeService;
     private final AssignmentRepository assignmentRepository;
-    // --- Metoda mapiranja (Entity -> Response DTO) - AŽURIRANA ---
 
+    // --- Metoda mapiranja (Entity -> Response DTO) - AŽURIRANA ---
     @Override
     public ShipmentResponse mapToResponse(Shipment shipment) {
         ShipmentResponse dto = new ShipmentResponse();
@@ -257,22 +262,28 @@ public class ShipmentServiceImpl implements ShipmentService {
         // 4. Promijeni status
         shipment.setStatus(ShipmentStatus.DELIVERED);
 
-        // 5. Spremi POD podatke kao komentar (ako Shipment ima notes polje)
-        // NAPOMENA: Ako nemaš 'notes' polje, možeš zakomentirati ovaj dio ili kreirati ProofOfDelivery entitet
-        StringBuilder podNotes = new StringBuilder();
-        podNotes.append("DELIVERED by Driver ID: ").append(driverId).append("\n");
-        podNotes.append("Recipient: ").append(pod.getRecipientName()).append("\n");
-        if (pod.getNotes() != null) {
-            podNotes.append("Notes: ").append(pod.getNotes()).append("\n");
-        }
-        if (pod.getLatitude() != null && pod.getLongitude() != null) {
-            podNotes.append("GPS: ").append(pod.getLatitude()).append(", ").append(pod.getLongitude()).append("\n");
-        }
-
-
+        // 5. Kreiraj i logiraj POD podatke
+        String podReport = buildProofOfDeliveryReport(driverId, pod);
+        logger.info("Delivery completed: {}", podReport);
 
         Shipment updatedShipment = shipmentRepository.save(shipment);
         return mapToResponse(updatedShipment);
+    }
+
+    private String buildProofOfDeliveryReport(Long driverId, ProofOfDeliveryDTO pod) {
+        StringBuilder podNotes = new StringBuilder();
+        podNotes.append("DELIVERED by Driver ID: ").append(driverId).append("\n");
+        podNotes.append("Recipient: ").append(pod.getRecipientName()).append("\n");
+
+        if (pod.getNotes() != null) {
+            podNotes.append("Notes: ").append(pod.getNotes()).append("\n");
+        }
+
+        if (pod.getLatitude() != null && pod.getLongitude() != null) {
+            podNotes.append("GPS: ").append(pod.getLatitude()).append(", ").append(pod.getLongitude());
+        }
+
+        return podNotes.toString();
     }
 
     @Override
@@ -298,21 +309,28 @@ public class ShipmentServiceImpl implements ShipmentService {
         // 4. Označi kao DELAYED
         shipment.setStatus(ShipmentStatus.DELAYED);
 
-        // 5. Spremi issue report kao komentar
+        // 5. Kreiraj i logiraj issue report
+        String issueReport = buildIssueReport(driverId, issue);
+        logger.info("Shipment issue reported: {}", issueReport);
+
+        Shipment updatedShipment = shipmentRepository.save(shipment);
+        return mapToResponse(updatedShipment);
+    }
+
+    private String buildIssueReport(Long driverId, IssueReportDTO issue) {
         StringBuilder issueNotes = new StringBuilder();
         issueNotes.append("ISSUE REPORTED by Driver ID: ").append(driverId).append("\n");
         issueNotes.append("Type: ").append(issue.getIssueType()).append("\n");
         issueNotes.append("Description: ").append(issue.getDescription()).append("\n");
+
         if (issue.getEstimatedDelay() != null) {
             issueNotes.append("Estimated Delay: ").append(issue.getEstimatedDelay()).append("\n");
         }
+
         if (issue.getLatitude() != null && issue.getLongitude() != null) {
-            issueNotes.append("GPS: ").append(issue.getLatitude()).append(", ").append(issue.getLongitude()).append("\n");
+            issueNotes.append("GPS: ").append(issue.getLatitude()).append(", ").append(issue.getLongitude());
         }
 
-
-
-        Shipment updatedShipment = shipmentRepository.save(shipment);
-        return mapToResponse(updatedShipment);
+        return issueNotes.toString();
     }
 }
