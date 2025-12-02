@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { createVehicle, fetchDrivers } from '../services/VehicleApi.js';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
 import { FaSave } from 'react-icons/fa';
-import { useTranslation } from 'react-i18next'; // ✅ Uvoz za internacionalizaciju
+import { useTranslation } from 'react-i18next';
 
 
 const AddVehicle = () => {
-    const { t } = useTranslation(); // ✅ Inicijalizacija
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);

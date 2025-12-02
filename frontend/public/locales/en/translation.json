@@ -155,6 +155,8 @@
 
   "vehicles": {
   "vehicle_list": "Vehicle list",
-    "add_vehicle": "Add new vehicle"
+    "add_vehicle": "Add new vehicle",
+    "service_status": "Service status",
+    "error_message": "Error while fetching driver"
 }
 }

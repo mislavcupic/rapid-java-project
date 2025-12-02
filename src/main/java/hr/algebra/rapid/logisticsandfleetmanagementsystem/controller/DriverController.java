@@ -24,11 +24,8 @@ public class DriverController {
 
     private final DriverService driverService;
 
-    // -----------------------------------------------------------------
-    // READ (Dohvaćanje)
-    // -----------------------------------------------------------------
 
-    /** Dohvaća listu svih Driver profila (za Dispečera/Admina) */
+
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<List<DriverResponseDTO>> getAllDrivers() {

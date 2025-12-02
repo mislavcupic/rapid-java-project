@@ -152,6 +152,8 @@
 
   "vehicles": {
     "vehicle_list": "Liste des véhicules",
-    "add_vehicle": "Ajouter un nouveau véhicule"
+    "add_vehicle": "Ajouter un nouveau véhicule",
+    "service_status": "Récupération des véhicules status",
+    "error_message": "Erreur lors de la récupération du pilote"
   }
 }

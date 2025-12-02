@@ -49,7 +49,7 @@ const DriverList = () => {
             setDrivers(data);
             setError(null);
         } catch (err) {
-            console.error("Greška pri učitavanju vozača:", err);
+            console.error(t('messages.error_fetching_drivers'), err);
             setError(err.message || t('messages.error_fetching_drivers'));
         } finally {
             setLoading(false);

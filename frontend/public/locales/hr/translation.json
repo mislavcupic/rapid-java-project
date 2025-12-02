@@ -161,6 +161,8 @@
 
   "vehicles": {
     "vehicle_list": "Lista vozila",
-    "add_vehicle": "Dodaj novo vozilo"
+    "add_vehicle": "Dodaj novo vozilo",
+    "service_status": "Servisni status",
+    "error_message": "Greška pri dohvaćanju vozača"
   }
 }

@@ -25,18 +25,14 @@ public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    // ✅ Final polja - immutable dependencije
+    //  Final polja - immutable dependencije
     private final UserService userService;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    // ✅ Konstruktor više ne trebaš pisati - @RequiredArgsConstructor to radi automatski!
 
-    /**
-     * REGISTER ENDPOINT
-     * POST /auth/register
-     * Body: { username, password, firstName, lastName, email }
-     */
+
+
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> registerUser(@Valid @RequestBody RegisterRequestDTO registerRequest) {
         try {
@@ -71,11 +67,7 @@ public class AuthController {
         }
     }
 
-    /**
-     * LOGIN ENDPOINT
-     * POST /auth/login
-     * Body: { username, password }
-     */
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> authenticateAndGetToken(@RequestBody AuthRequestDTO authRequest) {
         try {

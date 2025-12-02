@@ -50,7 +50,6 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public List<DriverResponseDTO> findAllDrivers() {
-        // Popravak S5168 - korištenje toList() od Jave 16, ili ako nije dostupna, ostaviti Collectors.toList()
         return driverRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .toList();
