@@ -21,7 +21,7 @@ const DriverForm = () => {
         password: '',
         firstName: '',
         lastName: '',
-        email: '', // ✅ DODANO EMAIL POLJE
+        email: '',
     });
 
     const [error, setError] = useState(null);

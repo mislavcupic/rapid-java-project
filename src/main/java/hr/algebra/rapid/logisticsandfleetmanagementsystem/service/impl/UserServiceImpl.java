@@ -11,8 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -67,8 +69,7 @@ public class UserServiceImpl implements UserService {
         newUser.setLastName(registerRequest.getLastName());
         newUser.setEmail(registerRequest.getEmail());
         newUser.setIsEnabled(true); // Automatski aktiviraj korisnika
-        newUser.setRoles(Collections.singletonList(driverRole)); // Postavi default ulogu
-        
+        newUser.setRoles(new ArrayList<>(Arrays.asList(driverRole)));
         // 5. Spremi u bazu
         return userRepository.save(newUser);
     }
@@ -82,5 +83,31 @@ public class UserServiceImpl implements UserService {
     public boolean existsByEmail(String email) {
         return userRepository.findAll().stream()
                 .anyMatch(user -> user.getEmail().equalsIgnoreCase(email));
+    }
+
+    @Override
+    @Transactional
+    public UserInfo updateUserRoles(Long userId, List<String> roleNames) {
+        // 1. Dohvati korisnika
+        UserInfo user = findById(userId);
+
+        // 2. Dohvati uloge iz baze - ✅ KORISTI collect sa ArrayList:
+        List<UserRole> roles = roleNames.stream()
+                .map(roleName -> userRoleRepository.findByName(roleName)
+                        .orElseThrow(() -> new ResourceNotFoundException("Uloga", "ime", roleName)))
+                .collect(Collectors.toCollection(ArrayList::new)); // ✅ Explicit ArrayList
+
+        // 3. Postavi nove uloge
+        user.setRoles(roles);
+
+        // 4. Spremi
+        return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        UserInfo user = findById(userId);
+        userRepository.delete(user);
     }
 }

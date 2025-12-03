@@ -1,8 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AuthRequestDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AuthResponseDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.JwtService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;

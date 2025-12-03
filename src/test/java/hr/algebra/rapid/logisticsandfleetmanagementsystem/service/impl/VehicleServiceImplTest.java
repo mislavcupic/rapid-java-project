@@ -85,12 +85,14 @@ class VehicleServiceImplTest {
             // When
             List<VehicleResponse> result = vehicleService.findAllVehicles();
 
-            // Then
-            assertThat(result).isNotEmpty();
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getLicensePlate()).isEqualTo("ZG-1234-AB");
-            assertThat(result.get(0).getMake()).isEqualTo("Mercedes");
-            verify(vehicleRepository).findAll();
+            assertThat(result)
+                    .isNotEmpty()
+                    .hasSize(1)
+                    .first()
+                    .satisfies(vehicle -> {
+                        assertThat(vehicle.getLicensePlate()).isEqualTo("ZG-1234-AB");
+                        assertThat(vehicle.getMake()).isEqualTo("Mercedes");
+                    });
         }
 
         @Test

@@ -42,12 +42,16 @@
   },
 
   "alerts": {
-    "overdue_service": "Overdue Service - Registration: {{registration}}",
-    "low_fuel": "Low Fuel Level - Registration: {{registration}}"
+    "overdue_service": "Overdue Service - Registration",
+    "low_fuel": "Low Fuel Level - Registration",
+    "free_vehicles": "Free vehicles",
+    "service_warning": "Service warning",
+    "total_vehicles": "Total vehicles",
+    "average_weight": "Average weight"
   },
 
   "forms": {
-    "create_vehicle": "Create Vehicle",
+    "create_vehicle_title": "Create Vehicle",
     "edit_vehicle": "Edit Vehicle",
     "create_shipment": "Create Shipment",
     "edit_driver": "Edit Driver",
@@ -59,7 +63,14 @@
     "driver_name": "Driver's name",
     "email": "Email",
     "license": "License number",
-    "phone": "Phone number"
+    "phone": "Phone number",
+    "create_vehicle": "Create new vehicle",
+    "fuel_type": "Fuel type",
+    "license_plate": "License plate",
+    "model_year": "Model production year",
+    "make": "Make",
+    "model": "Model"
+
   },
 
   "shipments": {
@@ -100,7 +111,12 @@
     "route_status": "Route Status",
     "no_coordinates": "No coordinates to display the map.",
     "back_to_list": "Back to Shipment List",
-    "details_button": "Details"
+    "details_button": "Details",
+    "license_plate": "Licence plate",
+    "model_year": "Model year",
+    "make": "Make",
+    "model": "Model"
+
   },
 
   "drivers": {
@@ -115,7 +131,8 @@
     "driver_list": "Drivers list",
     "driver_details": "Driver Details",
     "add_driver": "Add new driver",
-    "scheduled": "Scheduled"
+    "scheduled": "Scheduled",
+    "current_vehicle": "Current Vehicle"
   },
 
   "messages": {
@@ -157,6 +174,12 @@
   "vehicle_list": "Vehicle list",
     "add_vehicle": "Add new vehicle",
     "service_status": "Service status",
-    "error_message": "Error while fetching driver"
+    "error_message": "Error while fetching driver",
+    "error_creating": "Error while creating vehicle",
+    "load_capacity": "Load capacity",
+    "fuel_consumption": "Fuel consumption",
+    "current_mileage": "Current mileage",
+    "next_service": "Next service",
+    "unassigned": "Unassigned"
 }
 }

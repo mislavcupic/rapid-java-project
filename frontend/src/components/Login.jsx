@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
     const { t } = useTranslation();
     // Polja potrebna za prijavu
     const [username, setUsername] = useState('');
@@ -55,6 +56,11 @@ const Login = () => {
 
             localStorage.setItem('userRole', roleToStore);
             // =========================================================================
+
+            // ✅ POZOVI CALLBACK da App.jsx ažurira isAdmin state
+            if (onLoginSuccess) {
+                onLoginSuccess();
+            }
 
             navigate('/vehicles');
         } catch (err) {
@@ -132,6 +138,14 @@ const Login = () => {
             </Card>
         </Container>
     );
+};
+
+Login.propTypes = {
+    onLoginSuccess: PropTypes.func
+};
+
+Login.defaultProps = {
+    onLoginSuccess: null
 };
 
 export default Login;

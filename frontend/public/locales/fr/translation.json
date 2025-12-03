@@ -37,12 +37,16 @@
   },
 
   "alerts": {
-    "overdue_service": "Entretien en Retard - Immatriculation: {{registration}}",
-    "low_fuel": "Niveau de Carburant Bas - Immatriculation: {{registration}}"
+    "overdue_service": "Entretien en Retard - Immatriculation",
+    "low_fuel": "Niveau de Carburant Bas - Immatriculation",
+    "free_vehicles": "Véhicules libres",
+    "service_warning": "Avertissement d'entretien",
+    "total_vehicles": "Nombre total de véhicules",
+    "average_weight": "Poids moyen"
   },
 
   "forms": {
-    "create_vehicle": "Créer Véhicule",
+    "create_vehicle_title": "Créer Véhicule",
     "edit_vehicle": "Modifier Véhicule",
     "create_shipment": "Créer Expédition",
     "edit_driver": "Modifier Conducteur",
@@ -56,7 +60,13 @@
     "driver_name": "Nom du conducteur",
     "email": "Adresse e-mail",
     "license": "Numéro de permis",
-    "phone": "Numéro de téléphone"
+    "phone": "Numéro de téléphone",
+    "license_plate": "Plaque d'immatriculation",
+    "model_year": "Année du modèle",
+    "make": "Marque",
+    "model": "Modèle",
+    "create_vehicle": "Créer un nouveau véhicule",
+    "fuel_type": "Type de carburant"
   },
 
   "shipments": {
@@ -112,7 +122,8 @@
     "driver_list": "Liste des Conducteurs",
     "driver_details": "Détails du Conducteur",
     "add_driver": "Ajouter un nouveau pilote",
-    "scheduled": "Programme"
+    "scheduled": "Programme",
+    "current_vehicle": "Véhicule actuel"
   },
 
   "messages": {
@@ -154,6 +165,11 @@
     "vehicle_list": "Liste des véhicules",
     "add_vehicle": "Ajouter un nouveau véhicule",
     "service_status": "Récupération des véhicules status",
-    "error_message": "Erreur lors de la récupération du pilote"
+    "error_message": "Erreur lors de la récupération du pilote",
+    "load_capacity": "Capacité de charge",
+    "fuel_consumption": "Consommation de carburant",
+    "current_mileage": "Kilométrage actuel",
+    "next_service": "Prochain entretien",
+    "unassigned": "Non attribué"
   }
 }

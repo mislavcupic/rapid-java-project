@@ -48,12 +48,16 @@
   },
 
   "alerts": {
-    "overdue_service": "Istekao Servis - Registracija: {{registration}}",
-    "low_fuel": "Nizak Nivo Goriva - Registracija: {{registration}}"
+    "overdue_service": "Istekao Servis - Registracija",
+    "low_fuel": "Nizak Nivo Goriva - Registracija",
+    "free_vehicles": "Slobodna vozila",
+    "service_warning": "Upozorenje o servisu",
+    "total_vehicles": "Ukupno vozila",
+    "average_weight": "Prosječna težina"
   },
 
   "forms": {
-    "create_vehicle": "Kreiraj Vozilo",
+    "create_vehicle_title": "Kreiraj Vozilo",
     "edit_vehicle": "Uredi Vozilo",
     "create_shipment": "Kreiraj Pošiljku",
     "edit_driver": "Uredi Vozača",
@@ -65,7 +69,13 @@
     "driver_name": "Ime vozača",
     "email": "Email",
     "license": "Broj važeće vozačke dozvole",
-    "phone": "Kontakt broj"
+    "phone": "Kontakt broj",
+    "license_plate": "Registarska pločica",
+    "model_year": "Godina modela",
+    "make": "Marka",
+    "model": "Model",
+    "create_vehicle": "Kreiraj novo vozilo",
+    "fuel_type": "Vrsta goriva"
   },
 
   "shipments": {
@@ -121,7 +131,8 @@
     "driver_list": "Popis Vozača",
     "driver_details": "Detalji Vozača",
     "add_driver": "Dodaj novog vozača",
-    "scheduled": "Zakazano"
+    "scheduled": "Zakazano",
+    "current_vehicle": "Trenutno vozilo"
   },
 
   "messages": {
@@ -163,6 +174,11 @@
     "vehicle_list": "Lista vozila",
     "add_vehicle": "Dodaj novo vozilo",
     "service_status": "Servisni status",
-    "error_message": "Greška pri dohvaćanju vozača"
+    "error_message": "Greška pri dohvaćanju vozača",
+    "load_capacity": "Nosivost",
+    "fuel_consumption": "Potrošnja goriva",
+    "current_mileage": "Trenutna kilometraža",
+    "next_service": "Sljedeći servis",
+    "unassigned": "Nedodijeljeno"
   }
 }

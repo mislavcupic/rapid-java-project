@@ -185,26 +185,26 @@ class AssignmentControllerTest {
         @DisplayName("PUT /api/assignments/{id}/start - should start assignment")
         void startAssignment_ShouldReturnUpdated() throws Exception {
             when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
-            when(assignmentService.startAssignment(eq(1L), eq(1L)))
+            when(assignmentService.startAssignment(1L, 1L))
                     .thenReturn(testAssignmentResponse);
 
             mockMvc.perform(put("/api/assignments/1/start"))
                     .andExpect(status().isOk());
 
-            verify(assignmentService).startAssignment(eq(1L), eq(1L));
+            verify(assignmentService).startAssignment(1L, 1L);
         }
 
         @Test
         @DisplayName("PUT /api/assignments/{id}/complete - should complete assignment")
         void completeAssignment_ShouldReturnCompleted() throws Exception {
             when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
-            when(assignmentService.completeAssignment(eq(1L), eq(1L)))
+            when(assignmentService.completeAssignment(1L, 1L))
                     .thenReturn(testAssignmentResponse);
 
             mockMvc.perform(put("/api/assignments/1/complete"))
                     .andExpect(status().isOk());
 
-            verify(assignmentService).completeAssignment(eq(1L), eq(1L));
+            verify(assignmentService).completeAssignment(1L,1L);
         }
     }
 }

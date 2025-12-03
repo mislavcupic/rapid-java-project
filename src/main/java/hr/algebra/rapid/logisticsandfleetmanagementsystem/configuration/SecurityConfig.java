@@ -68,7 +68,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/welcome").permitAll()
-
+                        .requestMatchers("/api/admin/**").hasRole(ADMIN)
                         // ================================================================
                         // B. DRIVER RUTE - ✅ NOVO za Driver Dashboard
                         // ================================================================

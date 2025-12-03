@@ -81,9 +81,8 @@ CREATE TABLE IF NOT EXISTS shipment(
                           destination_address VARCHAR(255) NOT NULL,
                           status VARCHAR(50) NOT NULL,
                           expected_delivery_date TIMESTAMP WITH TIME ZONE,
-    -- OVO MORATE DODATI!
+
                           route_id BIGINT,
-    -- Poželjno je dodati i Foreign Key
                           CONSTRAINT fk_route FOREIGN KEY (route_id) REFERENCES route (id)
 );
 

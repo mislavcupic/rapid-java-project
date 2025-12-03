@@ -1,8 +1,8 @@
-// frontend/src/App.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { jwtDecode } from 'jwt-decode';
 
 // Import svih ruta/komponenti
 import AddVehicle from './components/AddVehicle.jsx';
@@ -27,22 +27,15 @@ import ShipmentDetails from "./components/ShipmentDetails.jsx";
 import DriverAssignmentDetails from "./components/DriverAssignmentDetails.jsx";
 import DriverDashboard from "./components/DriverDashboard.jsx";
 import DeliveryConfirmationModal from "./components/DeliveryConfirmationModal.jsx";
+import AdminDashboard from "./components/AdminDashboard.jsx";
 
 // =========================================================================
 // NAVIGACIJSKA KOMPONENTA
 // =========================================================================
 
-const AppNavbar = () => {
+const AppNavbar = ({ isAdmin, onLogout }) => {
     const { t, i18n } = useTranslation();
     const isAuthenticated = !!localStorage.getItem('accessToken');
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userRole');
-        navigate('/login');
-    };
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
@@ -67,6 +60,13 @@ const AppNavbar = () => {
                                 <Nav.Link as={Link} to="/shipments">{t('Shipments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/assignments">{t('Assignments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
+
+                                {/* ✅ SAMO ADMIN VIDI OVAJ LINK */}
+                                {isAdmin && (
+                                    <Nav.Link as={Link} to="/admin/users">
+                                        {t('UserManagement')}
+                                    </Nav.Link>
+                                )}
                             </>
                         )}
                     </Nav>
@@ -90,7 +90,7 @@ const AppNavbar = () => {
                         {/* 🔐 Login / Register / Logout gumbi */}
                         {isAuthenticated ? (
                             <Button
-                                onClick={handleLogout}
+                                onClick={onLogout}
                                 variant="outline-danger"
                                 className="font-monospace"
                             >
@@ -124,14 +124,61 @@ const AppNavbar = () => {
 };
 
 function App() {
+    const navigate = useNavigate();
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    // Provjeri je li korisnik ADMIN pri učitavanju i nakon logina
+    useEffect(() => {
+        checkAdminRole();
+    }, []);
+
+    const checkAdminRole = () => {
+        const token = localStorage.getItem('accessToken');
+        const userRole = localStorage.getItem('userRole'); // ✅ Dodano
+
+        if (!token) {
+            setIsAdmin(false);
+            return;
+        }
+
+        try {
+            const decoded = jwtDecode(token);
+            const currentTime = Date.now() / 1000;
+
+            // Provjeri je li token istekao
+            if (decoded.exp < currentTime) {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('userRole'); // ✅ Očisti i userRole
+                setIsAdmin(false);
+                return;
+            }
+
+            // ✅ Provjeri ima li ROLE_ADMIN iz localStorage (jer JWT nema roles polje)
+            setIsAdmin(userRole === 'ROLE_ADMIN');
+
+            console.log('User role from localStorage:', userRole); // Debug
+            console.log('Is admin:', userRole === 'ROLE_ADMIN'); // Debug
+        } catch (error) {
+            console.error('JWT decode error:', error);
+            setIsAdmin(false);
+        }
+    };
+    const handleLogout = () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userRole');
+        setIsAdmin(false);
+        navigate('/login');
+    };
+
     return (
         <div className="bg-light min-vh-100">
-            <AppNavbar />
+            <AppNavbar isAdmin={isAdmin} onLogout={handleLogout} />
             <Container className="py-4 py-md-5">
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/vehicles" element={<VehicleList />} />
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login" element={<Login onLoginSuccess={checkAdminRole} />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="*" element={<NotFound />} />
                     <Route path="/vehicles/add" element={<AddVehicle />} />
@@ -153,7 +200,10 @@ function App() {
                     <Route path="/shipments/details/:id" element={<ShipmentDetails />} />
                     <Route path="/driver/assignment/:id" element={<DriverAssignmentDetails />} />
                     <Route path="/driver/dashboard" element={<DriverDashboard />} />
-                    <Route path="deliveryconfirmation" element={<DeliveryConfirmationModal />} />
+                    <Route path="/deliveryconfirmation" element={<DeliveryConfirmationModal />} />
+
+                    {/*  ADMIN RUTA */}
+                    <Route path="/admin/users" element={<AdminDashboard />} />
                 </Routes>
             </Container>
         </div>
