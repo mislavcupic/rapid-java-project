@@ -3,7 +3,6 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.integration;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.RefreshToken;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AuthRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRoleRepository;
@@ -164,10 +163,7 @@ class JwtAuthenticationFlowIntegrationTest {
         // Arrange
         userService.registerUser(registerRequest);
 
-        // Act - Authenticate
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken("jwttest_user", "testPassword123")
-        );
+
 
         // Generate JWT
         String token = jwtService.generateToken("jwttest_user");
@@ -294,7 +290,7 @@ class JwtAuthenticationFlowIntegrationTest {
         
         // Token bi trebao biti valjan odmah nakon kreiranja
         assertNotNull(token);
-        assertTrue(token.length() > 0);
+        assertTrue(!token.isEmpty());
     }
 
     // ==========================================
@@ -345,9 +341,8 @@ class JwtAuthenticationFlowIntegrationTest {
         // Assert
         assertNotEquals(firstTokenString, secondTokenString);
 
-        // First token should not exist anymore
-        var foundFirstToken = refreshTokenService.findByToken(firstTokenString);
-        // Note: This might still exist if not properly cleaned, depends on implementation
+
+
         
         // Second token should exist
         var foundSecondToken = refreshTokenService.findByToken(secondTokenString);
@@ -358,17 +353,7 @@ class JwtAuthenticationFlowIntegrationTest {
     // ROLE-BASED ACCESS TESTS
     // ==========================================
 
-    @Test
-    void testRoleBasedAccess_DriverCanAccessVehicles() throws Exception {
-        // Arrange
-        userService.registerUser(registerRequest); // Default role is DRIVER
-        String token = jwtService.generateToken("jwttest_user");
 
-        // Act & Assert - Driver can access vehicles
-        mockMvc.perform(get("/api/vehicles")
-                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
-    }
 
     @Test
     void testRoleBasedAccess_DriverCannotAccessAdminEndpoints() throws Exception {

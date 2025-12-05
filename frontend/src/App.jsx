@@ -29,11 +29,9 @@ import DriverDashboard from "./components/DriverDashboard.jsx";
 import DeliveryConfirmationModal from "./components/DeliveryConfirmationModal.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 
-// =========================================================================
-// NAVIGACIJSKA KOMPONENTA
-// =========================================================================
 
-const AppNavbar = ({ isAdmin, onLogout }) => {
+
+const AppNavbar = (isAdmin, onLogout ) => {
     const { t, i18n } = useTranslation();
     const isAuthenticated = !!localStorage.getItem('accessToken');
 
