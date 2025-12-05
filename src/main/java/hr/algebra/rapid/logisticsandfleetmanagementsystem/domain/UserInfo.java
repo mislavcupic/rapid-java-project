@@ -36,7 +36,7 @@ public class UserInfo {
     @Column(name = "last_name")
     private String lastName;
 
-    // ✅ ISPRAVLJENO: Email je NOT NULL i UNIQUE
+
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 

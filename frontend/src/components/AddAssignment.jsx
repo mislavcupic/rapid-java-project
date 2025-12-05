@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
 
-// ✅ Uvoz Assignment funkcija (za kreiranje)
+//Uvoz Assignment funkcija (za kreiranje)
 import { createAssignment } from '../services/AssignmentApi';
 
-// ✅ Uvoz Shipment funkcija (za dohvaćanje liste pošiljaka)
+// Uvoz Shipment funkcija (za dohvaćanje liste pošiljaka)
 import { fetchShipments } from '../services/ShipmentApi';
 
-// ✅ Uvoz pomoćnih funkcija (Vozači i Vozila)
+// Uvoz pomoćnih funkcija (Vozači i Vozila)
 import { fetchDrivers, fetchVehicles } from '../services/VehicleApi';
 import { useTranslation } from 'react-i18next';
 

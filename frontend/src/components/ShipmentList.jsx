@@ -1,10 +1,7 @@
-// frontend/src/components/ShipmentList.jsx (KORIGIRANA VERZIJA)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchShipments, deleteShipment } from '../services/ShipmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-// ✅ PROMJENA: Dodan FaEye za Detalje
 import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
