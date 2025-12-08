@@ -38,7 +38,7 @@ export const fetchAssignments = async () => {
     return handleResponse(response);
 };
 
-// 2. DOHVAĆANJE DODJELE PO ID-ju (GET by ID)
+// 2. DOHVAĆANJE  PO ID-ju (GET by ID)
 export const fetchAssignmentById = async (id) => {
     const token = getToken();
     if (!token) throw new Error("Korisnik nije prijavljen.");

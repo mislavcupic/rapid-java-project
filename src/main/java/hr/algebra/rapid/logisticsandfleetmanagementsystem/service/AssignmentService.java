@@ -1,7 +1,3 @@
-//package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
-//
-//import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment;
-//import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentRequestDTO;
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment;
@@ -12,9 +8,6 @@ import java.util.Optional;
 
 public interface AssignmentService {
 
-    // ========================================================================
-    // POSTOJEĆE METODE (iz tvog originalnog koda)
-    // ========================================================================
 
     AssignmentResponseDTO mapToResponse(Assignment assignment);
 
@@ -29,10 +22,6 @@ public interface AssignmentService {
     void deleteAssignment(Long id);
 
     List<AssignmentResponseDTO> findAssignmentsByDriver(Long driverId);
-
-    // ========================================================================
-    // NOVE METODE za Driver Workflow
-    // ========================================================================
 
     /**
      * Driver započinje Assignment (SCHEDULED → IN_PROGRESS)

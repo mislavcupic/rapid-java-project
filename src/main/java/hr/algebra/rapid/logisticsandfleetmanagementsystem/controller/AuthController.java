@@ -15,12 +15,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor // ✅ Lombok generiše konstruktor
+@RequiredArgsConstructor
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -81,9 +85,17 @@ public class AuthController {
             if (authentication.isAuthenticated()) {
                 String accessToken = jwtService.generateToken(authRequest.getUsername());
 
+                // ✅ DOHVATI ULOGE IZ AUTHENTICATION OBJEKTA
+                List<String> roles = authentication.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority).
+                        toList();
+
+                logger.info("✅ Korisnik {} prijavljen sa ulogama: {}", authRequest.getUsername(), roles);
+
                 AuthResponseDTO response = AuthResponseDTO.builder()
                         .accessToken(accessToken)
                         .username(authRequest.getUsername())
+                        .roles(roles)  // ✅ DODAJ ULOGE!
                         .message("Prijava uspješna!")
                         .build();
 

@@ -28,10 +28,10 @@ import DriverAssignmentDetails from "./components/DriverAssignmentDetails.jsx";
 import DriverDashboard from "./components/DriverDashboard.jsx";
 import DeliveryConfirmationModal from "./components/DeliveryConfirmationModal.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
+import PropTypes from 'prop-types';
 
 
-
-const AppNavbar = (isAdmin, onLogout ) => {
+const AppNavbar = ({isAdmin, onLogout} ) => {
     const { t, i18n } = useTranslation();
     const isAuthenticated = !!localStorage.getItem('accessToken');
 
@@ -59,7 +59,6 @@ const AppNavbar = (isAdmin, onLogout ) => {
                                 <Nav.Link as={Link} to="/assignments">{t('Assignments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
 
-                                {/* ✅ SAMO ADMIN VIDI OVAJ LINK */}
                                 {isAdmin && (
                                     <Nav.Link as={Link} to="/admin/users">
                                         {t('UserManagement')}
@@ -70,7 +69,6 @@ const AppNavbar = (isAdmin, onLogout ) => {
                     </Nav>
 
                     <Nav className="align-items-center">
-                        {/* 🌐 Gumbi za promjenu jezika */}
                         <div className="d-flex me-3">
                             {['en', 'fr', 'hr'].map(lng => (
                                 <Button
@@ -85,7 +83,6 @@ const AppNavbar = (isAdmin, onLogout ) => {
                             ))}
                         </div>
 
-                        {/* 🔐 Login / Register / Logout gumbi */}
                         {isAuthenticated ? (
                             <Button
                                 onClick={onLogout}
@@ -125,14 +122,12 @@ function App() {
     const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(false);
 
-    // Provjeri je li korisnik ADMIN pri učitavanju i nakon logina
     useEffect(() => {
         checkAdminRole();
     }, []);
 
     const checkAdminRole = () => {
         const token = localStorage.getItem('accessToken');
-        const userRole = localStorage.getItem('userRole'); // ✅ Dodano
 
         if (!token) {
             setIsAdmin(false);
@@ -143,28 +138,27 @@ function App() {
             const decoded = jwtDecode(token);
             const currentTime = Date.now() / 1000;
 
-            // Provjeri je li token istekao
             if (decoded.exp < currentTime) {
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('userRole'); // ✅ Očisti i userRole
+                localStorage.clear();
                 setIsAdmin(false);
                 return;
             }
 
-            // ✅ Provjeri ima li ROLE_ADMIN iz localStorage (jer JWT nema roles polje)
-            setIsAdmin(userRole === 'ROLE_ADMIN');
+            const authorities = decoded.authorities || [];
+            const hasAdminRole = authorities.includes('ROLE_ADMIN');
 
-            console.log('User role from localStorage:', userRole); // Debug
-            console.log('Is admin:', userRole === 'ROLE_ADMIN'); // Debug
+            setIsAdmin(hasAdminRole);
+
+            console.log('JWT authorities:', authorities);
+            console.log('Is admin:', hasAdminRole);
         } catch (error) {
             console.error('JWT decode error:', error);
             setIsAdmin(false);
         }
     };
+
     const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userRole');
+        localStorage.clear();
         setIsAdmin(false);
         navigate('/login');
     };
@@ -199,13 +193,16 @@ function App() {
                     <Route path="/driver/assignment/:id" element={<DriverAssignmentDetails />} />
                     <Route path="/driver/dashboard" element={<DriverDashboard />} />
                     <Route path="/deliveryconfirmation" element={<DeliveryConfirmationModal />} />
-
-                    {/*  ADMIN RUTA */}
                     <Route path="/admin/users" element={<AdminDashboard />} />
                 </Routes>
             </Container>
         </div>
     );
 }
+
+AppNavbar.propTypes = {
+    isAdmin: PropTypes.bool.isRequired,
+    onLogout: PropTypes.func.isRequired
+};
 
 export default App;

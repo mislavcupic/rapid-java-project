@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// Koristite @RequiredArgsConstructor umjesto ručnog konstruktora
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -26,10 +26,7 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')") // Koristim 'ROLE_DISPATCHER' umjesto 'MANAGER'
     public ResponseEntity<List<DriverResponseDTO>> getDrivers() {
 
-        // ✅ ISPRAVNO: Koristite metodu iz DriverService koja već dohvaća i mapira Driver entitete.
         List<DriverResponseDTO> driversInfo = driverService.findAllDrivers();
-
-
 
         return ResponseEntity.ok(driversInfo);
     }

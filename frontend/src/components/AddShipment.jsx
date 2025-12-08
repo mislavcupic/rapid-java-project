@@ -4,17 +4,13 @@ import { Container, Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-// =================================================================
-// 🛑 REACT LEAFLET UVEZ
-// =================================================================
+//leaflet uvoz
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { geocodeAddress } from '../services/ShipmentApi';
 
-// =================================================================
-// FIKSIRANJE IKONA
-// =================================================================
+//fiksiranje ikona
 const customIcon = new L.Icon({
     iconUrl: '/images/marker-icons/marker-icon.png',
     iconRetinaUrl: '/images/marker-icons/marker-icon-2x.png',

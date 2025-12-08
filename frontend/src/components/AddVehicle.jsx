@@ -1,5 +1,3 @@
-// frontend/src/components/AddVehicle.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createVehicle, fetchDrivers } from '../services/VehicleApi.js';
@@ -49,7 +47,7 @@ const AddVehicle = () => {
         if (localStorage.getItem('accessToken')) {
             loadDrivers();
         } else {
-            // Ako nismo prijavljeni, vozači ne mogu biti učitani (ako je to pravilo Backenda)
+            // Ako nismo prijavljeni, vozači nisu učitani
             setDriversLoading(false);
         }
     }, [t]);

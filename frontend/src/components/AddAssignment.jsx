@@ -1,5 +1,3 @@
-// frontend/src/components/AddAssignment.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
@@ -40,7 +38,7 @@ const AddAssignment = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Učitavanje listi (Vozači, Vozila, Pošiljke)
+    // Učitavanje lista (Vozači, Vozila, Pošiljke)
     useEffect(() => {
         const loadDependencies = async () => {
             if (!localStorage.getItem('accessToken')) return navigate('/login');

@@ -47,6 +47,7 @@ INSERT INTO roles (name) VALUES ('ROLE_ADMIN');
 INSERT INTO roles (name) VALUES ('ROLE_DISPATCHER');
 INSERT INTO roles (name) VALUES ('ROLE_DRIVER');
 
+
 -- App_User
 INSERT INTO app_user (first_name, last_name, username, password, email, is_enabled) VALUES
     ('Admin', 'Korisnik', 'admin', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW', 'admin@fleet.io', TRUE);

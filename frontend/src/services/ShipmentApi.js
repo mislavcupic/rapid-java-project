@@ -8,7 +8,6 @@ const handleResponse = async (response) => {
     if (!response.ok) {
         let errorDetail = {};
         try {
-            // Pokušaj parsiranja JSON-a za detalje greške iz Backenda
             errorDetail = await response.json();
         } catch (e) {
         log.error(e);
@@ -21,9 +20,9 @@ const handleResponse = async (response) => {
     return response.status === 204 ?  null : response.json();
 };
 
-// =================================================================
-// NOVO: FUNKCIJA ZA GEOCORDING PREKO NOMINATIMA (OSM)
-// =================================================================
+
+// FUNKCIJA ZA GEOCORDING PREKO NOMINATIMA (OSM)
+
 /**
  * Pretvara adresu u geografske koordinate (Latitude, Longitude) koristeći Nominatim (OSM).
  * OGRANIČENJE: Koristiti max 1 zahtjev u sekundi.

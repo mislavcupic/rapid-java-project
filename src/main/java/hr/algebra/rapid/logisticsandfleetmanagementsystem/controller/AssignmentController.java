@@ -71,7 +71,7 @@ public class AssignmentController {
      * GET /api/assignments/my-schedule
      */
     @GetMapping("/my-schedule")
-    @PreAuthorize("hasAuthority('ROLE_DRIVER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DRIVER')")
     public ResponseEntity<List<AssignmentResponseDTO>> getDriverSchedule(
             @AuthenticationPrincipal UserDetails userDetails) {
 

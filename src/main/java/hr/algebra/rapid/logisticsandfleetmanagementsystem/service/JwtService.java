@@ -1,5 +1,8 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -7,11 +10,13 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -20,98 +25,73 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class JwtService {
 
-    // ✅ Injektuj SECRET i expiration iz application.properties
+    private final UserRepository userRepository;
+
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration.time}")
     private long expirationTimeInSeconds;
 
-    // ----------------------------------------------------------------------
-    // PUBLIC API METODE
-    // ----------------------------------------------------------------------
-
-    /**
-     * Ekstraktuje username iz JWT tokena
-     */
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    /**
-     * Validira JWT token za danog korisnika
-     */
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    /**
-     * Generiše novi JWT token za korisnika
-     */
     public String generateToken(String username) {
+        UserInfo user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        List<String> roles = user.getRoles().stream()
+                .map(UserRole::getName)
+                .toList();
+
         Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", roles);
+
         return createToken(claims, username);
     }
 
-    // ----------------------------------------------------------------------
-    // PRIVATNE HELPER METODE
-    // ----------------------------------------------------------------------
-
-    /**
-     * Ekstraktuje datum isteka tokena
-     */
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    /**
-     * Generička metoda za ekstrakciju claim-a iz tokena
-     */
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    /**
-     * Parsira i ekstraktuje sve claim-ove iz tokena
-     * ✅ NOVO: Koristi moderni API bez deprecated metoda
-     */
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSignKey()) // ✅ NOVO: zamjena za setSigningKey
+                .verifyWith(getSignKey())
                 .build()
-                .parseSignedClaims(token)  // ✅ NOVO: zamjena za parseClaimsJws
-                .getPayload();              // ✅ NOVO: zamjena za getBody
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
-    /**
-     * Provjerava je li token istekao
-     */
     private Boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
-    /**
-     * Kreira novi JWT token s claim-ovima
-     * ✅ NOVO: Koristi moderni builder API
-     */
     private String createToken(Map<String, Object> claims, String username) {
         long expirationTimeInMillis = TimeUnit.SECONDS.toMillis(expirationTimeInSeconds);
 
         return Jwts.builder()
-                .claims(claims)             // ✅ NOVO: claims() umjesto setClaims()
-                .subject(username)          // ✅ NOVO: subject() umjesto setSubject()
-                .issuedAt(new Date(System.currentTimeMillis()))  // ✅ NOVO: issuedAt()
-                .expiration(new Date(System.currentTimeMillis() + expirationTimeInMillis)) // ✅ NOVO: expiration()
-                .signWith(getSignKey())     // ✅ NOVO: Automatski detektuje algoritam
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expirationTimeInMillis))
+                .signWith(getSignKey())
                 .compact();
     }
 
-    /**
-     * Generiše signing key iz SECRET stringa
-     * ✅ NOVO: Vraća SecretKey umjesto Key
-     */
     private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);

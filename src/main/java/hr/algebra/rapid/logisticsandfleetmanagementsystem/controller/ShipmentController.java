@@ -24,7 +24,7 @@ import java.util.List;
 public class ShipmentController {
 
     private final ShipmentService shipmentService;
-    private final DriverService driverService; // ✅ NOVO - za Driver Dashboard
+    private final DriverService driverService;
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
@@ -35,7 +35,7 @@ public class ShipmentController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER') or " +
-            "@driverService.isShipmentAssignedToDriver(#id, authentication.name)") // ✅ NOVO - Driver može vidjeti svoje
+            "@driverService.isShipmentAssignedToDriver(#id, authentication.name)") //driver može vidjeti assignmente dodijeljene njemu
     public ResponseEntity<ShipmentResponse> getShipmentById(@PathVariable Long id) {
         ShipmentResponse shipment = shipmentService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", id));
@@ -64,9 +64,9 @@ public class ShipmentController {
         return ResponseEntity.noContent().build();
     }
 
-    // ========================================================================
-    // ✅ NOVI DRIVER ENDPOINTI - Akcije za promjenu statusa pošiljke
-    // ========================================================================
+
+    // Novi driver endpoint - Akcije za promjenu statusa pošiljke
+
 
     /**
      * Driver započinje dostavu (SCHEDULED → IN_TRANSIT)

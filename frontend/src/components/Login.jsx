@@ -1,4 +1,4 @@
-// frontend/src/components/Login.jsx (KONAČNA ISPRAVKA)
+// frontend/src/components/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
@@ -7,15 +7,10 @@ import PropTypes from 'prop-types';
 
 const Login = ({ onLoginSuccess }) => {
     const { t } = useTranslation();
-    // Polja potrebna za prijavu
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-
-    // Polja Ime i Prezime: NE šaljemo ih u body zahtjeva za prijavu,
-    // ali ih ostavljamo u stanju ako ih je forma vizualno zahtijevala.
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -24,45 +19,56 @@ const Login = ({ onLoginSuccess }) => {
         setError(null);
 
         try {
+            localStorage.clear();
+
             const response = await fetch('http://localhost:8080/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // ✅ KRITIČNO: Šaljemo samo 'username' i 'password' ako backend ne zahtijeva ime/prezime za prijavu
                 body: JSON.stringify({ username, password }),
             });
 
             if (!response.ok) {
                 const data = await response.json();
-                // Ako backend vrati 401/403, uhvatimo poruku
                 throw new Error(data.message || 'Prijava neuspješna. Provjerite korisničko ime i lozinku.');
             }
 
             const data = await response.json();
-            // 1. Spremi Access Token
+
             localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('username', username);
 
-            // =========================================================================
-            // ✅ KRITIČNA LOGIKA: SPREMANJE ULOGE
-            // Ovo je jedini način da VehicleList.jsx zna vašu ulogu.
-            // =========================================================================
-            let roleToStore = 'ROLE_DRIVER';
-            const user = username.toLowerCase();
-
-            if (user.includes('admin')) {
-                roleToStore = 'ROLE_ADMIN';
-            } else if (user.includes('dispatcher') || user.includes('disp')) {
-                roleToStore = 'ROLE_DISPATCHER';
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken);
             }
 
-            localStorage.setItem('userRole', roleToStore);
-            // =========================================================================
+            try {
+                const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+                const authorities = payload.authorities || payload.roles || [];
 
-            // ✅ POZOVI CALLBACK da App.jsx ažurira isAdmin state
+                if (authorities && authorities.length > 0) {
+                    localStorage.setItem('userRoles', JSON.stringify(authorities));
+
+                    if (authorities.includes('ROLE_ADMIN')) {
+                        localStorage.setItem('userRole', 'ROLE_ADMIN');
+                    } else if (authorities.includes('ROLE_DISPATCHER')) {
+                        localStorage.setItem('userRole', 'ROLE_DISPATCHER');
+                    } else if (authorities.includes('ROLE_DRIVER')) {
+                        localStorage.setItem('userRole', 'ROLE_DRIVER');
+                    } else {
+                        localStorage.setItem('userRole', authorities[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('JWT decode error:', err);
+            }
+
             if (onLoginSuccess) {
                 onLoginSuccess();
             }
 
-            navigate('/vehicles');
+            navigate('/');
+            globalThis.location.reload();
+
         } catch (err) {
             setError(err.message);
         }
@@ -79,8 +85,6 @@ const Login = ({ onLoginSuccess }) => {
                     )}
 
                     <Form onSubmit={handleSubmit}>
-
-                        {/* Polje za Korisničko Ime */}
                         <FloatingLabel controlId="floatingUsername" label={t("forms.username")} className="mb-3">
                             <Form.Control
                                 type="text"
@@ -92,7 +96,6 @@ const Login = ({ onLoginSuccess }) => {
                             />
                         </FloatingLabel>
 
-                        {/* Polje za Ime (Ostaje, ali se ne koristi za prijavu) */}
                         <FloatingLabel controlId="floatingFirstName" label={t("forms.firstName")} className="mb-3">
                             <Form.Control
                                 type="text"
@@ -103,7 +106,6 @@ const Login = ({ onLoginSuccess }) => {
                             />
                         </FloatingLabel>
 
-                        {/* Polje za Prezime (Ostaje, ali se ne koristi za prijavu) */}
                         <FloatingLabel controlId="floatingLastName" label={t("forms.lastName")} className="mb-3">
                             <Form.Control
                                 type="text"
@@ -114,7 +116,6 @@ const Login = ({ onLoginSuccess }) => {
                             />
                         </FloatingLabel>
 
-                        {/* Polje za Lozinku */}
                         <FloatingLabel controlId="floatingPassword" label={t("forms.password")} className="mb-4">
                             <Form.Control
                                 type="password"
@@ -131,7 +132,7 @@ const Login = ({ onLoginSuccess }) => {
                             variant="outline-primary"
                             className="w-100 fw-bold font-monospace"
                         >
-                            Prijava
+                            {t("LOGIN")}
                         </Button>
                     </Form>
                 </Card.Body>

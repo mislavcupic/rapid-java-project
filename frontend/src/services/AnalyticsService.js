@@ -17,9 +17,9 @@ const handleResponse = async (response) => {
     return response;
 };
 
-// =================================================================
-// 1. ANALITIKA POŠILJKI
-// =================================================================
+
+// 1. Analitika pošiljki
+
 export const getAverageActiveShipmentWeight = async (token) => {
     const response = await fetch(`${API_BASE_URL}/shipments/average-active-weight`, {
         method: 'GET',
@@ -32,9 +32,7 @@ export const getAverageActiveShipmentWeight = async (token) => {
     return validatedResponse.json();
 };
 
-// =================================================================
-// 2. BULK OPERACIJA (MARK OVERDUE)
-// =================================================================
+// 2. Bulk operacija (bulk overdue)
 export const bulkMarkOverdue = async (token) => {
     const response = await fetch(`${API_BASE_URL}/shipments/mark-overdue`, {
         method: 'POST',
@@ -48,11 +46,11 @@ export const bulkMarkOverdue = async (token) => {
     return validatedResponse.text();
 };
 
-// =================================================================
-// 🆕 3. ANALITIKA VOZILA (MAINTENANCE I SCHEDULER ALERT)
+
+//  3. ANALITIKA VOZILA (MAINTENANCE I SCHEDULER ALERT)
 // Pretpostavljamo Backend endpoint: /api/analytics/vehicles/status
 // Vraća DTO: { overdue: 2, warning: 5, free: 12, total: 20 }
-// =================================================================
+
 export const fetchVehicleAnalytics = async (token) => {
     if (!token) throw new Error("Korisnik nije prijavljen.");
 

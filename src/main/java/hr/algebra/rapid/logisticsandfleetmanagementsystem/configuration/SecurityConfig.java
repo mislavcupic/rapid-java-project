@@ -101,12 +101,13 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.GET, "/api/users/drivers").hasAnyRole(ADMIN, DISPATCHER)
                         .requestMatchers(HttpMethod.GET, "/api/vehicles/**").hasAnyRole(ADMIN, DISPATCHER)
                         .requestMatchers(HttpMethod.GET, "/api/shipments/**").hasAnyRole(ADMIN, DISPATCHER)
-                        .requestMatchers(HttpMethod.GET, "/api/drivers/**").hasAnyRole(ADMIN, DISPATCHER)
+                        .requestMatchers(HttpMethod.GET, "/api/drivers/**").hasAnyRole(ADMIN, DISPATCHER, DRIVER)
 
                         // Assignment CRUD (Dispatcher kreira i upravlja Assignment-ima)
                         .requestMatchers(HttpMethod.GET, "/api/assignments").hasAnyRole(ADMIN, DISPATCHER)
                         .requestMatchers(HttpMethod.POST, "/api/assignments").hasRole(DISPATCHER)
                         .requestMatchers(HttpMethod.PUT, API_ASSIGNMENTS_ID).hasRole(DISPATCHER)
+                        .requestMatchers(HttpMethod.GET, "/api/assignments/my-schedule").hasAnyRole(ADMIN, DISPATCHER, DRIVER)
 
                         // Shipment CRUD (Dispatcher kreira i upravlja Shipment-ima)
                         .requestMatchers(HttpMethod.POST, "/api/shipments").hasRole(DISPATCHER)

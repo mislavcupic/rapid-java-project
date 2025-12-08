@@ -44,9 +44,7 @@ public class DriverController {
         return ResponseEntity.ok(driver);
     }
 
-    // -----------------------------------------------------------------
-    // CREATE (Kreiranje)
-    // -----------------------------------------------------------------
+
 
     /** Kreira novi Driver profil i povezuje ga s postojećim UserInfo */
     @PostMapping

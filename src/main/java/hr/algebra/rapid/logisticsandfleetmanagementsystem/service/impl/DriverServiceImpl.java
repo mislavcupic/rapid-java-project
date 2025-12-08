@@ -39,7 +39,7 @@ public class DriverServiceImpl implements DriverService {
     private final PasswordEncoder passwordEncoder;
     private final AssignmentRepository assignmentRepository;
 
-    // ✅ NOVO: Injektiranje sebe preko ObjectProvider da bi se osigurao poziv kroz Spring AOP proxy
+    // Injektiranje sebe preko ObjectProvider da bi se osigurao poziv kroz Spring AOP proxy
     // Ovo rješava SonarQube problem S58809
     private final ObjectProvider<DriverService> driverServiceProvider;
 
