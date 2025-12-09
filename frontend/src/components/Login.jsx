@@ -1,9 +1,10 @@
-// frontend/src/components/Login.jsx - SA VALIDACIJOM
+// frontend/src/components/Login.jsx - ISPRAVLJENA VERZIJA
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
+import { apiClient } from '../services/apiClient.js';
 
 const Login = ({ onLoginSuccess }) => {
     const { t } = useTranslation();
@@ -11,8 +12,6 @@ const Login = ({ onLoginSuccess }) => {
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
 
     // Validation errors
     const [errors, setErrors] = useState({});
@@ -75,29 +74,24 @@ const Login = ({ onLoginSuccess }) => {
         }
 
         try {
+            // Očisti localStorage prije prijave
             localStorage.clear();
 
-            const response = await fetch('http://localhost:8080/auth/login', {
+            // ✅ ISPRAVAK: apiClient VRAĆA PARSIRANI JSON DIREKTNO
+            const data = await apiClient('/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
 
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Prijava neuspješna. Provjerite korisničko ime i lozinku.');
-            }
+            // ✅ UKLONJENA 'if (!response.ok)' i 'response.json()' provjera
+            // apiClient automatski baca Error za 4xx/5xx statuse
 
-            const data = await response.json();
-
+            // ✅ SPREMANJE ACCESS TOKENA
             localStorage.setItem('accessToken', data.accessToken);
             localStorage.setItem('username', username);
 
-            if (data.refreshToken) {
-                localStorage.setItem('refreshToken', data.refreshToken);
-            }
-
             try {
+                // Dekodiranje JWT payload-a za uloge
                 const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
                 const authorities = payload.authorities || payload.roles || [];
 
@@ -123,10 +117,10 @@ const Login = ({ onLoginSuccess }) => {
             }
 
             navigate('/');
-            globalThis.location.reload();
 
         } catch (err) {
-            setError(err.message);
+            // ✅ apiClient baca Error objekt s .message propertyjem
+            setError(err.message || 'Prijava neuspješna. Provjerite korisničko ime i lozinku.');
         }
     };
 
@@ -154,26 +148,6 @@ const Login = ({ onLoginSuccess }) => {
                             <Form.Control.Feedback type="invalid">
                                 {errors.username}
                             </Form.Control.Feedback>
-                        </FloatingLabel>
-
-                        <FloatingLabel controlId="floatingFirstName" label={t("forms.firstName")} className="mb-3">
-                            <Form.Control
-                                type="text"
-                                placeholder={t("forms.firstName")}
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                className="font-monospace"
-                            />
-                        </FloatingLabel>
-
-                        <FloatingLabel controlId="floatingLastName" label={t("forms.lastName")} className="mb-3">
-                            <Form.Control
-                                type="text"
-                                placeholder={t("forms.lastName")}
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                className="font-monospace"
-                            />
                         </FloatingLabel>
 
                         <FloatingLabel controlId="floatingPassword" label={t("forms.password") + ' *'} className="mb-4">

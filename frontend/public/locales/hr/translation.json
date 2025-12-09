@@ -75,7 +75,18 @@
     "make": "Marka",
     "model": "Model",
     "create_vehicle": "Kreiraj novo vozilo",
-    "fuel_type": "Vrsta goriva"
+    "fuel_type": "Vrsta goriva",
+    "registration": "Registracija",
+    "confirm_password": "Potvrdi lozinku",
+    "driver_info_optional": "Podatci vozača (Opciono)",
+    "license_number": "Broj vozačke dozvole",
+    "license_expiration": "Datum isteka dozvole",
+    "optional_later": "Opcionalno - možeš unijeti kasnije",
+    "characters": "znakova",
+    "must_be_future": "Opcionalno - mora biti u budućnosti",
+    "phone_format": "Format: +385912345678 (9-15 brojeva)",
+    "already_have_account": "Već imaš račun?",
+    "register_button": "Registriraj se"
   },
 
   "shipments": {

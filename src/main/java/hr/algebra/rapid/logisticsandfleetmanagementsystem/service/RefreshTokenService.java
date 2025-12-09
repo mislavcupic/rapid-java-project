@@ -1,3 +1,4 @@
+// File: RefreshTokenService.java - MODIFICIRANO
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.RefreshToken;
@@ -6,6 +7,7 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.TokenExpire
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.RefreshTokenRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value; // ✅ DODANO
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -13,35 +15,31 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor // ✅ Lombok generiše konstruktor
+@RequiredArgsConstructor
 public class RefreshTokenService {
 
-    // ✅ Final fields - Constructor Injection
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
+    @Value("${refresh.token.expiration.ms}") // ✅ DODANO: Inject 24h trajanje
+    private long refreshTokenExpirationMs;
+
     /**
-     * Kreira novi refresh token za korisnika
-     * Ako postoji stari token, briše ga prije kreiranja novog
+     * Kreira novi refresh token za korisnika (trajanje 24h)
      */
     public RefreshToken createRefreshToken(String username) {
-        // 1. Dohvati UserInfo objekt
         UserInfo userInfo = userRepository.findByUsername(username);
 
-        // 2. Provjeri postoji li već token za ovog korisnika
-        Optional<RefreshToken> existingToken = refreshTokenRepository.findByUserInfo(userInfo);
+        // Rotacija tokena: Obriši stari token ako postoji
+        refreshTokenRepository.findByUserInfo(userInfo).ifPresent(refreshTokenRepository::delete);
 
-        // 3. Obriši stari token ako postoji
-        existingToken.ifPresent(refreshTokenRepository::delete);
-
-        // 4. Kreiraj novi token
+        // Kreiraj novi token
         RefreshToken refreshToken = RefreshToken.builder()
                 .userInfo(userInfo)
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(600000)) // 10 minuta
+                .expiryDate(Instant.now().plusMillis(refreshTokenExpirationMs))
                 .build();
 
-        // 5. Spremi i vrati novi token
         return refreshTokenRepository.save(refreshToken);
     }
 
@@ -54,7 +52,6 @@ public class RefreshTokenService {
 
     /**
      * Verificira da li je token istekao
-     * Ako jeste, briše ga i baca exception
      */
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0) {

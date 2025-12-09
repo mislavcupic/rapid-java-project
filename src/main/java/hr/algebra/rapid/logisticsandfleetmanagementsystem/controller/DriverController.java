@@ -1,5 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
+
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+
 
 import java.util.List;
 
@@ -23,7 +25,6 @@ import java.util.List;
 public class DriverController {
 
     private final DriverService driverService;
-
 
 
     @GetMapping
@@ -78,4 +79,6 @@ public class DriverController {
         driverService.deleteDriver(id);
         return ResponseEntity.noContent().build();
     }
+
+
 }

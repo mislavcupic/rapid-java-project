@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button, NavDropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { jwtDecode } from 'jwt-decode';
 
@@ -31,9 +31,14 @@ import AdminDashboard from "./components/AdminDashboard.jsx";
 import PropTypes from 'prop-types';
 
 
-const AppNavbar = ({isAdmin, onLogout} ) => {
+const AppNavbar = ({ userRoles, onLogout }) => {
     const { t, i18n } = useTranslation();
     const isAuthenticated = !!localStorage.getItem('accessToken');
+
+    // ✅ Provjera pojedinačnih uloga
+    const isAdmin = userRoles.includes('ROLE_ADMIN');
+    const isDispatcher = userRoles.includes('ROLE_DISPATCHER');
+    const isDriver = userRoles.includes('ROLE_DRIVER');
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
@@ -52,17 +57,36 @@ const AppNavbar = ({isAdmin, onLogout} ) => {
                         <Nav.Link as={Link} to="/">{t('Home')}</Nav.Link>
                         {isAuthenticated && (
                             <>
+                                {/* ✅ Vozila, Vozači, Pošiljke, Assignments - vidljivo za sve autentificirane */}
                                 <Nav.Link as={Link} to="/vehicles">{t('Vehicles')}</Nav.Link>
                                 <Nav.Link as={Link} to="/drivers">{t('Drivers')}</Nav.Link>
-                                <Nav.Link as={Link} to="/driver/dashboard">{t('DriverDashboard')}</Nav.Link>
                                 <Nav.Link as={Link} to="/shipments">{t('Shipments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/assignments">{t('Assignments')}</Nav.Link>
-                                <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
 
-                                {isAdmin && (
-                                    <Nav.Link as={Link} to="/admin/users">
-                                        {t('UserManagement')}
-                                    </Nav.Link>
+                                {/* ✅ Dashboards - Dropdown ako ima više uloga */}
+                                {(isAdmin || isDispatcher || isDriver) && (
+                                    <NavDropdown title={t('Dashboards')} id="dashboards-dropdown">
+                                        {isAdmin && (
+                                            <NavDropdown.Item as={Link} to="/admin/users">
+                                                {t('Admin Dashboard')}
+                                            </NavDropdown.Item>
+                                        )}
+                                        {isDispatcher && (
+                                            <NavDropdown.Item as={Link} to="/dispatcher/dashboard">
+                                                {t('Dispatcher Dashboard')}
+                                            </NavDropdown.Item>
+                                        )}
+                                        {isDriver && (
+                                            <NavDropdown.Item as={Link} to="/driver/dashboard">
+                                                {t('Driver Dashboard')}
+                                            </NavDropdown.Item>
+                                        )}
+                                    </NavDropdown>
+                                )}
+
+                                {/* ✅ Analytics - samo Admin i Dispatcher */}
+                                {(isAdmin || isDispatcher) && (
+                                    <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
                                 )}
                             </>
                         )}
@@ -120,17 +144,17 @@ const AppNavbar = ({isAdmin, onLogout} ) => {
 
 function App() {
     const navigate = useNavigate();
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [userRoles, setUserRoles] = useState([]);
 
     useEffect(() => {
-        checkAdminRole();
+        checkUserRoles();
     }, []);
 
-    const checkAdminRole = () => {
+    const checkUserRoles = () => {
         const token = localStorage.getItem('accessToken');
 
         if (!token) {
-            setIsAdmin(false);
+            setUserRoles([]);
             return;
         }
 
@@ -140,37 +164,34 @@ function App() {
 
             if (decoded.exp < currentTime) {
                 localStorage.clear();
-                setIsAdmin(false);
+                setUserRoles([]);
                 return;
             }
 
             const authorities = decoded.authorities || [];
-            const hasAdminRole = authorities.includes('ROLE_ADMIN');
-
-            setIsAdmin(hasAdminRole);
+            setUserRoles(authorities);
 
             console.log('JWT authorities:', authorities);
-            console.log('Is admin:', hasAdminRole);
         } catch (error) {
             console.error('JWT decode error:', error);
-            setIsAdmin(false);
+            setUserRoles([]);
         }
     };
 
     const handleLogout = () => {
         localStorage.clear();
-        setIsAdmin(false);
+        setUserRoles([]);
         navigate('/login');
     };
 
     return (
         <div className="bg-light min-vh-100">
-            <AppNavbar isAdmin={isAdmin} onLogout={handleLogout} />
+            <AppNavbar userRoles={userRoles} onLogout={handleLogout} />
             <Container className="py-4 py-md-5">
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/vehicles" element={<VehicleList />} />
-                    <Route path="/login" element={<Login onLoginSuccess={checkAdminRole} />} />
+                    <Route path="/login" element={<Login onLoginSuccess={checkUserRoles} />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="*" element={<NotFound />} />
                     <Route path="/vehicles/add" element={<AddVehicle />} />
@@ -201,7 +222,7 @@ function App() {
 }
 
 AppNavbar.propTypes = {
-    isAdmin: PropTypes.bool.isRequired,
+    userRoles: PropTypes.array.isRequired,
     onLogout: PropTypes.func.isRequired
 };
 

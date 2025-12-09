@@ -66,7 +66,18 @@
     "make": "Marque",
     "model": "Modèle",
     "create_vehicle": "Créer un nouveau véhicule",
-    "fuel_type": "Type de carburant"
+    "fuel_type": "Type de carburant",
+    "registration": "Inscription",
+    "confirm_password": "Confirmer le mot de passe",
+    "driver_info_optional": "Informations du conducteur (Facultatif)",
+    "license_number": "Numéro de permis de conduire",
+    "license_expiration": "Date d'expiration du permis",
+    "optional_later": "Facultatif - peut être saisi plus tard",
+    "characters": "caractères",
+    "must_be_future": "Facultatif - doit être une date future",
+    "phone_format": "Format: +385912345678 (9-15 chiffres)",
+    "already_have_account": "Vous avez déjà un compte?",
+    "register_button": "Register"
   },
 
   "shipments": {

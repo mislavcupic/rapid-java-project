@@ -27,7 +27,7 @@ public class AdminUserController {
     public ResponseEntity<UserInfo> updateUserRoles(
             @PathVariable Long id,
             @RequestBody UpdateUserRolesRequestDTO request) {
-        UserInfo updatedUser = userService.updateUserRoles(id, request.getRoleNames());
+        UserInfo updatedUser = userService.updateUserRoles(id, request.getRoles());
         return ResponseEntity.ok(updatedUser);
     }
 

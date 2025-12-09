@@ -1,79 +1,78 @@
-// src/services/AnalyticsService.js (AŽURIRANA VERZIJA)
+// frontend/src/services/AnalyticsService.js
 
-const API_BASE_URL = 'http://localhost:8080/api/analytics';
+// ✅ IMPORTIRANJE CENTRALNOG API KLIJENTA
+import { apiClient } from './apiClient';
 
-const handleResponse = async (response) => {
-    if (!response.ok) {
-        const errorText = await response.text();
-        // Pokušaj parsiranja JSON-a ako je moguće za detaljniju grešku
-        try {
-            const errorDetail = await response.json();
-            throw new Error(errorDetail.message || `HTTP error! Status: ${response.status}`);
-        } catch (parseError) {
-            // Response nije JSON format, koristi raw text
-            throw new Error(errorText || `HTTP error! Status: ${response.status}. Parse error: ${parseError.message}`);
-        }
+// Relativne putanje do resursa
+const BASE_PATH_SHIPMENTS = '/api/analytics/shipments';
+const BASE_PATH_VEHICLES = '/api/analytics/vehicles';
+
+
+// =================================================================
+// 1. ANALITIKA POŠILJKI
+// =================================================================
+
+/**
+ * Dohvaća prosječnu težinu aktivnih pošiljaka.
+ * Očekivani povrat: broj (npr. 1500.5) ili objekt.
+ */
+export const getAverageActiveShipmentWeight = async () => {
+    const path = `${BASE_PATH_SHIPMENTS}/average-active-weight`;
+
+    try {
+        // Očekuje se pojedinačna vrijednost, ne niz
+        return await apiClient(path, {
+            method: 'GET',
+        });
+    } catch (error) {
+        console.error("Greška pri dohvaćanju prosječne težine pošiljaka:", error);
+        // Osiguravamo da se greška propagira
+        throw error;
     }
-    return response;
+};
+
+/**
+ * Bulk akcija: označavanje pošiljaka kao zakasnjele.
+ * Očekivani povrat: statusni objekt/poruka.
+ */
+export const bulkMarkOverdue = async () => {
+    const path = `${BASE_PATH_SHIPMENTS}/mark-overdue`;
+
+    try {
+        // Očekuje se statusni objekt/poruka
+        return await apiClient(path, {
+            method: 'POST',
+        });
+    } catch (error) {
+        console.error("Greška pri bulk akciji označavanja pošiljaka:", error);
+        // Osiguravamo da se greška propagira
+        throw error;
+    }
 };
 
 
-// 1. Analitika pošiljki
+// =================================================================
+// 2. ANALITIKA VOZILA
+// =================================================================
 
-export const getAverageActiveShipmentWeight = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/shipments/average-active-weight`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+/**
+ * Dohvaća statusnu analitiku vozila (npr. overdue, warning, free, total).
+ * Očekivani povrat: objekt (npr. { overdue: 5, warning: 3, free: 10, total: 18 })
+ */
+export const fetchVehicleAnalytics = async () => {
+    const path = `${BASE_PATH_VEHICLES}/status`;
 
-    const validatedResponse = await handleResponse(response);
-    return validatedResponse.json();
-};
+    try {
+        const data = await apiClient(path, {
+            method: 'GET',
+        });
 
-// 2. Bulk operacija (bulk overdue)
-export const bulkMarkOverdue = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/shipments/mark-overdue`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
+        // Očekuje se objekt s brojevima, a ne niz, pa ne treba Array.isArray provjera
+        return data;
 
-    const validatedResponse = await handleResponse(response);
-    return validatedResponse.text();
-};
-
-
-//  3. ANALITIKA VOZILA (MAINTENANCE I SCHEDULER ALERT)
-// Pretpostavljamo Backend endpoint: /api/analytics/vehicles/status
-// Vraća DTO: { overdue: 2, warning: 5, free: 12, total: 20 }
-
-export const fetchVehicleAnalytics = async (token) => {
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${API_BASE_URL}/vehicles/status`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    const validatedResponse = await handleResponse(response);
-    return validatedResponse.json();
-};
-
-export const fetchVehicleAlertStatus = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/vehicles/status`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    const validatedResponse = await handleResponse(response);
-    // Očekuje se JSON objekt tipa VehicleAnalyticsResponse
-    return validatedResponse.json();
+    } catch (error) {
+        console.error("Greška pri dohvaćanju statusne analitike vozila:", error);
+        // Osiguravamo da se greška propagira
+        throw error;
+    }
 };

@@ -1,8 +1,9 @@
-// frontend/src/components/Register.jsx - SA VALIDACIJOM I i18n
+// frontend/src/components/Register.jsx - ISPRAVLJENA VERZIJA S apiClient
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container, Spinner } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { apiClient } from '../services/apiClient.js';
 
 const Register = () => {
     const { t } = useTranslation();
@@ -166,9 +167,12 @@ const Register = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8080/auth/register', {
+            // Očisti localStorage prije registracije
+            localStorage.clear();
+
+            // ✅ ISPRAVAK: Koristi apiClient umjesto fetch
+            const data = await apiClient('/auth/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username,
                     password,
@@ -181,26 +185,45 @@ const Register = () => {
                 }),
             });
 
-            const data = await response.json();
+            // ✅ UKLONJENA 'if (!response.ok)' provjera
+            // apiClient automatski baca Error za 4xx/5xx statuse
 
-            if (!response.ok) {
-                // Backend validation errors
-                if (data.errors) {
-                    setErrors(data.errors);
-                    setError(data.message || t('validation.fix_errors'));
-                } else {
-                    throw new Error(data.message || 'Registracija nije uspjela.');
-                }
-                return;
-            }
-
+            // ✅ SPREMANJE ACCESS TOKENA
             localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('userRole', 'ROLE_DRIVER');
+            localStorage.setItem('username', username);
+
+            try {
+                // Dekodiranje JWT payload-a za uloge
+                const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+                const authorities = payload.authorities || payload.roles || [];
+
+                if (authorities && authorities.length > 0) {
+                    localStorage.setItem('userRoles', JSON.stringify(authorities));
+
+                    if (authorities.includes('ROLE_ADMIN')) {
+                        localStorage.setItem('userRole', 'ROLE_ADMIN');
+                    } else if (authorities.includes('ROLE_DISPATCHER')) {
+                        localStorage.setItem('userRole', 'ROLE_DISPATCHER');
+                    } else if (authorities.includes('ROLE_DRIVER')) {
+                        localStorage.setItem('userRole', 'ROLE_DRIVER');
+                    } else {
+                        localStorage.setItem('userRole', authorities[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('JWT decode error:', err);
+            }
 
             navigate('/');
 
         } catch (err) {
-            setError(err.message);
+            // ✅ Rukovanje backend validation errors
+            if (err.body && err.body.errors) {
+                setErrors({ ...errors, ...err.body.errors });
+                setError(err.body.message || t('validation.fix_errors'));
+            } else {
+                setError(err.message || 'Registracija nije uspjela.');
+            }
         } finally {
             setLoading(false);
         }

@@ -65,7 +65,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         // ================================================================
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/auth/login", "/auth/register").permitAll()
+                        .requestMatchers("/auth/login", "/auth/register", "/auth/refreshToken").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/welcome").permitAll()
                         .requestMatchers("/api/admin/**").hasRole(ADMIN)
@@ -75,11 +75,14 @@ public class SecurityConfig implements WebMvcConfigurer {
 
                         // Driver Dashboard - dohvat svojih Assignment-a
                         .requestMatchers(HttpMethod.GET, "/api/assignments/my-schedule").hasRole(DRIVER)
-
+                                .requestMatchers(HttpMethod.GET, "/driver/assignment/{id}").hasRole(DRIVER)
+                                // Driver - Akcije za Shipment KROZ Assignment
+                                .requestMatchers(HttpMethod.POST, "/api/assignments/*/shipments/*/start").hasAnyRole(DRIVER, ADMIN)
+                                .requestMatchers(HttpMethod.POST, "/api/assignments/*/shipments/*/complete").hasAnyRole(DRIVER, ADMIN)
                         // Driver može vidjeti svoje Assignment-e i Shipment-e (dodatna @PreAuthorize provjera u Controllerima)
                         .requestMatchers(HttpMethod.GET, API_ASSIGNMENTS_ID).hasAnyRole(ADMIN, DISPATCHER, DRIVER)
                         .requestMatchers(HttpMethod.GET, API_SHIPMENTS_ID).hasAnyRole(ADMIN, DISPATCHER, DRIVER)
-
+// Driver - Akcije za Shipment KROZ Assignment
                         // Driver - Akcije za Assignment
                         .requestMatchers(HttpMethod.PUT, "/api/assignments/{id}/start").hasRole(DRIVER)
                         .requestMatchers(HttpMethod.PUT, "/api/assignments/{id}/complete").hasRole(DRIVER)

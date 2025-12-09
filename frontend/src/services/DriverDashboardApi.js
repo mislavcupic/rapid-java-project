@@ -1,157 +1,69 @@
-const getToken = () => localStorage.getItem('accessToken');
-const BASE_URL = 'http://localhost:8080/api';
+// frontend/src/services/DriverDashboardApi.js
 
-// Pomoćna funkcija za obradu grešaka
-const handleResponse = async (response) => {
-    if (!response.ok) {
-        let errorDetail = {};
-        try {
-            errorDetail = await response.json();
-        } catch (e) {
-            console.error(e);
-            errorDetail.message = response.statusText;
-        }
-        throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
-    }
-    return response.status === 204 ? null : response.json();
-};
+import { apiClient } from './apiClient';
 
+const BASE_ASSIGNMENT_PATH = '/api/assignments'; // ✅ PROMIJENJENO
 
-// DRIVER DASHBOARD - Dohvaćanje svojih Assignment-a
-
-
-/**
- * Dohvaća listu Assignment-a za trenutno ulogiranog Driver-a
- * GET /api/assignments/my-schedule
- */
+// 1. DOHVAĆANJE RASPOREDA ZA PRIJAVLJENOG VOZAČA
 export const fetchMySchedule = async () => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/assignments/my-schedule`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+    try {
+        const data = await apiClient(`${BASE_ASSIGNMENT_PATH}/my-schedule`, { method: 'GET' }); // ✅ ISPRAVLJENO
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Greška pri dohvaćanju rasporeda vozača:", error);
+        return []; // ✅ Vraća [] umjesto throw
+    }
 };
 
-/**
- * Dohvaća detalje jednog Assignment-a
- * GET /api/assignments/{id}
- */
-export const fetchAssignmentDetails = async (assignmentId) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/assignments/${assignmentId}`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+// 2. DOHVAĆANJE DETALJA ASSIGNMENTA
+export const fetchAssignmentDetails = async (id) => {
+    try {
+        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${id}`, { method: 'GET' });
+    } catch (error) {
+        console.error(`Greška pri dohvaćanju detalja assignmenta ${id}:`, error);
+        throw error;
+    }
 };
 
-// ========================================================================
-// ASSIGNMENT AKCIJE - Driver mijenja status Assignment-a
-// ========================================================================
-
-/**
- * Driver započinje Assignment (SCHEDULED → IN_PROGRESS)
- * PUT /api/assignments/{id}/start
- */
-export const startAssignment = async (assignmentId) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/assignments/${assignmentId}/start`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+// 3. POKRETANJE ASSIGNMENTA
+export const startAssignment = async (id) => {
+    try {
+        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${id}/start`, { method: 'PUT' }); // ✅ PUT, ne POST
+    } catch (error) {
+        console.error(`Greška pri pokretanju assignmenta ${id}:`, error);
+        throw error;
+    }
 };
 
-/**
- * Driver završava Assignment (IN_PROGRESS → COMPLETED)
- * PUT /api/assignments/{id}/complete
- */
-export const completeAssignment = async (assignmentId) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/assignments/${assignmentId}/complete`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+// 4. ZAVRŠAVANJE ASSIGNMENTA
+export const completeAssignment = async (id) => {
+    try {
+        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${id}/complete`, { method: 'PUT' }); // ✅ PUT, ne POST
+    } catch (error) {
+        console.error(`Greška pri završavanju assignmenta ${id}:`, error);
+        throw error;
+    }
 };
 
-// ========================================================================
-// SHIPMENT AKCIJE - Driver mijenja status Shipment-a
-// ========================================================================
-
-/**
- * Driver započinje dostavu (SCHEDULED → IN_TRANSIT)
- * PUT /api/shipments/{id}/start
- */
-export const startDelivery = async (shipmentId) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/shipments/${shipmentId}/start`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+// 5. POKRETANJE DOSTAVE POŠILJKE
+export const startDelivery = async (assignmentId, shipmentId) => {
+    try {
+        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${assignmentId}/shipments/${shipmentId}/start`, { method: 'POST' });
+    } catch (error) {
+        console.error(`Greška pri pokretanju dostave ${shipmentId}:`, error);
+        throw error;
+    }
 };
 
-/**
- * Driver završava dostavu s Proof of Delivery (IN_TRANSIT → DELIVERED)
- * POST /api/shipments/{id}/complete
- */
-export const completeDelivery = async (shipmentId, podData) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/shipments/${shipmentId}/complete`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(podData)
-    });
-    return handleResponse(response);
-};
-
-/**
- * Driver prijavljuje problem s dostavom (IN_TRANSIT → DELAYED)
- * PUT /api/shipments/{id}/report-issue
- */
-export const reportDeliveryIssue = async (shipmentId, issueData) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/shipments/${shipmentId}/report-issue`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(issueData)
-    });
-    return handleResponse(response);
+// 6. ZAVRŠAVANJE DOSTAVE (POD)
+export const completeDelivery = async (assignmentId, shipmentId, podData) => {
+    try {
+        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${assignmentId}/shipments/${shipmentId}/complete`, {
+            method: 'POST',
+            body: JSON.stringify(podData)
+        });
+    } catch (error) {
+        console.error(`Greška pri završavanju dostave ${shipmentId}:`, error);
+        throw error;
+    }
 };

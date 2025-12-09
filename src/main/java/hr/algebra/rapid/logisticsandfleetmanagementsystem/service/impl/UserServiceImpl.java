@@ -3,13 +3,13 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRoleRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,29 +17,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DriverRepository driverRepository;
-
-    public UserServiceImpl(
-            UserRepository userRepository,
-            UserRoleRepository userRoleRepository,
-            PasswordEncoder passwordEncoder,
-            DriverRepository driverRepository
-    ) {
-        this.userRepository = userRepository;
-        this.userRoleRepository = userRoleRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.driverRepository = driverRepository;
-    }
 
     @Override
     public List<UserInfo> findAll() {
@@ -55,21 +46,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserInfo registerUser(RegisterRequestDTO registerRequest) {
-        // 1. Provjera postoji li username
         if (existsByUsername(registerRequest.getUsername())) {
-            throw new IllegalArgumentException("Korisničko ime '" + registerRequest.getUsername() + "' je već zauzeto!");
+            throw new IllegalArgumentException("Korisničko ime već postoji!");
         }
 
-        // 2. Provjera postoji li email
         if (existsByEmail(registerRequest.getEmail())) {
-            throw new IllegalArgumentException("Email '" + registerRequest.getEmail() + "' je već registriran!");
+            throw new IllegalArgumentException("Email već postoji!");
         }
 
-        // 3. Dohvati ROLE_DRIVER kao default ulogu
         UserRole driverRole = userRoleRepository.findByName("ROLE_DRIVER")
                 .orElseThrow(() -> new ResourceNotFoundException("Uloga", "ime", "ROLE_DRIVER"));
 
-        // 4. Kreiraj novog korisnika
         UserInfo newUser = new UserInfo();
         newUser.setUsername(registerRequest.getUsername());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
@@ -77,24 +64,25 @@ public class UserServiceImpl implements UserService {
         newUser.setLastName(registerRequest.getLastName());
         newUser.setEmail(registerRequest.getEmail());
         newUser.setIsEnabled(true);
-        newUser.setRoles(new ArrayList<>(Arrays.asList(driverRole)));
 
-        // 5. Spremi UserInfo u bazu
+        // ✅ KONAČNO RJEŠENJE: Koristi List umjesto Set
+        List<UserRole> rolesList = new ArrayList<>();
+        rolesList.add(driverRole);
+        newUser.setRoles(rolesList);
+
         UserInfo savedUser = userRepository.save(newUser);
 
-        log.info("Novi korisnik registriran: {} (ID: {}) sa ulogom ROLE_DRIVER",
-                savedUser.getUsername(), savedUser.getId());
-
-        // 6. Automatski kreiraj Driver profil
         Driver driver = new Driver();
         driver.setUserInfo(savedUser);
-        driver.setLicenseNumber(registerRequest.getLicenseNumber()); //reqdto umj pending
-        driver.setLicenseExpirationDate(LocalDate.now().plusYears(10));
+        driver.setLicenseNumber(registerRequest.getLicenseNumber());
+        driver.setLicenseExpirationDate(registerRequest.getLicenseExpirationDate() != null
+                ? registerRequest.getLicenseExpirationDate()
+                : LocalDate.now().plusYears(10));
         driver.setPhoneNumber(registerRequest.getPhoneNumber());
 
         driverRepository.save(driver);
 
-        log.info("Driver profil automatski kreiran za korisnika: {}", savedUser.getUsername());
+        log.info("Registriran novi korisnik: {} sa ulogom ROLE_DRIVER", savedUser.getUsername());
 
         return savedUser;
     }
@@ -116,35 +104,37 @@ public class UserServiceImpl implements UserService {
         UserInfo user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Korisnik", "ID", userId));
 
-        log.info("PRIJE ažuriranja - User {} ima uloge: {}",
-                user.getUsername(),
-                user.getRoles().stream().map(UserRole::getName).toList());
+        if (roleNames == null || roleNames.isEmpty()) {
+            throw new IllegalArgumentException("Korisnik mora imati barem jednu ulogu!");
+        }
 
-        List<UserRole> newRoles = roleNames.stream()
+        Set<UserRole> newRoles = roleNames.stream()
                 .map(roleName -> userRoleRepository.findByName(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException("Uloga", "ime", roleName)))
-                .toList();
+                .collect(Collectors.toSet());
 
         user.getRoles().clear();
-        userRepository.flush();
-
         user.getRoles().addAll(newRoles);
 
-        UserInfo updated = userRepository.saveAndFlush(user);
+        UserInfo updatedUser = userRepository.saveAndFlush(user);
 
-        log.info("Uloge uspješno ažurirane za korisnika {} (ID: {}). NOVE uloge: {}",
-                updated.getUsername(), userId, roleNames);
+        log.info("Uloge ažurirane za korisnika: {}. Nove uloge: {}",
+                updatedUser.getUsername(),
+                updatedUser.getRoles().stream().map(UserRole::getName).collect(Collectors.toSet()));
 
-        log.warn("Korisnik {} MORA SE PONOVNO PRIJAVITI da bi aktivirao nove uloge!",
-                updated.getUsername());
-
-        return updated;
+        return updatedUser;
     }
 
     @Override
     @Transactional
     public void deleteUser(Long userId) {
         UserInfo user = findById(userId);
+
+        driverRepository.findByUserInfoId(userId)
+                .ifPresent(driverRepository::delete);
+
         userRepository.delete(user);
+
+        log.info("Korisnik obrisan: {}", user.getUsername());
     }
 }

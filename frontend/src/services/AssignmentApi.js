@@ -1,116 +1,47 @@
 // frontend/src/services/AssignmentApi.js
 
-const getToken = () => localStorage.getItem('accessToken');
-const BASE_URL = 'http://localhost:8080/api/assignments'; // Koristimo 'assignments' iz Spring Controllera
+import { apiClient } from './apiClient';
 
-// Pomoćna funkcija za obradu grešaka
-const handleResponse = async (response) => {
-    if (!response.ok) {
-        let errorDetail = {};
-        try {
-            // Pokušaj parsirati grešku kao JSON (za ConflictException ili Validation)
-            errorDetail = await response.json();
-        } catch (err) {
-            // Ako nije JSON, koristi tekst ili status
-            console.error("Greška pri dohvaćanju dodjele:", err);
-            errorDetail.message = response.statusText;
-        }
-        // Bacamo grešku s detaljnom porukom
-        throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
-    }
-    // DELETE često vraća 204 No Content
-   // return response.status !== 204 ? response.json() : null;
-    return response.status === 204 ? null : response.json();
-};
+const BASE_ASSIGNMENTS_PATH = '/api/assignments';
 
-// 1. DOHVAĆANJE SVIH DODJELA (GET)
+// =================================================================
+// ASSIGNMENT CRUD FUNKCIJE
+// =================================================================
+
+// 1. DOHVAĆANJE SVIH ASSIGNMENTA (GET)
 export const fetchAssignments = async () => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(BASE_URL, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+    try {
+        const data = await apiClient(BASE_ASSIGNMENTS_PATH, { method: 'GET' });
+        // ✅ KRITIČNA KOREKCIJA: Osiguraj da je povratna vrijednost uvijek niz.
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Greška pri dohvaćanju assignmenta:", error);
+        throw error;
+    }
 };
 
-// 2. DOHVAĆANJE  PO ID-ju (GET by ID)
+// 2. DOHVAĆANJE ASSIGNMENTA PO ID-ju (GET by ID)
 export const fetchAssignmentById = async (id) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/${id}`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+    return apiClient(`${BASE_ASSIGNMENTS_PATH}/${id}`, { method: 'GET' });
 };
 
-// 3. KREIRANJE DODJELE (POST)
+// 3. KREIRANJE ASSIGNMENTA (POST)
 export const createAssignment = async (assignmentData) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(BASE_URL, {
+    return apiClient(BASE_ASSIGNMENTS_PATH, {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
         body: JSON.stringify(assignmentData)
     });
-    return handleResponse(response);
 }
 
-// 4. AŽURIRANJE DODJELE (PUT)
+// 4. AŽURIRANJE ASSIGNMENTA (PUT)
 export const updateAssignment = async (id, assignmentData) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/${id}`, {
+    return apiClient(`${BASE_ASSIGNMENTS_PATH}/${id}`, {
         method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
         body: JSON.stringify(assignmentData)
     });
-    return handleResponse(response);
 };
 
-// 5. BRISANJE DODJELE (DELETE)
+// 5. BRISANJE ASSIGNMENTA (DELETE)
 export const deleteAssignment = async (id) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    // DELETE vraća null nakon uspješne provjere
-    return handleResponse(response);
-};
-
-// 6. DOHVAĆANJE AKTIVNIH DODJELA PO VOZAČU (Dashboard)
-export const fetchAssignmentsByDriver = async (driverId) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-
-    const response = await fetch(`${BASE_URL}/driver/${driverId}`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    return handleResponse(response);
+    return apiClient(`${BASE_ASSIGNMENTS_PATH}/${id}`, { method: 'DELETE' });
 };

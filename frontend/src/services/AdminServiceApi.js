@@ -1,60 +1,32 @@
-const API_BASE_URL = 'http://localhost:8080';
+// frontend/src/services/AdminServiceApi.js
 
-// Helper funkcija za dohvaćanje tokena
-const getAuthHeaders = () => {
-    const token = localStorage.getItem('accessToken');
-    console.log('Getting auth headers, token exists:', !!token);
-    return {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` })
-    };
-};
+import { apiClient } from './apiClient';
 
-// Helper funkcija za obradu odgovora
-const handleResponse = async (response) => {
-    if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('accessToken');
-        globalThis.location.href = '/login';
-        throw new Error('Neovlašteni pristup');
-    }
+const BASE_ADMIN_PATH = '/api/admin';
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-
-    // Ako je 204 No Content, vrati prazan objekt
-    if (response.status === 204) {
-        return {};
-    }
-
-    return response.json();
-};
-
+// 1. DOHVAĆANJE SVIH KORISNIKA (GET)
 export const getAllUsers = async () => {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-    });
-
-    return handleResponse(response);
+    try {
+        const data = await apiClient(`${BASE_ADMIN_PATH}/users`, { method: 'GET' });
+        // ✅ KRITIČNA KOREKCIJA: Osiguraj da je povratna vrijednost uvijek niz.
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Greška pri dohvaćanju svih korisnika:", error);
+        throw error;
+    }
 };
 
-export const updateUserRoles = async (userId, roleNames) => {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/roles`, {
+// 2. AŽURIRANJE ULOGA KORISNIKA (PUT)
+export const updateUserRoles = async (userId, roles) => {
+    // ✅ ISPRAVAK: Zamotat roles niz u objekt s poljem "roles"
+    // Backend očekuje: { "roles": ["ROLE_ADMIN", "ROLE_DRIVER"] }
+    return apiClient(`${BASE_ADMIN_PATH}/users/${userId}/roles`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ roleNames })
+        body: JSON.stringify({ roles: roles })
     });
-
-    return handleResponse(response);
 };
 
+// 3. BRISANJE KORISNIKA (DELETE)
 export const deleteUser = async (userId) => {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-    });
-
-    return handleResponse(response);
+    return apiClient(`${BASE_ADMIN_PATH}/users/${userId}`, { method: 'DELETE' });
 };

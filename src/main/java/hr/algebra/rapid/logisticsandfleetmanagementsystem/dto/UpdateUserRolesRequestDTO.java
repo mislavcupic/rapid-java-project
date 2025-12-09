@@ -10,5 +10,5 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateUserRolesRequestDTO {
-    private List<String> roleNames; // npr. ["ROLE_ADMIN", "ROLE_DRIVER"]
+    private List<String> roles; // npr. ["ROLE_ADMIN", "ROLE_DRIVER"]
 }

@@ -69,7 +69,18 @@
     "license_plate": "License plate",
     "model_year": "Model production year",
     "make": "Make",
-    "model": "Model"
+    "model": "Model",
+    "registration": "Registration",
+    "confirm_password": "Confirm Password",
+    "driver_info_optional": "Driver Information (Optional)",
+    "license_number": "Driver's License Number",
+    "license_expiration": "License Expiration Date",
+    "optional_later": "Optional - can be entered later",
+    "characters": "characters",
+    "must_be_future": "Optional - must be a future date",
+    "phone_format": "Format: +385912345678 (9-15 digits)",
+    "already_have_account": "Already have an account?",
+    "register_button": "Register"
 
   },
 
