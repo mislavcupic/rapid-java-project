@@ -1,4 +1,4 @@
-// frontend/src/components/Login.jsx
+// frontend/src/components/Login.jsx - SA VALIDACIJOM
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
@@ -7,16 +7,72 @@ import PropTypes from 'prop-types';
 
 const Login = ({ onLoginSuccess }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+
+    // Validation errors
+    const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
+
+    // Validation functions
+    const validateUsername = (value) => {
+        if (!value) return t('validation.username_required');
+        if (value.length < 3) return t('validation.username_min_length');
+        return '';
+    };
+
+    const validatePassword = (value) => {
+        if (!value) return t('validation.password_required');
+        if (value.length < 6) return t('validation.password_min_length');
+        return '';
+    };
+
+    // Handle blur
+    const handleBlur = (field) => {
+        setTouched({ ...touched, [field]: true });
+
+        let error = '';
+        switch (field) {
+            case 'username':
+                error = validateUsername(username);
+                break;
+            case 'password':
+                error = validatePassword(password);
+                break;
+            default:
+                break;
+        }
+
+        setErrors({ ...errors, [field]: error });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+
+        // Validate all required fields
+        const newErrors = {
+            username: validateUsername(username),
+            password: validatePassword(password)
+        };
+
+        setErrors(newErrors);
+        setTouched({
+            username: true,
+            password: true
+        });
+
+        // Check if there are any errors
+        const hasErrors = Object.values(newErrors).some(err => err !== '');
+        if (hasErrors) {
+            setError(t('validation.fix_errors'));
+            return;
+        }
 
         try {
             localStorage.clear();
@@ -84,16 +140,20 @@ const Login = ({ onLoginSuccess }) => {
                         <Alert variant="danger" className="font-monospace">{error}</Alert>
                     )}
 
-                    <Form onSubmit={handleSubmit}>
-                        <FloatingLabel controlId="floatingUsername" label={t("forms.username")} className="mb-3">
+                    <Form onSubmit={handleSubmit} noValidate>
+                        <FloatingLabel controlId="floatingUsername" label={t("forms.username") + ' *'} className="mb-3">
                             <Form.Control
                                 type="text"
                                 placeholder={t("forms.username")}
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                required
+                                onBlur={() => handleBlur('username')}
+                                isInvalid={touched.username && errors.username}
                                 className="font-monospace"
                             />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.username}
+                            </Form.Control.Feedback>
                         </FloatingLabel>
 
                         <FloatingLabel controlId="floatingFirstName" label={t("forms.firstName")} className="mb-3">
@@ -116,15 +176,19 @@ const Login = ({ onLoginSuccess }) => {
                             />
                         </FloatingLabel>
 
-                        <FloatingLabel controlId="floatingPassword" label={t("forms.password")} className="mb-4">
+                        <FloatingLabel controlId="floatingPassword" label={t("forms.password") + ' *'} className="mb-4">
                             <Form.Control
                                 type="password"
                                 placeholder={t("forms.password")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required
+                                onBlur={() => handleBlur('password')}
+                                isInvalid={touched.password && errors.password}
                                 className="font-monospace"
                             />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.password}
+                            </Form.Control.Feedback>
                         </FloatingLabel>
 
                         <Button

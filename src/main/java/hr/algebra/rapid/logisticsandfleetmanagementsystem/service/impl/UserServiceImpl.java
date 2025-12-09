@@ -3,6 +3,7 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository;
@@ -87,9 +88,9 @@ public class UserServiceImpl implements UserService {
         // 6. Automatski kreiraj Driver profil
         Driver driver = new Driver();
         driver.setUserInfo(savedUser);
-        driver.setLicenseNumber("PENDING");
+        driver.setLicenseNumber(registerRequest.getLicenseNumber()); //reqdto umj pending
         driver.setLicenseExpirationDate(LocalDate.now().plusYears(10));
-        driver.setPhoneNumber("N/A");
+        driver.setPhoneNumber(registerRequest.getPhoneNumber());
 
         driverRepository.save(driver);
 
