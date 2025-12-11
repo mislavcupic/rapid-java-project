@@ -189,7 +189,7 @@ class ShipmentControllerTest {
         @Test
         @DisplayName("POST /api/shipments/{id}/complete - should complete delivery")
         void completeDelivery_ShouldReturnCompleted() throws Exception {
-            when(shipmentService.completeDelivery(eq(1L), anyLong(), any(ProofOfDeliveryDTO.class)))
+            when(shipmentService.completeDelivery(1L, anyLong(), any(ProofOfDeliveryDTO.class)))
                     .thenReturn(testShipmentResponse);
 
             String json = """
@@ -210,7 +210,7 @@ class ShipmentControllerTest {
         @Test
         @DisplayName("PUT /api/shipments/{id}/report-issue - should report issue")
         void reportIssue_ShouldReturnUpdated() throws Exception {
-            when(shipmentService.reportIssue(eq(1L), anyLong(), any(IssueReportDTO.class)))
+            when(shipmentService.reportIssue(1L, anyLong(), any(IssueReportDTO.class)))
                     .thenReturn(testShipmentResponse);
 
             String json = """
@@ -224,7 +224,7 @@ class ShipmentControllerTest {
                             .content(json))
                     .andExpect(status().isOk());
 
-            verify(shipmentService).reportIssue(eq(1L), anyLong(), any(IssueReportDTO.class));
+            verify(shipmentService).reportIssue(1L, anyLong(), any(IssueReportDTO.class));
         }
     }
 }

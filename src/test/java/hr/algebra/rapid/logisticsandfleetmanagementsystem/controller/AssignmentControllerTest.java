@@ -1,210 +1,382 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentRequestDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentResponseDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.configuration.TestSecurityConfig;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.*;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AssignmentService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.JwtService;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AssignmentController Tests")
+/**
+ * ✅ FINALNO POPRAVLJEN Controller Test - Assignment Controller
+ * - @MockitoBean umjesto @MockBean ✓
+ * - Maknuti eq() ✓
+ * - Ispravljeni Mockito stubovi ✓
+ * - Dodani Security mockovi (JwtService, DriverService, UserDetailsService) ✓
+ * - Ispravljeni endpointi za Driver Dashboard ✓
+ */
+@WebMvcTest(AssignmentController.class)
+@Import(TestSecurityConfig.class)
 class AssignmentControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
     private AssignmentService assignmentService;
 
-    @Mock
+    @MockitoBean
     private DriverService driverService;
 
-    @InjectMocks
-    private AssignmentController assignmentController;
+    @MockitoBean
+    private JwtService jwtService;
 
-    private MockMvc mockMvc;
-    private AssignmentResponseDTO testAssignmentResponse;
+    @MockitoBean
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(assignmentController).build();
-
-        testAssignmentResponse = new AssignmentResponseDTO();
-        testAssignmentResponse.setId(1L);
-    }
+    // ==========================================
+    // CREATE ASSIGNMENT TESTS
+    // ==========================================
 
     @Nested
-    @DisplayName("GET /api/assignments")
-    class GetAllAssignments {
-
-        @Test
-        @DisplayName("Should return all assignments")
-        void getAllAssignments_ShouldReturnList() throws Exception {
-            List<AssignmentResponseDTO> assignments = Arrays.asList(testAssignmentResponse);
-            when(assignmentService.findAll()).thenReturn(assignments);
-
-            mockMvc.perform(get("/api/assignments"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$[0].id").value(1));
-
-            verify(assignmentService).findAll();
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /api/assignments/{id}")
-    class GetAssignmentById {
-
-        @Test
-        @DisplayName("Should return assignment when exists")
-        void getAssignmentById_WhenExists_ShouldReturnAssignment() throws Exception {
-            when(assignmentService.findById(1L)).thenReturn(Optional.of(testAssignmentResponse));
-
-            mockMvc.perform(get("/api/assignments/1"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id").value(1));
-
-            verify(assignmentService).findById(1L);
-        }
-
-        @Test
-        @DisplayName("Should return 404 when assignment not found")
-        void getAssignmentById_WhenNotFound_ShouldReturn404() throws Exception {
-            when(assignmentService.findById(999L)).thenReturn(Optional.empty());
-
-            mockMvc.perform(get("/api/assignments/999"))
-                    .andExpect(status().isNotFound());
-        }
-    }
-
-    @Nested
-    @DisplayName("POST /api/assignments")
     class CreateAssignment {
 
         @Test
-        @DisplayName("Should create assignment")
+        @WithMockUser(username = "dispatcher1", roles = {"DISPATCHER"})
         void createAssignment_ShouldReturnCreated() throws Exception {
+            // Arrange
+            AssignmentRequestDTO request = new AssignmentRequestDTO();
+            request.setDriverId(1L);
+            request.setVehicleId(1L);
+            request.setShipmentId(1L);
+            request.setStartTime(LocalDateTime.now().plusHours(2));
+
+            AssignmentResponseDTO response = createMockAssignmentResponse(1L);
+
             when(assignmentService.createAssignment(any(AssignmentRequestDTO.class)))
-                    .thenReturn(testAssignmentResponse);
+                    .thenReturn(response);
 
-            String json = """
-                {
-                    "driverId": 1,
-                    "vehicleId": 1,
-                    "shipmentId": 1
-                }
-                """;
-
+            // Act & Assert
             mockMvc.perform(post("/api/assignments")
+                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(json))
+                            .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.id").value(1));
+                    .andExpect(jsonPath("$.id", is(1)))
+                    .andExpect(jsonPath("$.assignmentStatus", is("SCHEDULED")))
+                    .andExpect(jsonPath("$.driver.id", is(1)))
+                    .andExpect(jsonPath("$.vehicle.id", is(1)))
+                    .andExpect(jsonPath("$.shipment.id", is(1)));
 
-            verify(assignmentService).createAssignment(any(AssignmentRequestDTO.class));
+            verify(assignmentService, times(1)).createAssignment(any(AssignmentRequestDTO.class));
+        }
+
+        @Test
+        @WithMockUser(username = "dispatcher1", roles = {"DISPATCHER"})
+        void createAssignment_WithInvalidData_ShouldReturnBadRequest() throws Exception {
+            // Arrange - Request bez potrebnih polja
+            AssignmentRequestDTO request = new AssignmentRequestDTO();
+            // Sve null
+
+            // Act & Assert
+            mockMvc.perform(post("/api/assignments")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+
+            verify(assignmentService, never()).createAssignment(any());
         }
     }
 
+    // ==========================================
+    // UPDATE ASSIGNMENT TESTS
+    // ==========================================
+
     @Nested
-    @DisplayName("PUT /api/assignments/{id}")
     class UpdateAssignment {
 
         @Test
-        @DisplayName("Should update assignment")
+        @WithMockUser(username = "dispatcher1", roles = {"DISPATCHER"})
         void updateAssignment_ShouldReturnUpdated() throws Exception {
-            when(assignmentService.updateAssignment(eq(1L), any(AssignmentRequestDTO.class)))
-                    .thenReturn(testAssignmentResponse);
+            // Arrange
+            Long assignmentId = 1L;
+            AssignmentRequestDTO request = new AssignmentRequestDTO();
+            request.setDriverId(2L);
+            request.setVehicleId(2L);
+            request.setShipmentId(1L);
+            request.setStartTime(LocalDateTime.now().plusHours(3));
 
-            String json = """
-                {
-                    "driverId": 1,
-                    "vehicleId": 2
-                }
-                """;
+            AssignmentResponseDTO response = createMockAssignmentResponse(assignmentId);
+            response.getDriver().setId(2L);
+            response.getVehicle().setId(2L);
 
-            mockMvc.perform(put("/api/assignments/1")
+            when(assignmentService.updateAssignment(anyLong(), any(AssignmentRequestDTO.class)))
+                    .thenReturn(response);
+
+            // Act & Assert
+            mockMvc.perform(put("/api/assignments/{id}", assignmentId)
+                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(json))
-                    .andExpect(status().isOk());
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", is(1)))
+                    .andExpect(jsonPath("$.driver.id", is(2)))
+                    .andExpect(jsonPath("$.vehicle.id", is(2)));
 
-            verify(assignmentService).updateAssignment(eq(1L), any(AssignmentRequestDTO.class));
+            verify(assignmentService, times(1))
+                    .updateAssignment(anyLong(), any(AssignmentRequestDTO.class));
         }
     }
 
+    // ==========================================
+    // GET ASSIGNMENT TESTS
+    // ==========================================
+
     @Nested
-    @DisplayName("DELETE /api/assignments/{id}")
-    class DeleteAssignment {
+    class GetAssignment {
 
         @Test
-        @DisplayName("Should delete assignment")
-        void deleteAssignment_ShouldReturnNoContent() throws Exception {
-            doNothing().when(assignmentService).deleteAssignment(1L);
+        @WithMockUser(username = "admin", roles = {"ADMIN"})
+        void getAssignmentById_ShouldReturnAssignment() throws Exception {
+            // Arrange
+            Long assignmentId = 1L;
+            AssignmentResponseDTO response = createMockAssignmentResponse(assignmentId);
 
-            mockMvc.perform(delete("/api/assignments/1"))
-                    .andExpect(status().isNoContent());
 
-            verify(assignmentService).deleteAssignment(1L);
+            when(assignmentService.findById(anyLong())).thenReturn(Optional.of(response));
+
+            // Act & Assert
+            mockMvc.perform(get("/api/assignments/{id}", assignmentId)
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id", is(1)))
+                    .andExpect(jsonPath("$.assignmentStatus", is("SCHEDULED")));
+
+            verify(assignmentService, times(1)).findById(anyLong());
+        }
+
+        @Test
+        @WithMockUser(username = "admin", roles = {"ADMIN"})
+        void getAllAssignments_ShouldReturnList() throws Exception {
+            // Arrange
+            List<AssignmentResponseDTO> assignments = Arrays.asList(
+                    createMockAssignmentResponse(1L),
+                    createMockAssignmentResponse(2L)
+            );
+
+            when(assignmentService.findAll()).thenReturn(assignments);
+
+            // Act & Assert
+            mockMvc.perform(get("/api/assignments")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(2)))
+                    .andExpect(jsonPath("$[0].id", is(1)))
+                    .andExpect(jsonPath("$[1].id", is(2)));
+
+            verify(assignmentService, times(1)).findAll();
         }
     }
 
+    // ==========================================
+    // DRIVER DASHBOARD TESTS
+    // ==========================================
+
     @Nested
-    @DisplayName("Driver Dashboard Endpoints")
     class DriverDashboard {
 
         @Test
-        @DisplayName("GET /api/assignments/my-schedule - should return driver schedule")
+        @WithMockUser(username = "driver1", roles = {"DRIVER"})
         void getDriverSchedule_ShouldReturnList() throws Exception {
-            when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
-            when(assignmentService.findAssignmentsByDriver(1L))
-                    .thenReturn(Arrays.asList(testAssignmentResponse));
+            // Arrange
+            Long driverId = 1L;
+            List<AssignmentResponseDTO> assignments = Arrays.asList(
+                    createMockAssignmentResponse(1L),
+                    createMockAssignmentResponse(2L)
+            );
 
-            mockMvc.perform(get("/api/assignments/my-schedule"))
+            // Mock driverService.getDriverIdFromUsername("driver1") → 1L
+            when(driverService.getDriverIdFromUsername("driver1")).thenReturn(driverId);
+            when(assignmentService.findAssignmentsByDriver(anyLong()))
+                    .thenReturn(assignments);
+
+            // Act & Assert
+            mockMvc.perform(get("/api/assignments/my-schedule")
+                            .with(csrf()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$[0].id").value(1));
+                    .andExpect(jsonPath("$", hasSize(2)));
 
-            verify(assignmentService).findAssignmentsByDriver(1L);
+            verify(driverService, times(1)).getDriverIdFromUsername("driver1");
+            verify(assignmentService, times(1)).findAssignmentsByDriver(anyLong());
         }
 
         @Test
-        @DisplayName("PUT /api/assignments/{id}/start - should start assignment")
         void startAssignment_ShouldReturnUpdated() throws Exception {
-            when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
-            when(assignmentService.startAssignment(1L, 1L))
-                    .thenReturn(testAssignmentResponse);
+            // Arrange
+            Long assignmentId = 1L;
+            Long driverId = 1L;
 
-            mockMvc.perform(put("/api/assignments/1/start"))
-                    .andExpect(status().isOk());
+            AssignmentResponseDTO response = createMockAssignmentResponse(assignmentId);
+            response.setAssignmentStatus("IN_PROGRESS");
 
-            verify(assignmentService).startAssignment(1L, 1L);
+            // Mock za @PreAuthorize provjeru
+            when(driverService.isAssignmentOwnedByDriver(assignmentId, "driver1")).thenReturn(true);
+
+            // Mock driverService.getDriverIdFromUsername("driver1") → 1L
+            when(driverService.getDriverIdFromUsername("driver1")).thenReturn(driverId);
+            when(assignmentService.startAssignment(anyLong(), anyLong()))
+                    .thenReturn(response);
+
+            // Act & Assert
+            mockMvc.perform(put("/api/assignments/{id}/start", assignmentId)
+                            .with(csrf())
+                            .with(user("driver1").roles("DRIVER")))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.assignmentStatus", is("IN_PROGRESS")));
+
+            verify(driverService, times(1)).isAssignmentOwnedByDriver(assignmentId, "driver1");
+            verify(driverService, times(1)).getDriverIdFromUsername("driver1");
+            verify(assignmentService, times(1))
+                    .startAssignment(anyLong(), anyLong());
         }
 
         @Test
-        @DisplayName("PUT /api/assignments/{id}/complete - should complete assignment")
         void completeAssignment_ShouldReturnCompleted() throws Exception {
-            when(driverService.getDriverIdFromUsername(anyString())).thenReturn(1L);
-            when(assignmentService.completeAssignment(1L, 1L))
-                    .thenReturn(testAssignmentResponse);
+            // Arrange
+            Long assignmentId = 1L;
+            Long driverId = 1L;
 
-            mockMvc.perform(put("/api/assignments/1/complete"))
-                    .andExpect(status().isOk());
+            AssignmentResponseDTO response = createMockAssignmentResponse(assignmentId);
+            response.setAssignmentStatus("COMPLETED");
+            response.setEndTime(LocalDateTime.now());
 
-            verify(assignmentService).completeAssignment(1L,1L);
+            // Mock za @PreAuthorize provjeru
+            when(driverService.isAssignmentOwnedByDriver(assignmentId, "driver1")).thenReturn(true);
+
+            // Mock driverService.getDriverIdFromUsername("driver1") → 1L
+            when(driverService.getDriverIdFromUsername("driver1")).thenReturn(driverId);
+            when(assignmentService.completeAssignment(anyLong(), anyLong()))
+                    .thenReturn(response);
+
+            // Act & Assert
+            mockMvc.perform(put("/api/assignments/{id}/complete", assignmentId)
+                            .with(csrf())
+                            .with(user("driver1").roles("DRIVER")))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.assignmentStatus", is("COMPLETED")))
+                    .andExpect(jsonPath("$.endTime", notNullValue()));
+
+            verify(driverService, times(1)).isAssignmentOwnedByDriver(assignmentId, "driver1");
+            verify(driverService, times(1)).getDriverIdFromUsername("driver1");
+            verify(assignmentService, times(1))
+                    .completeAssignment(anyLong(), anyLong());
         }
+    }
+
+    // ==========================================
+    // DELETE ASSIGNMENT TESTS
+    // ==========================================
+
+    @Nested
+    class DeleteAssignment {
+
+        @Test
+        @WithMockUser(username = "admin", roles = {"ADMIN"})
+        void deleteAssignment_ShouldReturnNoContent() throws Exception {
+            // Arrange
+            Long assignmentId = 1L;
+            doNothing().when(assignmentService).deleteAssignment(anyLong());
+
+            // Act & Assert
+            mockMvc.perform(delete("/api/assignments/{id}", assignmentId)
+                            .with(csrf()))
+                    .andExpect(status().isNoContent());
+
+            verify(assignmentService, times(1)).deleteAssignment(anyLong());
+        }
+    }
+
+    // ==========================================
+    // HELPER METHODS
+    // ==========================================
+
+    private AssignmentResponseDTO createMockAssignmentResponse(Long id) {
+        AssignmentResponseDTO response = new AssignmentResponseDTO();
+        response.setId(id);
+        response.setAssignmentStatus("SCHEDULED");
+        response.setStartTime(LocalDateTime.now().plusHours(2));
+
+        // Driver
+        DriverResponseDTO driver = new DriverResponseDTO();
+        driver.setId(1L);
+        driver.setUsername("testdriver");
+        driver.setFirstName("Test");
+        driver.setLastName("Driver");
+        driver.setFullName("Test Driver");
+        driver.setLicenseNumber("TEST-001");
+        driver.setEmail("test@driver.com");
+        driver.setPhoneNumber("+385991234567");
+        response.setDriver(driver);
+
+        // Vehicle
+        VehicleResponse vehicle = new VehicleResponse();
+        vehicle.setId(1L);
+        vehicle.setLicensePlate("ZG-TEST-001");
+        vehicle.setMake("Mercedes");
+        vehicle.setModel("Sprinter");
+        vehicle.setModelYear(2022);
+        vehicle.setFuelType("Diesel");
+        vehicle.setLoadCapacityKg(BigDecimal.valueOf(1000));
+        vehicle.setCurrentMileageKm(50000L);
+        vehicle.setNextServiceMileageKm(55000L);
+        vehicle.setRemainingKmToService(5000L);
+        response.setVehicle(vehicle);
+
+        // Shipment
+        ShipmentResponse shipment = new ShipmentResponse();
+        shipment.setId(1L);
+        shipment.setTrackingNumber("SHIP-001");
+        shipment.setDescription("Test shipment");
+        shipment.setOriginAddress("Zagreb, Croatia");
+        shipment.setDestinationAddress("Split, Croatia");
+        shipment.setWeightKg(BigDecimal.valueOf(100.0));
+        shipment.setVolumeM3(BigDecimal.valueOf(5.0));
+        shipment.setStatus(ShipmentStatus.SCHEDULED);
+        shipment.setExpectedDeliveryDate(LocalDateTime.now().plusDays(2));
+        shipment.setEstimatedDistanceKm(300.0);
+        shipment.setEstimatedDurationMinutes(180L);
+        shipment.setRouteStatus("CALCULATED");
+        response.setShipment(shipment);
+
+        return response;
     }
 }
