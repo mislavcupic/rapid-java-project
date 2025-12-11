@@ -14,24 +14,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * INTEGRACIJSKI TEST - Driver Delivery Complete Workflow
- * 
- * Testira KOMPLETAN lifecycle pošiljke:
- * 1. Assignment Creation (PENDING → SCHEDULED)
- * 2. Start Delivery (SCHEDULED → IN_TRANSIT)
- * 3. Complete Delivery (IN_TRANSIT → DELIVERED)
- * 4. Complete Assignment (IN_PROGRESS → COMPLETED)
- * 
- * Također testira alternativni scenarij:
- * - Report Issue (IN_TRANSIT → DELAYED)
+ * ✅ FIXED INTEGRACIJSKI TEST - Driver Delivery Complete Workflow
+ *
+ * IZMJENE:
+ * - Maknut @Transactional s klase
+ * - Dodana @Transactional samo na setUp() i svaki test
+ * - Eksplicitno korištenje ArrayList za roles
+ * - Dodani detaljniji asserts
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class DriverDeliveryWorkflowIntegrationTest {
 
@@ -65,6 +63,7 @@ class DriverDeliveryWorkflowIntegrationTest {
     private Long shipmentId;
 
     @BeforeEach
+    @Transactional
     void setUp() {
         // Setup Driver
         UserRole driverRole = userRoleRepository.findByName("ROLE_DRIVER")
@@ -76,12 +75,17 @@ class DriverDeliveryWorkflowIntegrationTest {
 
         UserInfo userInfo = new UserInfo();
         userInfo.setUsername("workflow_driver");
-        userInfo.setPassword("hashedPassword");
+        userInfo.setPassword("$2a$10$hashedPassword");
         userInfo.setFirstName("Workflow");
         userInfo.setLastName("Driver");
         userInfo.setEmail("workflow@test.com");
         userInfo.setIsEnabled(true);
-        userInfo.setRoles(java.util.Arrays.asList(driverRole));
+
+        // ✅ FIX: Eksplicitno koristi ArrayList
+        List<UserRole> rolesList = new ArrayList<>();
+        rolesList.add(driverRole);
+        userInfo.setRoles(rolesList);
+
         userInfo = userRepository.save(userInfo);
 
         testDriver = new Driver();
@@ -97,11 +101,11 @@ class DriverDeliveryWorkflowIntegrationTest {
         testVehicle.setModel("Sprinter");
         testVehicle.setYear(2022);
         testVehicle.setFuelType("Diesel");
-        testVehicle.setLoadCapacityKg(java.math.BigDecimal.valueOf(1000));
+        testVehicle.setLoadCapacityKg(BigDecimal.valueOf(1000));
         testVehicle.setCurrentMileageKm(50000L);
         testVehicle.setNextServiceMileageKm(55000L);
         testVehicle.setLastServiceDate(java.time.LocalDate.now().minusMonths(2));
-        testVehicle.setFuelConsumptionLitersPer100Km(java.math.BigDecimal.valueOf(8.5));
+        testVehicle.setFuelConsumptionLitersPer100Km(BigDecimal.valueOf(8.5));
         testVehicle = vehicleRepository.save(testVehicle);
 
         // Setup Shipment
@@ -137,20 +141,21 @@ class DriverDeliveryWorkflowIntegrationTest {
     // ==========================================
 
     @Test
+    @Transactional
     void testCompleteDeliveryWorkflow_HappyPath() {
         // Step 1: Verify initial state
         Shipment initialShipment = shipmentRepository.findById(shipmentId).orElseThrow();
-        assertEquals(ShipmentStatus.SCHEDULED, initialShipment.getStatus());
+        assertEquals(ShipmentStatus.SCHEDULED, initialShipment.getStatus(), "Initial shipment status should be SCHEDULED");
 
         Assignment initialAssignment = assignmentRepository.findById(assignmentId).orElseThrow();
-        assertEquals("SCHEDULED", initialAssignment.getStatus());
+        assertEquals("SCHEDULED", initialAssignment.getStatus(), "Initial assignment status should be SCHEDULED");
 
-        // Step 2: Driver starts delivery
+        // Step 2: Driver starts assignment
         AssignmentResponseDTO startedAssignment = assignmentService.startAssignment(assignmentId, testDriver.getId());
-        assertEquals("IN_PROGRESS", startedAssignment.getAssignmentStatus());
+        assertEquals("IN_PROGRESS", startedAssignment.getAssignmentStatus(), "Assignment should be IN_PROGRESS");
 
         ShipmentResponse startedShipment = shipmentService.findById(shipmentId).orElseThrow();
-        assertEquals(ShipmentStatus.IN_TRANSIT, startedShipment.getStatus());
+        assertEquals(ShipmentStatus.IN_TRANSIT, startedShipment.getStatus(), "Shipment should be IN_TRANSIT");
 
         // Step 3: Driver completes delivery
         ProofOfDeliveryDTO pod = new ProofOfDeliveryDTO();
@@ -160,19 +165,19 @@ class DriverDeliveryWorkflowIntegrationTest {
         pod.setLongitude(16.4402);
 
         ShipmentResponse completedShipment = shipmentService.completeDelivery(shipmentId, testDriver.getId(), pod);
-        assertEquals(ShipmentStatus.DELIVERED, completedShipment.getStatus());
+        assertEquals(ShipmentStatus.DELIVERED, completedShipment.getStatus(), "Shipment should be DELIVERED");
 
         // Step 4: Driver completes assignment
         AssignmentResponseDTO completedAssignment = assignmentService.completeAssignment(assignmentId, testDriver.getId());
-        assertEquals("COMPLETED", completedAssignment.getAssignmentStatus());
-        assertNotNull(completedAssignment.getEndTime());
+        assertEquals("COMPLETED", completedAssignment.getAssignmentStatus(), "Assignment should be COMPLETED");
+        assertNotNull(completedAssignment.getEndTime(), "End time should be set");
 
         // Final verification
         Shipment finalShipment = shipmentRepository.findById(shipmentId).orElseThrow();
-        assertEquals(ShipmentStatus.DELIVERED, finalShipment.getStatus());
+        assertEquals(ShipmentStatus.DELIVERED, finalShipment.getStatus(), "Final shipment status should be DELIVERED");
 
         Assignment finalAssignment = assignmentRepository.findById(assignmentId).orElseThrow();
-        assertEquals("COMPLETED", finalAssignment.getStatus());
+        assertEquals("COMPLETED", finalAssignment.getStatus(), "Final assignment status should be COMPLETED");
     }
 
     // ==========================================
@@ -180,8 +185,9 @@ class DriverDeliveryWorkflowIntegrationTest {
     // ==========================================
 
     @Test
+    @Transactional
     void testIssueReportingWorkflow() {
-        // Step 1: Start delivery
+        // Step 1: Start assignment
         assignmentService.startAssignment(assignmentId, testDriver.getId());
 
         // Step 2: Report issue
@@ -193,11 +199,11 @@ class DriverDeliveryWorkflowIntegrationTest {
         issue.setLongitude(16.0);
 
         ShipmentResponse delayedShipment = shipmentService.reportIssue(shipmentId, testDriver.getId(), issue);
-        assertEquals(ShipmentStatus.DELAYED, delayedShipment.getStatus());
+        assertEquals(ShipmentStatus.DELAYED, delayedShipment.getStatus(), "Shipment should be DELAYED");
 
         // Verify persistence
         Shipment persistedShipment = shipmentRepository.findById(shipmentId).orElseThrow();
-        assertEquals(ShipmentStatus.DELAYED, persistedShipment.getStatus());
+        assertEquals(ShipmentStatus.DELAYED, persistedShipment.getStatus(), "Persisted shipment should be DELAYED");
     }
 
     // ==========================================
@@ -205,6 +211,7 @@ class DriverDeliveryWorkflowIntegrationTest {
     // ==========================================
 
     @Test
+    @Transactional
     void testDriverDashboard_ScheduledAssignments() {
         // Create additional assignments
         ShipmentRequest req2 = createShipmentRequest("DASHBOARD-002");
@@ -221,14 +228,15 @@ class DriverDeliveryWorkflowIntegrationTest {
         var driverAssignments = assignmentService.findAssignmentsByDriver(testDriver.getId());
 
         // Assert
-        assertEquals(2, driverAssignments.size());
-        assertTrue(driverAssignments.stream().allMatch(a -> 
-            a.getAssignmentStatus().equals("SCHEDULED") || 
-            a.getAssignmentStatus().equals("IN_PROGRESS")
-        ));
+        assertEquals(2, driverAssignments.size(), "Driver should have 2 assignments");
+        assertTrue(driverAssignments.stream().allMatch(a ->
+                a.getAssignmentStatus().equals("SCHEDULED") ||
+                        a.getAssignmentStatus().equals("IN_PROGRESS")
+        ), "All assignments should be SCHEDULED or IN_PROGRESS");
     }
 
     @Test
+    @Transactional
     void testDriverDashboard_InProgressAssignments() {
         // Start the assignment
         assignmentService.startAssignment(assignmentId, testDriver.getId());
@@ -237,17 +245,21 @@ class DriverDeliveryWorkflowIntegrationTest {
         var driverAssignments = assignmentService.findAssignmentsByDriver(testDriver.getId());
 
         // Assert
-        assertEquals(1, driverAssignments.size());
-        assertEquals("IN_PROGRESS", driverAssignments.get(0).getAssignmentStatus());
+        assertEquals(1, driverAssignments.size(), "Driver should have 1 assignment");
+        assertEquals("IN_PROGRESS", driverAssignments.get(0).getAssignmentStatus(),
+                "Assignment should be IN_PROGRESS");
     }
 
     @Test
+    @Transactional
     void testDriverDashboard_CompletedNotShown() {
         // Complete the entire workflow
         assignmentService.startAssignment(assignmentId, testDriver.getId());
 
         ProofOfDeliveryDTO pod = new ProofOfDeliveryDTO();
         pod.setRecipientName("Test Recipient");
+        pod.setLatitude(43.5081);
+        pod.setLongitude(16.4402);
         shipmentService.completeDelivery(shipmentId, testDriver.getId(), pod);
 
         assignmentService.completeAssignment(assignmentId, testDriver.getId());
@@ -256,7 +268,7 @@ class DriverDeliveryWorkflowIntegrationTest {
         var driverAssignments = assignmentService.findAssignmentsByDriver(testDriver.getId());
 
         // Assert - Completed assignments should not appear
-        assertEquals(0, driverAssignments.size());
+        assertEquals(0, driverAssignments.size(), "Completed assignments should not appear in dashboard");
     }
 
     // ==========================================
@@ -264,18 +276,22 @@ class DriverDeliveryWorkflowIntegrationTest {
     // ==========================================
 
     @Test
+    @Transactional
     void testCannotCompleteDeliveryWithoutStarting() {
         // Try to complete delivery without starting
         ProofOfDeliveryDTO pod = new ProofOfDeliveryDTO();
         pod.setRecipientName("John Doe");
+        pod.setLatitude(43.5081);
+        pod.setLongitude(16.4402);
 
         // Assert - Should throw exception
         assertThrows(Exception.class, () -> {
             shipmentService.completeDelivery(shipmentId, testDriver.getId(), pod);
-        });
+        }, "Should not be able to complete delivery without starting");
     }
 
     @Test
+    @Transactional
     void testCannotCompleteAssignmentBeforeDelivery() {
         // Start assignment
         assignmentService.startAssignment(assignmentId, testDriver.getId());
@@ -283,10 +299,11 @@ class DriverDeliveryWorkflowIntegrationTest {
         // Try to complete assignment without completing delivery
         assertThrows(Exception.class, () -> {
             assignmentService.completeAssignment(assignmentId, testDriver.getId());
-        });
+        }, "Should not be able to complete assignment before delivery");
     }
 
     @Test
+    @Transactional
     void testCannotReportIssueBeforeStarting() {
         // Try to report issue without starting delivery
         IssueReportDTO issue = new IssueReportDTO();
@@ -296,7 +313,7 @@ class DriverDeliveryWorkflowIntegrationTest {
         // Assert
         assertThrows(Exception.class, () -> {
             shipmentService.reportIssue(shipmentId, testDriver.getId(), issue);
-        });
+        }, "Should not be able to report issue before starting");
     }
 
     // ==========================================

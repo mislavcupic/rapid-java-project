@@ -1,7 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
 import lombok.RequiredArgsConstructor; // Preporučeno koristiti Lombok @RequiredArgsConstructor za injekciju
 import org.springframework.http.ResponseEntity;

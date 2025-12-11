@@ -228,7 +228,8 @@ class RefreshTokenServiceTest {
         // Act
         try {
             refreshTokenService.verifyExpiration(testToken);
-        } catch (TokenExpiredException _) {
+        } catch (TokenExpiredException err) {
+            System.err.println(err.getMessage());
             // Expected
         }
 

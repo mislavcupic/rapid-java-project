@@ -218,7 +218,7 @@ const Register = () => {
 
         } catch (err) {
             // ✅ Rukovanje backend validation errors
-            if (err.body && err.body.errors) {
+            if (err?.body.errors) {
                 setErrors({ ...errors, ...err.body.errors });
                 setError(err.body.message || t('validation.fix_errors'));
             } else {

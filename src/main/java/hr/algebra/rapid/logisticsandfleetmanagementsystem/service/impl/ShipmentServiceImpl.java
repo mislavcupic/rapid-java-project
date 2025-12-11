@@ -183,7 +183,8 @@ public class ShipmentServiceImpl implements ShipmentService {
             try {
                 ShipmentStatus newStatus = ShipmentStatus.valueOf(request.getStatus().toUpperCase());
                 shipment.setStatus(newStatus);
-            } catch (IllegalArgumentException _) {
+            } catch (IllegalArgumentException err) {
+                logger.error(err.getMessage(), err);
                 throw new IllegalArgumentException("Neispravan status pošiljke: " + request.getStatus());
             }
         }
