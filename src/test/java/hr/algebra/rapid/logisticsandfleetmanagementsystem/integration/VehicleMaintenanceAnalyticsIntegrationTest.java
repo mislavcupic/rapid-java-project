@@ -12,10 +12,12 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRoleRep
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.VehicleRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AnalyticsService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,16 +29,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * ✅ FIXED INTEGRACIJSKI TEST - Vehicle Maintenance Analytics
- *
- * IZMJENE:
- * - Maknut @Transactional s klase
- * - Dodana @Transactional na setUp() i svaki test
- * - Fixed List.of() -> ArrayList (immutable list problem)
- * - Dodani detaljniji assert messages
+ * ✅ POPRAVLJEN INTEGRACIJSKI TEST - Vehicle Maintenance Analytics
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class VehicleMaintenanceAnalyticsIntegrationTest {
 
     @Autowired
@@ -57,11 +54,17 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
     @Autowired
     private UserRoleRepository userRoleRepository;
 
+    @Autowired
+    private EntityManager entityManager;  // ✅ DODANO
+
     private Driver testDriver;
 
     @BeforeEach
-    @Transactional
-    void setUp() {
+    void setUp() {  // ✅ BEZ @Transactional
+        // Očisti bazu
+        vehicleRepository.deleteAll();
+        driverRepository.deleteAll();
+
         // Setup driver
         UserRole driverRole = userRoleRepository.findByName("ROLE_DRIVER")
                 .orElseGet(() -> {
@@ -71,7 +74,6 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
                 });
 
         UserInfo userInfo = new UserInfo();
-        userInfo.setId(1L);
         userInfo.setUsername("maintenance_driver");
         userInfo.setPassword("$2a$10$hashedPassword");
         userInfo.setFirstName("Maintenance");
@@ -79,7 +81,6 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         userInfo.setEmail("maintenance@test.com");
         userInfo.setIsEnabled(true);
 
-        // ✅ FIX: Koristi ArrayList, ne List.of() (immutable problem)
         List<UserRole> rolesList = new ArrayList<>();
         rolesList.add(driverRole);
         userInfo.setRoles(rolesList);
@@ -91,6 +92,10 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         testDriver.setLicenseNumber("MAINT-001");
         testDriver.setPhoneNumber("+385991234567");
         testDriver = driverRepository.save(testDriver);
+
+        // ✅ Flush setup podataka u bazu
+        entityManager.flush();
+        entityManager.clear();
     }
 
     // ==========================================
@@ -114,6 +119,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         overdue.setFuelConsumptionLitersPer100Km(BigDecimal.valueOf(8.5));
 
         vehicleRepository.save(overdue);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleAnalyticsResponse analytics = analyticsService.getVehicleAlertStatus();
@@ -151,6 +158,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         warning.setFuelConsumptionLitersPer100Km(BigDecimal.valueOf(7.5));
 
         vehicleRepository.save(warning);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleAnalyticsResponse analytics = analyticsService.getVehicleAlertStatus();
@@ -188,6 +197,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         healthy.setFuelConsumptionLitersPer100Km(BigDecimal.valueOf(9.0));
 
         vehicleRepository.save(healthy);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleAnalyticsResponse analytics = analyticsService.getVehicleAlertStatus();
@@ -216,6 +227,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         Vehicle healthy = createVehicle("ZG-HLTH-001", 45000L, 55000L);
 
         vehicleRepository.saveAll(List.of(overdue, warning, healthy));
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleAnalyticsResponse analytics = analyticsService.getVehicleAlertStatus();
@@ -233,6 +246,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         // Arrange - Vehicle with 8000 km remaining
         Vehicle vehicle = createVehicle("ZG-TEST-001", 47000L, 55000L);
         vehicleRepository.save(vehicle);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleResponse response = vehicleService.findVehicleById(vehicle.getId()).orElseThrow();
@@ -248,6 +263,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         // Arrange - Vehicle overdue by 3000 km
         Vehicle vehicle = createVehicle("ZG-TEST-002", 58000L, 55000L);
         vehicleRepository.save(vehicle);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleResponse response = vehicleService.findVehicleById(vehicle.getId()).orElseThrow();
@@ -263,6 +280,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         // Arrange - Vehicle at exact service mileage
         Vehicle vehicle = createVehicle("ZG-TEST-003", 55000L, 55000L);
         vehicleRepository.save(vehicle);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleResponse response = vehicleService.findVehicleById(vehicle.getId()).orElseThrow();
@@ -278,6 +297,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         // Arrange - Vehicle without driver
         Vehicle freeVehicle = createVehicle("ZG-FREE-001", 45000L, 55000L);
         vehicleRepository.save(freeVehicle);
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         VehicleAnalyticsResponse analytics = analyticsService.getVehicleAlertStatus();
@@ -295,6 +316,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         Vehicle overdue3 = createVehicle("ZG-OVER-003", 58000L, 55000L);
 
         vehicleRepository.saveAll(List.of(overdue1, overdue2, overdue3));
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         List<VehicleResponse> overdueList = vehicleService.findOverdueMaintenanceVehicles();
@@ -316,6 +339,8 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         Vehicle healthy = createVehicle("ZG-HLTH-001", 45000L, 55000L); // 10000 km
 
         vehicleRepository.saveAll(List.of(warn1, warn2, warn3, healthy));
+        entityManager.flush();
+        entityManager.clear();
 
         // Act
         List<VehicleResponse> warningList = vehicleService.findWarningMaintenanceVehicles(5000L);
@@ -331,7 +356,7 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
     @Test
     @Transactional
     void testEmptyFleet() {
-        // Act - No vehicles in database
+        // Act - No vehicles in database (već očišćeno u setUp)
         VehicleAnalyticsResponse analytics = analyticsService.getVehicleAlertStatus();
 
         // Assert
@@ -347,14 +372,19 @@ class VehicleMaintenanceAnalyticsIntegrationTest {
         // Arrange - Create vehicle in healthy state
         Vehicle vehicle = createVehicle("ZG-UPDATE-001", 45000L, 55000L);
         vehicle = vehicleRepository.save(vehicle);
+        entityManager.flush();
+        entityManager.clear();
 
         // Verify initial state
         VehicleAnalyticsResponse initialAnalytics = analyticsService.getVehicleAlertStatus();
         assertEquals(0L, initialAnalytics.getOverdue(), "Initially should have 0 overdue");
 
         // Act - Simulate mileage increase to overdue
+        vehicle = vehicleRepository.findById(vehicle.getId()).orElseThrow();
         vehicle.setCurrentMileageKm(58000L); // Now overdue
         vehicleRepository.save(vehicle);
+        entityManager.flush();
+        entityManager.clear();
 
         // Assert - Status should update
         VehicleAnalyticsResponse updatedAnalytics = analyticsService.getVehicleAlertStatus();

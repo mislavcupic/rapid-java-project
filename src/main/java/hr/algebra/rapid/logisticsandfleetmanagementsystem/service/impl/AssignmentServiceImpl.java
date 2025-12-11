@@ -110,6 +110,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         assignment.setShipment(shipment);
         assignment.setStartTime(request.getStartTime());
         assignment.setEndTime(request.getEndTime());
+        assignment.setRoute(shipment.getRoute());
         assignment.setStatus(SCHEDULED);
 
         shipment.setStatus(ShipmentStatus.valueOf(SCHEDULED));

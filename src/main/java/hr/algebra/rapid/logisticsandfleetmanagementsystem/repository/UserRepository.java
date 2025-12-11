@@ -13,6 +13,8 @@ public interface UserRepository extends JpaRepository<UserInfo, Long> {
 
     // Vraća JPA Entitet
     UserInfo findByUsername(String username);
+
+    void deleteByUsername(String username);
 }
 
 
