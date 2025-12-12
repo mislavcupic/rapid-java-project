@@ -14,7 +14,6 @@ public class TestSecurityConfig {
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                // Ostavite samo ono što rješava 401 grešku
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }

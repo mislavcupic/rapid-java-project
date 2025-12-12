@@ -77,7 +77,7 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
 
-        // 🛑 KRITIČNA KOREKCIJA: Putanja mora biti "/" za brisanje!
+        // Putanja mora biti "/" za brisanje!
         cookie.setPath("/");
 
         cookie.setMaxAge(0);

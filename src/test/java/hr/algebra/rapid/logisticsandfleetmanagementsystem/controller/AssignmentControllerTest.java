@@ -32,14 +32,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * ✅ FINALNO POPRAVLJEN Controller Test - Assignment Controller
- * - @MockitoBean umjesto @MockBean ✓
- * - Maknuti eq() ✓
- * - Ispravljeni Mockito stubovi ✓
- * - Dodani Security mockovi (JwtService, DriverService, UserDetailsService) ✓
- * - Ispravljeni endpointi za Driver Dashboard ✓
- */
+
 @WebMvcTest(AssignmentController.class)
 @Import(TestSecurityConfig.class)
 class AssignmentControllerTest {
@@ -62,9 +55,7 @@ class AssignmentControllerTest {
     @MockitoBean
     private UserDetailsServiceImpl userDetailsServiceImpl;
 
-    // ==========================================
-    // CREATE ASSIGNMENT TESTS
-    // ==========================================
+
 
     @Nested
     class CreateAssignment {
@@ -117,9 +108,7 @@ class AssignmentControllerTest {
         }
     }
 
-    // ==========================================
-    // UPDATE ASSIGNMENT TESTS
-    // ==========================================
+
 
     @Nested
     class UpdateAssignment {
@@ -157,9 +146,7 @@ class AssignmentControllerTest {
         }
     }
 
-    // ==========================================
-    // GET ASSIGNMENT TESTS
-    // ==========================================
+
 
     @Nested
     class GetAssignment {
@@ -207,9 +194,7 @@ class AssignmentControllerTest {
         }
     }
 
-    // ==========================================
-    // DRIVER DASHBOARD TESTS
-    // ==========================================
+
 
     @Nested
     class DriverDashboard {
@@ -302,9 +287,6 @@ class AssignmentControllerTest {
         }
     }
 
-    // ==========================================
-    // DELETE ASSIGNMENT TESTS
-    // ==========================================
 
     @Nested
     class DeleteAssignment {
@@ -325,9 +307,7 @@ class AssignmentControllerTest {
         }
     }
 
-    // ==========================================
-    // HELPER METHODS
-    // ==========================================
+//helper metode
 
     private AssignmentResponseDTO createMockAssignmentResponse(Long id) {
         AssignmentResponseDTO response = new AssignmentResponseDTO();

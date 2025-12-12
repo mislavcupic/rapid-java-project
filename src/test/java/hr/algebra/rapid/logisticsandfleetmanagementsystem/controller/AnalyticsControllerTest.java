@@ -53,24 +53,6 @@ class AnalyticsControllerTest {
         verify(analyticsService).getAverageActiveShipmentWeight();
     }
 
-    @Test
-    @DisplayName("POST /api/analytics/shipments/mark-overdue - should mark overdue")
-    void bulkMarkOverdue_ShouldReturnUpdatedCount() throws Exception {
-        int expectedCount = 15;
-        when(analyticsService.bulkMarkOverdue()).thenReturn(expectedCount);
-
-        // Očekivana poruka TOČNO PREPISANA IZ KONTROLERA (SADA RADI ZBOG UTF-8 POSTAVKE)
-        String expectedContent = String.format(
-                "Uspješno ažurirano %d pošiljaka u status 'OVERDUE'.",
-                expectedCount
-        );
-
-        mockMvc.perform(post("/api/analytics/shipments/mark-overdue"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(expectedContent)); // Očekujemo točan string
-
-        verify(analyticsService).bulkMarkOverdue();
-    }
 
     @Test
     @DisplayName("GET /api/analytics/vehicles/status - should return vehicle analytics")

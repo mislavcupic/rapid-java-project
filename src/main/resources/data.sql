@@ -1,8 +1,6 @@
 -- data.sql - APSOLUTNA KONAČNA KOREKCIJA (UKLJUČUJUĆI VEHICLE MAINTENANCE)
 
--- =================================================================
--- 1. KOREKCIJA SHEME I DODAVANJE NOVIH KOLONA
--- =================================================================
+--korekcije sheme i dodavanje novih kolona
 
 -- Dodavanje kolona za Pošiljke i Rute (ako nisu postojale)
 ALTER TABLE shipment ADD COLUMN IF NOT EXISTS origin_latitude DOUBLE PRECISION;
@@ -14,7 +12,7 @@ ALTER TABLE shipment ADD COLUMN IF NOT EXISTS shipment_value NUMERIC(19, 2);
 ALTER TABLE shipment ADD COLUMN IF NOT EXISTS volume_m3 NUMERIC(19, 2);
 ALTER TABLE assignment ADD COLUMN IF NOT EXISTS route_id BIGINT;
 
--- ⚡ KRITIČNO: KOREKCIJA ZA VEHICLE MAINTENANCE
+
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS current_mileage_km BIGINT;
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS last_service_date DATE;
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS next_service_mileage_km BIGINT;
@@ -24,9 +22,7 @@ ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS fuel_consumption_liters_per_100km N
 ALTER TABLE shipment DROP CONSTRAINT IF EXISTS fk_route;
 
 
--- =================================================================
--- 2. TRUNCATE i RESETIRANJE
--- =================================================================
+
 
 TRUNCATE TABLE assignment RESTART IDENTITY CASCADE;
 TRUNCATE TABLE routes RESTART IDENTITY CASCADE;
@@ -38,9 +34,7 @@ TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
 TRUNCATE TABLE app_user RESTART IDENTITY CASCADE;
 TRUNCATE TABLE refresh_token RESTART IDENTITY CASCADE;
 
--- =================================================================
--- 3. UNOS INICIJALNIH PODATAKA (USERS, DRIVERS)
--- =================================================================
+
 
 -- Roles
 INSERT INTO roles (name) VALUES ('ROLE_ADMIN');

@@ -7,9 +7,7 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Unit test za Driver domain
- */
+
 class DriverTest {
 
     private Driver driver;

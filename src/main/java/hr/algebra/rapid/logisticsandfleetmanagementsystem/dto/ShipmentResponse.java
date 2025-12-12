@@ -3,11 +3,16 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ShipmentResponse {
 
     private Long id;
