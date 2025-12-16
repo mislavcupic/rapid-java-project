@@ -61,7 +61,7 @@ public class AuthController {
         cookie.setHttpOnly(true);   // Nedostupan JavaScriptu (XSS zaštita)
         cookie.setSecure(false);    // Koristite 'true' samo za HTTPS (produkcija)
 
-        // 🛑 KRITIČNA KOREKCIJA: Postavljanjem na "/" šalje se na sve rute!
+
         cookie.setPath("/");
 
         cookie.setMaxAge(maxAgeInSeconds);
