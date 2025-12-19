@@ -38,22 +38,25 @@ const DriverForm = () => {
     // Učitavanje podataka za uređivanje
     useEffect(() => {
         const loadFormData = async () => {
-            try {
-                if (isEditMode) {
-                    const data = await fetchDriverById(id);
-                    setFormData({
-                        licenseNumber: data.licenseNumber || '',
-                        phoneNumber: data.phoneNumber || '',
-                        licenseExpirationDate: data.licenseExpirationDate || '',
+            // ✅ Ako NIJE edit mode, odmah završi loading
+            if (!isEditMode) {
+                setLoading(false);
+                return;
+            }
 
-                        // Podaci se dohvaćaju iz DTO-a za prikaz u edit modu
-                        username: data.username || '',
-                        firstName: data.firstName || '',
-                        lastName: data.lastName || '',
-                        email: data.email || '',
-                        password: '',
-                    });
-                }
+            // ✅ Samo u edit modu učitavaj podatke
+            try {
+                const data = await fetchDriverById(id);
+                setFormData({
+                    licenseNumber: data.licenseNumber || '',
+                    phoneNumber: data.phoneNumber || '',
+                    licenseExpirationDate: data.licenseExpirationDate || '',
+                    username: data.username || '',
+                    firstName: data.firstName || '',
+                    lastName: data.lastName || '',
+                    email: data.email || '',
+                    password: '',
+                });
             } catch (err) {
                 setError(err.message || "Greška pri učitavanju podataka.");
             } finally {
@@ -62,7 +65,6 @@ const DriverForm = () => {
         };
         loadFormData();
     }, [id, isEditMode]);
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
