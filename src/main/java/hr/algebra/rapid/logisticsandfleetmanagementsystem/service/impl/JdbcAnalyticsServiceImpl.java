@@ -1,7 +1,7 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleAnalyticsResponse;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.exception.BulkMarkOverdueException;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.BulkMarkOverdueException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AnalyticsService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
 import lombok.RequiredArgsConstructor;

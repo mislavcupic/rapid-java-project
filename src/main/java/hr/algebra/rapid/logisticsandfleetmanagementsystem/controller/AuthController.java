@@ -127,7 +127,7 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
             );
 
-            if (authentication.isAuthenticated()) {
+            if (authentication != null && authentication.isAuthenticated()) {
                 String username = authRequest.getUsername();
                 String accessToken = jwtService.generateToken(username);
 
@@ -152,6 +152,8 @@ public class AuthController {
                 return ResponseEntity.ok(authResponse);
             } else {
                 throw new UsernameNotFoundException("Neispravni kredencijali!");
+
+
             }
 
         } catch (Exception err) {

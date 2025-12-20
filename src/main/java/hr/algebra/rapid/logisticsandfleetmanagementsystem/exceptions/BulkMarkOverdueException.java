@@ -1,4 +1,4 @@
-package hr.algebra.rapid.logisticsandfleetmanagementsystem.exception;
+package hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions;
 
 /**
  * Iznimka koja se baca ako dođe do kritične greške prilikom masovnog (bulk) ažuriranja
