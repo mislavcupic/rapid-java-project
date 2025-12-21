@@ -19,12 +19,13 @@ public class ApplicationUser {
 
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToMany(fetch = FetchType.EAGER)
+
     @JoinTable(
             name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-
+            joinColumns = @JoinColumn(name = "application_user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private List<UserRole> roles;
