@@ -1,12 +1,16 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * DTO za Proof of Delivery - podaci koje Driver šalje kada završava dostavu
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProofOfDeliveryDTO {
 
     @NotBlank(message = "Recipient name is required")

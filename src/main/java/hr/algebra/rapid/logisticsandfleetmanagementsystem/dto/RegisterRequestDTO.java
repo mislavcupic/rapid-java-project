@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -31,4 +33,8 @@ public class RegisterRequestDTO {
     @NotBlank(message = "Email je obavezan")
     @Email(message = "Email mora biti valjan")
     private String email;
+
+    private String licenseNumber;
+    private LocalDate licenseExpirationDate;
+    private String phoneNumber;
 }

@@ -1,35 +1,37 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value; // ⭐ DODANO: Import za @Value
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit; // ⭐ DODANO: Za konverziju vremena (sekunde -> milisekunde)
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-@Component
+@Service
+@RequiredArgsConstructor
 public class JwtService {
 
-    // ⭐ GDJE STAVITI @Value: Iznad privatnog polja
-    // Ovdje Spring injektira vrijednost 'jwt.expiration.time' iz application.properties
+    private final UserRepository userRepository;
+
+    @Value("${jwt.secret}")
+    private String secret;
+
     @Value("${jwt.expiration.time}")
     private long expirationTimeInSeconds;
-
-    // Hardkodirani SECRET (preporučena praksa je da se i ovo premjesti u properties)
-    public static final String SECRET = "357638792F423F4428472B4B6250655368566D597133743677397A2443264629";
-
-    // ----------------------------------------------------------------------
-    // METODE KOJE SU VAM JAVILE 'cannot find symbol' - one moraju biti public
-    // ----------------------------------------------------------------------
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -37,35 +39,41 @@ public class JwtService {
 
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        // Ovdje su pozvane metode extractUsername i isTokenExpired
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    public String generateToken(String username){
+    public String generateToken(String username) {
+        UserInfo user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
+
+        List<String> roles = user.getRoles().stream()
+                .map(UserRole::getName)
+                .toList();
+
         Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", roles);
+
         return createToken(claims, username);
     }
 
-    // ----------------------------------------------------------------------
-    // POMOĆNE I PRIVATNE METODE
-    // ----------------------------------------------------------------------
-
-    public Date extractExpiration(String token) {
+    private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parser()
-                .setSigningKey(getSignKey())
+        return Jwts.parser()
+                .verifyWith(getSignKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private Boolean isTokenExpired(String token) {
@@ -73,21 +81,19 @@ public class JwtService {
     }
 
     private String createToken(Map<String, Object> claims, String username) {
-
-        // ⭐ RJEŠENJE ISTEKA TOKENA: Pretvaranje konfiguriranih sekundi u milisekunde
         long expirationTimeInMillis = TimeUnit.SECONDS.toMillis(expirationTimeInSeconds);
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                // ⭐ Korištenje konfigurabilne vrijednosti
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTimeInMillis))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256).compact();
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expirationTimeInMillis))
+                .signWith(getSignKey())
+                .compact();
     }
 
-    private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+    private SecretKey getSignKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

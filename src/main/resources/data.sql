@@ -1,17 +1,7 @@
 -- data.sql - APSOLUTNA KONAČNA KOREKCIJA (UKLJUČUJUĆI VEHICLE MAINTENANCE)
 
--- =================================================================
--- 1. KOREKCIJA SHEME I DODAVANJE NOVIH KOLONA
--- =================================================================
-DELETE FROM assignment;
-DELETE FROM shipment;
-DELETE FROM route;
-DELETE FROM vehicle;
-DELETE FROM driver;
-DELETE FROM user_roles;
-DELETE FROM roles;
-DELETE FROM app_user;
-DELETE FROM refresh_token;
+--korekcije sheme i dodavanje novih kolona
+
 -- Dodavanje kolona za Pošiljke i Rute (ako nisu postojale)
 ALTER TABLE shipment ADD COLUMN IF NOT EXISTS origin_latitude DOUBLE PRECISION;
 ALTER TABLE shipment ADD COLUMN IF NOT EXISTS origin_longitude DOUBLE PRECISION;
@@ -22,7 +12,7 @@ ALTER TABLE shipment ADD COLUMN IF NOT EXISTS shipment_value NUMERIC(19, 2);
 ALTER TABLE shipment ADD COLUMN IF NOT EXISTS volume_m3 NUMERIC(19, 2);
 ALTER TABLE assignment ADD COLUMN IF NOT EXISTS route_id BIGINT;
 
--- ⚡ KRITIČNO: KOREKCIJA ZA VEHICLE MAINTENANCE
+
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS current_mileage_km BIGINT;
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS last_service_date DATE;
 ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS next_service_mileage_km BIGINT;
@@ -32,22 +22,19 @@ ALTER TABLE vehicle ADD COLUMN IF NOT EXISTS fuel_consumption_liters_per_100km N
 ALTER TABLE shipment DROP CONSTRAINT IF EXISTS fk_route;
 
 
--- =================================================================
--- 2. TRUNCATE i RESETIRANJE
--- =================================================================
+
 
 TRUNCATE TABLE assignment RESTART IDENTITY CASCADE;
-TRUNCATE TABLE route RESTART IDENTITY CASCADE; -- ovdje je bila greška (makni 's')
+TRUNCATE TABLE routes RESTART IDENTITY CASCADE;
 TRUNCATE TABLE shipment RESTART IDENTITY CASCADE;
 TRUNCATE TABLE vehicle RESTART IDENTITY CASCADE;
 TRUNCATE TABLE driver RESTART IDENTITY CASCADE;
 TRUNCATE TABLE user_roles RESTART IDENTITY;
 TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
 TRUNCATE TABLE app_user RESTART IDENTITY CASCADE;
+TRUNCATE TABLE refresh_token RESTART IDENTITY CASCADE;
 
--- =================================================================
--- 3. UNOS INICIJALNIH PODATAKA (USERS, DRIVERS)
--- =================================================================
+
 
 -- Roles
 INSERT INTO roles (name) VALUES ('ROLE_ADMIN');
@@ -102,29 +89,29 @@ INSERT INTO vehicle (
 -- 5. RUTE, POŠILJKE, ASSIGNMENTS
 -- =================================================================
 
--- =================================================================
--- 5. RUTE, POŠILJKE, ASSIGNMENTS (POPRAVLJENO U JEDNINU)
--- =================================================================
-
 -- RUTA 1: ZG -> ST (ID 1)
-INSERT INTO route (origin_address, origin_latitude, origin_longitude, destination_address, destination_latitude, destination_longitude, estimated_distance_km, estimated_duration_minutes, status)
+INSERT INTO routes (origin_address, origin_latitude, origin_longitude, destination_address, destination_latitude, destination_longitude, estimated_distance_km, estimated_duration_minutes, status)
 VALUES ('Zagreb, HR', 45.8150, 15.9819, 'Split, HR', 43.5081, 16.4402, 410.50, 240, 'CALCULATED');
 
 -- RUTA 2: ST -> RI (ID 2)
-INSERT INTO route (origin_address, origin_latitude, origin_longitude, destination_address, destination_latitude, destination_longitude, estimated_distance_km, estimated_duration_minutes, status)
+INSERT INTO routes (origin_address, origin_latitude, origin_longitude, destination_address, destination_latitude, destination_longitude, estimated_distance_km, estimated_duration_minutes, status)
 VALUES ('Split, HR', 43.5081, 16.4402, 'Rijeka, HR', 45.3271, 14.4422, 390.00, 280, 'CALCULATED');
 
--- SHIPMENT 1
-INSERT INTO shipment (tracking_number, description, weight_kg, origin_address, destination_address, origin_latitude, origin_longitude, destination_latitude, destination_longitude, shipment_value, volume_m3, status, expected_delivery_date, route_id)
-VALUES ('SHIP001ZG', 'Elektronička oprema', 5000.00, 'Zagreb, HR', 'Split, HR', 45.8150, 15.9819, 43.5081, 16.4402, 15000.00, 12.50, 'PENDING', CURRENT_TIMESTAMP + INTERVAL '2 days', 1);
 
--- SHIPMENT 2
+-- SHIPMENT 1 (ID 1)
 INSERT INTO shipment (tracking_number, description, weight_kg, origin_address, destination_address, origin_latitude, origin_longitude, destination_latitude, destination_longitude, shipment_value, volume_m3, status, expected_delivery_date, route_id)
-VALUES ('SHIP002ST', 'Paleta namještaja', 8000.00, 'Split, HR', 'Rijeka, HR', 43.5081, 16.4402, 45.3271, 14.4422, 8500.00, 20.00, 'PENDING', CURRENT_TIMESTAMP + INTERVAL '3 days', 2);
+VALUES ('SHIP001ZG', 'Elektronička oprema', 5000.00, 'Zagreb, HR', 'Split, HR', 45.8150, 15.9819, 43.5081, 16.4402, 15000.00, 12.50, 'PENDING', NOW() + INTERVAL '2 day', 1);
+
+-- SHIPMENT 2 (ID 2)
+INSERT INTO shipment (tracking_number, description, weight_kg, origin_address, destination_address, origin_latitude, origin_longitude, destination_latitude, destination_longitude, shipment_value, volume_m3, status, expected_delivery_date, route_id)
+VALUES ('SHIP002ST', 'Paleta namještaja', 8000.00, 'Split, HR', 'Rijeka, HR', 43.5081, 16.4402, 45.3271, 14.4422, 8500.00, 20.00, 'PENDING', NOW() + INTERVAL '3 day', 2);
+
+-- PONOVNO KREIRANJE FOREIGN KEYA
+ALTER TABLE shipment ADD CONSTRAINT fk_routes FOREIGN KEY (route_id) REFERENCES routes(id);
 
 -- ASSIGNMENTS
 INSERT INTO assignment (driver_id, vehicle_id, shipment_id, route_id, start_time, status)
-VALUES (1, 1, 1, 1, CURRENT_TIMESTAMP + INTERVAL '1 hour', 'SCHEDULED');
+VALUES (1, 1, 1, 1, NOW() + INTERVAL '1 hour', 'SCHEDULED');
 
 INSERT INTO assignment (driver_id, vehicle_id, shipment_id, route_id, start_time, status)
-VALUES (2, 2, 2, 2, CURRENT_TIMESTAMP + INTERVAL '5 hours', 'SCHEDULED');
+VALUES (2, 2, 2, 2, NOW() + INTERVAL '5 hour', 'SCHEDULED');

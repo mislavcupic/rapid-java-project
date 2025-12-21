@@ -7,7 +7,7 @@ import java.util.Optional;
 
 @Entity
 @Table(name = "driver")
-@Data // Kritično: Omogućuje setLicenseNumber, setPhoneNumber, getLicenseNumber itd.
+@Data
 public class Driver {
 
     @Id
@@ -17,8 +17,6 @@ public class Driver {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_info_id", unique = true, nullable = false)
     private UserInfo userInfo;
-
-    // --- POLJA KOJA SU NEDOSTAJALA I UZROKOVALA "Cannot find symbol" ---
 
     @Column(name = "license_number", unique = true)
     private String licenseNumber;
@@ -32,9 +30,9 @@ public class Driver {
 
     // Driver može biti current_driver samo JEDNOM vozilu
     @OneToOne(mappedBy = "currentDriver", fetch = FetchType.LAZY)
-    private Vehicle currentVehicle; // BITNO: Ovo omogućuje getCurrentVehicle() metodu
+    private Vehicle currentVehicle; // Ovo omogućuje getCurrentVehicle() metodu
 
-    // --- TRANSIENT I POMOĆNE METODE ---
+   //transient i pomoćne metode
 
     @Transient
     public String getFullName() {

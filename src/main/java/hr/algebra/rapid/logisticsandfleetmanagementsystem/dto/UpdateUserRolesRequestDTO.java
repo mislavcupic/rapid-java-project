@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class RefreshTokenRequestDTO {
-    private String token;
+@AllArgsConstructor
+public class UpdateUserRolesRequestDTO {
+    private List<String> roles; // npr. ["ROLE_ADMIN", "ROLE_DRIVER"]
 }

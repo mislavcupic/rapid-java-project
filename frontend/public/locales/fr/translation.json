@@ -37,12 +37,16 @@
   },
 
   "alerts": {
-    "overdue_service": "Entretien en Retard - Immatriculation: {{registration}}",
-    "low_fuel": "Niveau de Carburant Bas - Immatriculation: {{registration}}"
+    "overdue_service": "Entretien en Retard - Immatriculation",
+    "low_fuel": "Niveau de Carburant Bas - Immatriculation",
+    "free_vehicles": "Véhicules libres",
+    "service_warning": "Avertissement d'entretien",
+    "total_vehicles": "Nombre total de véhicules",
+    "average_weight": "Poids moyen"
   },
 
   "forms": {
-    "create_vehicle": "Créer Véhicule",
+    "create_vehicle_title": "Créer Véhicule",
     "edit_vehicle": "Modifier Véhicule",
     "create_shipment": "Créer Expédition",
     "edit_driver": "Modifier Conducteur",
@@ -56,7 +60,24 @@
     "driver_name": "Nom du conducteur",
     "email": "Adresse e-mail",
     "license": "Numéro de permis",
-    "phone": "Numéro de téléphone"
+    "phone": "Numéro de téléphone",
+    "license_plate": "Plaque d'immatriculation",
+    "model_year": "Année du modèle",
+    "make": "Marque",
+    "model": "Modèle",
+    "create_vehicle": "Créer un nouveau véhicule",
+    "fuel_type": "Type de carburant",
+    "registration": "Inscription",
+    "confirm_password": "Confirmer le mot de passe",
+    "driver_info_optional": "Informations du conducteur (Facultatif)",
+    "license_number": "Numéro de permis de conduire",
+    "license_expiration": "Date d'expiration du permis",
+    "optional_later": "Facultatif - peut être saisi plus tard",
+    "characters": "caractères",
+    "must_be_future": "Facultatif - doit être une date future",
+    "phone_format": "Format: +385912345678 (9-15 chiffres)",
+    "already_have_account": "Vous avez déjà un compte?",
+    "register_button": "Register"
   },
 
   "shipments": {
@@ -111,7 +132,9 @@
     "address": "Adresse",
     "driver_list": "Liste des Conducteurs",
     "driver_details": "Détails du Conducteur",
-    "add_driver": "Ajouter un nouveau pilote"
+    "add_driver": "Ajouter un nouveau pilote",
+    "scheduled": "Programme",
+    "current_vehicle": "Véhicule actuel"
   },
 
   "messages": {
@@ -147,5 +170,61 @@
     "fetch_drivers": "Erreur lors de la récupération des conducteurs.",
     "fetch_vehicles": "Erreur lors de la récupération des véhicules.",
     "general_error": "Erreur Générale"
+  },
+
+  "vehicles": {
+    "vehicle_list": "Liste des véhicules",
+    "add_vehicle": "Ajouter un nouveau véhicule",
+    "service_status": "Récupération des véhicules status",
+    "error_message": "Erreur lors de la récupération du pilote",
+    "load_capacity": "Capacité de charge",
+    "fuel_consumption": "Consommation de carburant",
+    "current_mileage": "Kilométrage actuel",
+    "next_service": "Prochain entretien",
+    "unassigned": "Non attribué"
+  },
+  "validation": {
+    "username_required": "Le nom d'utilisateur est requis",
+    "username_min_length": "Le nom d'utilisateur doit contenir au moins 3 caractères",
+    "username_max_length": "Le nom d'utilisateur peut contenir au maximum 50 caractères",
+    "email_required": "L'email est requis",
+    "email_invalid": "Le format de l'email est invalide",
+    "password_required": "Le mot de passe est requis",
+    "password_min_length": "Le mot de passe doit contenir au moins 6 caractères",
+    "confirm_password_required": "La confirmation du mot de passe est requise",
+    "passwords_dont_match": "Les mots de passe ne correspondent pas",
+    "first_name_required": "Le prénom est requis",
+    "last_name_required": "Le nom de famille est requis",
+    "phone_invalid": "Le numéro de téléphone doit contenir 9-15 chiffres",
+    "license_number_length": "Le numéro de permis doit contenir 5-20 caractères",
+    "license_expiration_future": "La date d'expiration doit être dans le futur",
+    "fix_errors": "Veuillez corriger les erreurs dans le formulaire",
+    "license_plate_required": "La plaque d'immatriculation est requise",
+    "make_required": "La marque est requise",
+    "model_required": "Le modèle est requis",
+    "model_year_required": "L'année du modèle est requise",
+    "model_year_invalid": "L'année doit être entre 1900 et l'année actuelle",
+    "load_capacity_required": "La capacité de charge est requise",
+    "load_capacity_positive": "La capacité de charge doit être positive",
+    "current_mileage_required": "Le kilométrage actuel est requis",
+    "current_mileage_positive": "Le kilométrage doit être positif",
+    "next_service_required": "Le prochain service est requis",
+    "next_service_positive": "Le kilométrage du service doit être positif",
+    "fuel_consumption_required": "La consommation de carburant est requise",
+    "fuel_consumption_positive": "La consommation doit être positive",
+    "driver_id_required": "Le conducteur doit être sélectionné",
+    "vehicle_id_required": "Le véhicule doit être sélectionné",
+    "shipment_id_required": "L'envoi doit être sélectionné",
+    "start_time_required": "L'heure de début est requise",
+    "tracking_number_required": "Le numéro de suivi est requis",
+    "origin_address_required": "L'adresse d'origine est requise",
+    "destination_address_required": "L'adresse de destination est requise",
+    "weight_required": "Le poids est requis",
+    "weight_positive": "Le poids doit être positif",
+    "delivery_date_required": "La date de livraison est requise",
+    "delivery_date_future": "La date de livraison doit être dans le futur ou aujourd'hui",
+    "license_number_required": "Le numéro de permis est requis",
+    "license_expiration_required": "La date d'expiration du permis est requise",
+    "phone_required": "Le numéro de téléphone est requis"
   }
 }

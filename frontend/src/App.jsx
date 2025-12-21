@@ -1,8 +1,8 @@
-// frontend/src/App.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button, NavDropdown } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import { jwtDecode } from 'jwt-decode';
 
 // Import svih ruta/komponenti
 import AddVehicle from './components/AddVehicle.jsx';
@@ -27,22 +27,18 @@ import ShipmentDetails from "./components/ShipmentDetails.jsx";
 import DriverAssignmentDetails from "./components/DriverAssignmentDetails.jsx";
 import DriverDashboard from "./components/DriverDashboard.jsx";
 import DeliveryConfirmationModal from "./components/DeliveryConfirmationModal.jsx";
+import AdminDashboard from "./components/AdminDashboard.jsx";
+import PropTypes from 'prop-types';
 
-// =========================================================================
-// NAVIGACIJSKA KOMPONENTA
-// =========================================================================
 
-const AppNavbar = () => {
+const AppNavbar = ({ userRoles, onLogout }) => {
     const { t, i18n } = useTranslation();
     const isAuthenticated = !!localStorage.getItem('accessToken');
-    const navigate = useNavigate();
 
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userRole');
-        navigate('/login');
-    };
+    // ✅ Provjera pojedinačnih uloga
+    const isAdmin = userRoles.includes('ROLE_ADMIN');
+    const isDispatcher = userRoles.includes('ROLE_DISPATCHER');
+    const isDriver = userRoles.includes('ROLE_DRIVER');
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
@@ -61,18 +57,42 @@ const AppNavbar = () => {
                         <Nav.Link as={Link} to="/">{t('Home')}</Nav.Link>
                         {isAuthenticated && (
                             <>
+                                {/* ✅ Vozila, Vozači, Pošiljke, Assignments - vidljivo za sve autentificirane */}
                                 <Nav.Link as={Link} to="/vehicles">{t('Vehicles')}</Nav.Link>
                                 <Nav.Link as={Link} to="/drivers">{t('Drivers')}</Nav.Link>
-                                <Nav.Link as={Link} to="/driver/dashboard">{t('DriverDashboard')}</Nav.Link>
                                 <Nav.Link as={Link} to="/shipments">{t('Shipments')}</Nav.Link>
                                 <Nav.Link as={Link} to="/assignments">{t('Assignments')}</Nav.Link>
-                                <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
+
+                                {/* ✅ Dashboards - Dropdown ako ima više uloga */}
+                                {(isAdmin || isDispatcher || isDriver) && (
+                                    <NavDropdown title={t('Dashboards')} id="dashboards-dropdown">
+                                        {isAdmin && (
+                                            <NavDropdown.Item as={Link} to="/admin/users">
+                                                {t('Admin Dashboard')}
+                                            </NavDropdown.Item>
+                                        )}
+                                        {isDispatcher && (
+                                            <NavDropdown.Item as={Link} to="/dispatcher/dashboard">
+                                                {t('Dispatcher Dashboard')}
+                                            </NavDropdown.Item>
+                                        )}
+                                        {isDriver && (
+                                            <NavDropdown.Item as={Link} to="/driver/dashboard">
+                                                {t('Driver Dashboard')}
+                                            </NavDropdown.Item>
+                                        )}
+                                    </NavDropdown>
+                                )}
+
+                                {/* ✅ Analytics - samo Admin i Dispatcher */}
+                                {(isAdmin || isDispatcher) && (
+                                    <Nav.Link as={Link} to="/analytics">{t('Analytics')}</Nav.Link>
+                                )}
                             </>
                         )}
                     </Nav>
 
                     <Nav className="align-items-center">
-                        {/* 🌐 Gumbi za promjenu jezika */}
                         <div className="d-flex me-3">
                             {['en', 'fr', 'hr'].map(lng => (
                                 <Button
@@ -87,10 +107,9 @@ const AppNavbar = () => {
                             ))}
                         </div>
 
-                        {/* 🔐 Login / Register / Logout gumbi */}
                         {isAuthenticated ? (
                             <Button
-                                onClick={handleLogout}
+                                onClick={onLogout}
                                 variant="outline-danger"
                                 className="font-monospace"
                             >
@@ -124,14 +143,55 @@ const AppNavbar = () => {
 };
 
 function App() {
+    const navigate = useNavigate();
+    const [userRoles, setUserRoles] = useState([]);
+
+    useEffect(() => {
+        checkUserRoles();
+    }, []);
+
+    const checkUserRoles = () => {
+        const token = localStorage.getItem('accessToken');
+
+        if (!token) {
+            setUserRoles([]);
+            return;
+        }
+
+        try {
+            const decoded = jwtDecode(token);
+            const currentTime = Date.now() / 1000;
+
+            if (decoded.exp < currentTime) {
+                localStorage.clear();
+                setUserRoles([]);
+                return;
+            }
+
+            const authorities = decoded.authorities || [];
+            setUserRoles(authorities);
+
+            console.log('JWT authorities:', authorities);
+        } catch (error) {
+            console.error('JWT decode error:', error);
+            setUserRoles([]);
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.clear();
+        setUserRoles([]);
+        navigate('/login');
+    };
+
     return (
         <div className="bg-light min-vh-100">
-            <AppNavbar />
+            <AppNavbar userRoles={userRoles} onLogout={handleLogout} />
             <Container className="py-4 py-md-5">
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/vehicles" element={<VehicleList />} />
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login" element={<Login onLoginSuccess={checkUserRoles} />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="*" element={<NotFound />} />
                     <Route path="/vehicles/add" element={<AddVehicle />} />
@@ -153,11 +213,17 @@ function App() {
                     <Route path="/shipments/details/:id" element={<ShipmentDetails />} />
                     <Route path="/driver/assignment/:id" element={<DriverAssignmentDetails />} />
                     <Route path="/driver/dashboard" element={<DriverDashboard />} />
-                    <Route path="deliveryconfirmation" element={<DeliveryConfirmationModal />} />
+                    <Route path="/deliveryconfirmation" element={<DeliveryConfirmationModal />} />
+                    <Route path="/admin/users" element={<AdminDashboard />} />
                 </Routes>
             </Container>
         </div>
     );
 }
+
+AppNavbar.propTypes = {
+    userRoles: PropTypes.array.isRequired,
+    onLogout: PropTypes.func.isRequired
+};
 
 export default App;

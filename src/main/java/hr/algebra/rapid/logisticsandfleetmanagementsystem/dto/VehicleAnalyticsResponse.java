@@ -2,8 +2,10 @@
 
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * DTO koji prenosi ključne metrike Alert sustava s Backenda na Frontend
@@ -11,6 +13,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class VehicleAnalyticsResponse {
 
     // Maintenance Alert Metrike

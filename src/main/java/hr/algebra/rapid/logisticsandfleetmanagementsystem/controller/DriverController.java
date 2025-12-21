@@ -1,5 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
+
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+
 
 import java.util.List;
 
@@ -24,11 +26,7 @@ public class DriverController {
 
     private final DriverService driverService;
 
-    // -----------------------------------------------------------------
-    // READ (Dohvaćanje)
-    // -----------------------------------------------------------------
 
-    /** Dohvaća listu svih Driver profila (za Dispečera/Admina) */
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<List<DriverResponseDTO>> getAllDrivers() {
@@ -47,9 +45,7 @@ public class DriverController {
         return ResponseEntity.ok(driver);
     }
 
-    // -----------------------------------------------------------------
-    // CREATE (Kreiranje)
-    // -----------------------------------------------------------------
+
 
     /** Kreira novi Driver profil i povezuje ga s postojećim UserInfo */
     @PostMapping
@@ -83,4 +79,6 @@ public class DriverController {
         driverService.deleteDriver(id);
         return ResponseEntity.noContent().build();
     }
+
+
 }

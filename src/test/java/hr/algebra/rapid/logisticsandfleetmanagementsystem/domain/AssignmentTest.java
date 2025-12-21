@@ -7,10 +7,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Unit testovi za Assignment domain entitet
- * Testira getters/setters i osnovne funkcionalnosti entiteta
- */
+
 class AssignmentTest {
 
     private Assignment assignment;
@@ -68,56 +65,41 @@ class AssignmentTest {
 
     @Test
     void setAndGetShipment_ShouldWorkCorrectly() {
-        // Act
+
         assignment.setShipment(shipment);
 
-        // Assert
         assertThat(assignment.getShipment()).isEqualTo(shipment);
         assertThat(assignment.getShipment().getId()).isEqualTo(3L);
     }
 
     @Test
     void setAndGetStartTime_ShouldWorkCorrectly() {
-        // Arrange
+
         LocalDateTime startTime = LocalDateTime.of(2025, 1, 15, 8, 0);
-
-        // Act
         assignment.setStartTime(startTime);
-
-        // Assert
         assertThat(assignment.getStartTime()).isEqualTo(startTime);
     }
 
     @Test
     void setAndGetEndTime_ShouldWorkCorrectly() {
-        // Arrange
+
         LocalDateTime endTime = LocalDateTime.of(2025, 1, 15, 17, 0);
-
-        // Act
         assignment.setEndTime(endTime);
-
-        // Assert
         assertThat(assignment.getEndTime()).isEqualTo(endTime);
     }
 
     @Test
     void setAndGetStatus_ShouldWorkCorrectly() {
-        // Arrange
+
         String status = "ACTIVE";
-
-        // Act
         assignment.setStatus(status);
-
-        // Assert
         assertThat(assignment.getStatus()).isEqualTo("ACTIVE");
     }
 
     @Test
     void setAndGetRoute_ShouldWorkCorrectly() {
-        // Act
-        assignment.setRoute(route);
 
-        // Assert
+        assignment.setRoute(route);
         assertThat(assignment.getRoute()).isEqualTo(route);
         assertThat(assignment.getRoute().getId()).isEqualTo(4L);
     }
@@ -194,14 +176,15 @@ class AssignmentTest {
         String result = assignment.toString();
 
         // Assert
-        assertThat(result).contains("Assignment");
-        assertThat(result).contains("id=1");
-        assertThat(result).contains("status=ACTIVE");
+        assertThat(result)
+                .contains("ASSIGNMENT")
+                .contains("id=1")
+                .contains("status=ACTIVE");
     }
 
     @Test
     void equals_ShouldCompareById() {
-        // Arrange
+
         Assignment assignment1 = new Assignment();
         assignment1.setId(1L);
 
@@ -212,20 +195,19 @@ class AssignmentTest {
         assignment3.setId(2L);
 
         // Act & Assert
-        assertThat(assignment1).isEqualTo(assignment2);
-        assertThat(assignment1).isNotEqualTo(assignment3);
+        assertThat(assignment1).isEqualTo(assignment2).isNotEqualTo(assignment3);
     }
 
     @Test
     void hashCode_ShouldBeConsistentWithEquals() {
-        // Arrange
+
         Assignment assignment1 = new Assignment();
         assignment1.setId(1L);
 
         Assignment assignment2 = new Assignment();
         assignment2.setId(1L);
 
-        // Act & Assert
-        assertThat(assignment1.hashCode()).isEqualTo(assignment2.hashCode());
+
+        assertThat(assignment1.hashCode()).hasSameHashCodeAs(assignment2.hashCode());
     }
 }

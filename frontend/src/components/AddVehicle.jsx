@@ -1,15 +1,13 @@
-// frontend/src/components/AddVehicle.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createVehicle, fetchDrivers } from '../services/VehicleApi.js';
 import { Form, Button, Card, Alert, Container, FloatingLabel, Spinner } from 'react-bootstrap';
 import { FaSave } from 'react-icons/fa';
-import { useTranslation } from 'react-i18next'; // ✅ Uvoz za internacionalizaciju
+import { useTranslation } from 'react-i18next';
 
 
 const AddVehicle = () => {
-    const { t } = useTranslation(); // ✅ Inicijalizacija
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -39,6 +37,7 @@ const AddVehicle = () => {
                 const driverList = await fetchDrivers();
                 setDrivers(driverList);
             } catch (err) {
+                console.error("Greška pri dohvaćanju vozača (AddVehicle):", err);
                 setError(t('error.fetch_drivers'));
             } finally {
                 setDriversLoading(false);
@@ -48,7 +47,7 @@ const AddVehicle = () => {
         if (localStorage.getItem('accessToken')) {
             loadDrivers();
         } else {
-            // Ako nismo prijavljeni, vozači ne mogu biti učitani (ako je to pravilo Backenda)
+            // Ako nismo prijavljeni, vozači nisu učitani
             setDriversLoading(false);
         }
     }, [t]);

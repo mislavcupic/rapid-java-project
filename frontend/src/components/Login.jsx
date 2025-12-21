@@ -1,64 +1,126 @@
-// frontend/src/components/Login.jsx (KONAČNA ISPRAVKA)
+// frontend/src/components/Login.jsx - ISPRAVLJENA VERZIJA
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Alert, FloatingLabel, Container } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import { apiClient } from '../services/apiClient.js';
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
     const { t } = useTranslation();
-    // Polja potrebna za prijavu
+    const navigate = useNavigate();
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
-    // Polja Ime i Prezime: NE šaljemo ih u body zahtjeva za prijavu,
-    // ali ih ostavljamo u stanju ako ih je forma vizualno zahtijevala.
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-
+    // Validation errors
+    const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
     const [error, setError] = useState(null);
-    const navigate = useNavigate();
+
+    // Validation functions
+    const validateUsername = (value) => {
+        if (!value) return t('validation.username_required');
+        if (value.length < 3) return t('validation.username_min_length');
+        return '';
+    };
+
+    const validatePassword = (value) => {
+        if (!value) return t('validation.password_required');
+        if (value.length < 6) return t('validation.password_min_length');
+        return '';
+    };
+
+    // Handle blur
+    const handleBlur = (field) => {
+        setTouched({ ...touched, [field]: true });
+
+        let error = '';
+        switch (field) {
+            case 'username':
+                error = validateUsername(username);
+                break;
+            case 'password':
+                error = validatePassword(password);
+                break;
+            default:
+                break;
+        }
+
+        setErrors({ ...errors, [field]: error });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
+        // Validate all required fields
+        const newErrors = {
+            username: validateUsername(username),
+            password: validatePassword(password)
+        };
+
+        setErrors(newErrors);
+        setTouched({
+            username: true,
+            password: true
+        });
+
+        // Check if there are any errors
+        const hasErrors = Object.values(newErrors).some(err => err !== '');
+        if (hasErrors) {
+            setError(t('validation.fix_errors'));
+            return;
+        }
+
         try {
-            const response = await fetch('http://localhost:8080/auth/login', {
+            // Očisti localStorage prije prijave
+            localStorage.clear();
+
+            // ✅ ISPRAVAK: apiClient VRAĆA PARSIRANI JSON DIREKTNO
+            const data = await apiClient('/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                // ✅ KRITIČNO: Šaljemo samo 'username' i 'password' ako backend ne zahtijeva ime/prezime za prijavu
                 body: JSON.stringify({ username, password }),
             });
 
-            if (!response.ok) {
-                const data = await response.json();
-                // Ako backend vrati 401/403, uhvatimo poruku
-                throw new Error(data.message || 'Prijava neuspješna. Provjerite korisničko ime i lozinku.');
-            }
+            // ✅ UKLONJENA 'if (!response.ok)' i 'response.json()' provjera
+            // apiClient automatski baca Error za 4xx/5xx statuse
 
-            const data = await response.json();
-            // 1. Spremi Access Token
+            // ✅ SPREMANJE ACCESS TOKENA
             localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('username', username);
 
-            // =========================================================================
-            // ✅ KRITIČNA LOGIKA: SPREMANJE ULOGE
-            // Ovo je jedini način da VehicleList.jsx zna vašu ulogu.
-            // =========================================================================
-            let roleToStore = 'ROLE_DRIVER';
-            const user = username.toLowerCase();
+            try {
+                // Dekodiranje JWT payload-a za uloge
+                const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+                const authorities = payload.authorities || payload.roles || [];
 
-            if (user.includes('admin')) {
-                roleToStore = 'ROLE_ADMIN';
-            } else if (user.includes('dispatcher') || user.includes('disp')) {
-                roleToStore = 'ROLE_DISPATCHER';
+                if (authorities && authorities.length > 0) {
+                    localStorage.setItem('userRoles', JSON.stringify(authorities));
+
+                    if (authorities.includes('ROLE_ADMIN')) {
+                        localStorage.setItem('userRole', 'ROLE_ADMIN');
+                    } else if (authorities.includes('ROLE_DISPATCHER')) {
+                        localStorage.setItem('userRole', 'ROLE_DISPATCHER');
+                    } else if (authorities.includes('ROLE_DRIVER')) {
+                        localStorage.setItem('userRole', 'ROLE_DRIVER');
+                    } else {
+                        localStorage.setItem('userRole', authorities[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('JWT decode error:', err);
             }
 
-            localStorage.setItem('userRole', roleToStore);
-            // =========================================================================
+            if (onLoginSuccess) {
+                onLoginSuccess();
+            }
 
-            navigate('/vehicles');
+            navigate('/');
+
         } catch (err) {
-            setError(err.message);
+            // ✅ apiClient baca Error objekt s .message propertyjem
+            setError(err.message || 'Prijava neuspješna. Provjerite korisničko ime i lozinku.');
         }
     };
 
@@ -72,52 +134,35 @@ const Login = () => {
                         <Alert variant="danger" className="font-monospace">{error}</Alert>
                     )}
 
-                    <Form onSubmit={handleSubmit}>
-
-                        {/* Polje za Korisničko Ime */}
-                        <FloatingLabel controlId="floatingUsername" label={t("forms.username")} className="mb-3">
+                    <Form onSubmit={handleSubmit} noValidate>
+                        <FloatingLabel controlId="floatingUsername" label={t("forms.username") + ' *'} className="mb-3">
                             <Form.Control
                                 type="text"
                                 placeholder={t("forms.username")}
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                required
+                                onBlur={() => handleBlur('username')}
+                                isInvalid={touched.username && errors.username}
                                 className="font-monospace"
                             />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.username}
+                            </Form.Control.Feedback>
                         </FloatingLabel>
 
-                        {/* Polje za Ime (Ostaje, ali se ne koristi za prijavu) */}
-                        <FloatingLabel controlId="floatingFirstName" label={t("forms.firstName")} className="mb-3">
-                            <Form.Control
-                                type="text"
-                                placeholder={t("forms.firstName")}
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                className="font-monospace"
-                            />
-                        </FloatingLabel>
-
-                        {/* Polje za Prezime (Ostaje, ali se ne koristi za prijavu) */}
-                        <FloatingLabel controlId="floatingLastName" label={t("forms.lastName")} className="mb-3">
-                            <Form.Control
-                                type="text"
-                                placeholder={t("forms.lastName")}
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                className="font-monospace"
-                            />
-                        </FloatingLabel>
-
-                        {/* Polje za Lozinku */}
-                        <FloatingLabel controlId="floatingPassword" label={t("forms.password")} className="mb-4">
+                        <FloatingLabel controlId="floatingPassword" label={t("forms.password") + ' *'} className="mb-4">
                             <Form.Control
                                 type="password"
                                 placeholder={t("forms.password")}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required
+                                onBlur={() => handleBlur('password')}
+                                isInvalid={touched.password && errors.password}
                                 className="font-monospace"
                             />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.password}
+                            </Form.Control.Feedback>
                         </FloatingLabel>
 
                         <Button
@@ -125,13 +170,21 @@ const Login = () => {
                             variant="outline-primary"
                             className="w-100 fw-bold font-monospace"
                         >
-                            Prijava
+                            {t("LOGIN")}
                         </Button>
                     </Form>
                 </Card.Body>
             </Card>
         </Container>
     );
+};
+
+Login.propTypes = {
+    onLoginSuccess: PropTypes.func
+};
+
+Login.defaultProps = {
+    onLoginSuccess: null
 };
 
 export default Login;

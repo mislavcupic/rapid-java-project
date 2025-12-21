@@ -1,36 +1,26 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleAnalyticsResponse;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleResponse;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AnalyticsService;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-/**
- * Kontroler za izlaganje funkcionalnosti analitike i masovnih operacija
- * pomoću JdbcTemplate-a.
- * Ove operacije su obično rezervirane za Administraciju i Dispečere.
- */
+import java.util.List;
+
+
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
+    private final VehicleService vehicleService;
 
-    // -----------------------------------------------------------------
-    // ANALITIKA (READ)
-    // -----------------------------------------------------------------
 
-    /**
-     * Dohvaća prosječnu težinu svih aktivnih pošiljaka.
-     * Samo Admin i Dispečer imaju pristup.
-     * @return Prosječna težina u kilogramima.
-     */
     @GetMapping("/shipments/average-active-weight")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<Double> getAverageActiveShipmentWeight() {
@@ -38,16 +28,7 @@ public class AnalyticsController {
         return ResponseEntity.ok(averageWeight);
     }
 
-    // -----------------------------------------------------------------
-    // BULK OPERACIJE (WRITE)
-    // -----------------------------------------------------------------
 
-    /**
-     * Masovno ažurira status svih pošiljaka kojima je istekao očekivani rok isporuke
-     * i postavlja im status na 'OVERDUE'.
-     * Samo Admin ima pravo izvoditi masovne WRITE operacije.
-     * @return Broj pogođenih (ažuriranih) redaka.
-     */
     @PostMapping("/shipments/mark-overdue")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> bulkMarkOverdue() {
@@ -57,12 +38,33 @@ public class AnalyticsController {
 
         return ResponseEntity.ok(responseMessage);
     }
-    @GetMapping("/vehicles/status") // <--- OVO JE URL KOJI VAM JE FALIO
+    @GetMapping("/status")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<VehicleAnalyticsResponse> getVehicleAlertStatus() {
         // Poziva implementaciju iz JdbcAnalyticsServiceImpl (koja zove VehicleService)
         VehicleAnalyticsResponse response = analyticsService.getVehicleAlertStatus();
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/vehicles/overdue")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<List<VehicleResponse>> getOverdueVehicles() {
+        List<VehicleResponse> vehicles = vehicleService.findOverdueMaintenanceVehicles();
+        return ResponseEntity.ok(vehicles);
+    }
 
+    @GetMapping("/vehicles/warning")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<List<VehicleResponse>> getWarningVehicles(
+            @RequestParam(defaultValue = "5000") Long threshold
+    ) {
+        List<VehicleResponse> vehicles = vehicleService.findWarningMaintenanceVehicles(threshold);
+        return ResponseEntity.ok(vehicles);
+    }
+
+    @GetMapping("vehicles/free")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    public ResponseEntity<List<VehicleResponse>> getFreeVehicles() {
+        List<VehicleResponse> vehicles = vehicleService.findFreeVehiclesDetails();
+        return ResponseEntity.ok(vehicles);
+    }
 }

@@ -1,8 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
 import lombok.RequiredArgsConstructor; // Preporučeno koristiti Lombok @RequiredArgsConstructor za injekciju
 import org.springframework.http.ResponseEntity;
@@ -13,13 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// Koristite @RequiredArgsConstructor umjesto ručnog konstruktora
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
     private final DriverService driverService;
 
 
@@ -27,10 +24,7 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')") // Koristim 'ROLE_DISPATCHER' umjesto 'MANAGER'
     public ResponseEntity<List<DriverResponseDTO>> getDrivers() {
 
-        // ✅ ISPRAVNO: Koristite metodu iz DriverService koja već dohvaća i mapira Driver entitete.
         List<DriverResponseDTO> driversInfo = driverService.findAllDrivers();
-
-
 
         return ResponseEntity.ok(driversInfo);
     }

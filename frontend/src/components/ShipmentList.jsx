@@ -1,10 +1,7 @@
-// frontend/src/components/ShipmentList.jsx (KORIGIRANA VERZIJA)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchShipments, deleteShipment } from '../services/ShipmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-// ✅ PROMJENA: Dodan FaEye za Detalje
 import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -22,8 +19,8 @@ const ShipmentList = () => {
     const location = useLocation();
     const message = location.state?.message;
     const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole && userRole.includes('ROLE_ADMIN');
-    const isDispatcher = userRole && userRole.includes('ROLE_DISPATCHER');
+    const isAdmin = userRole?.includes('ROLE_ADMIN');
+    const isDispatcher = userRole?.includes('ROLE_DISPATCHER');
 
     // Admin i Dispečer smiju kreirati i uređivati (prema ShipmentController.java)
     const canCreate = isAdmin || isDispatcher;
@@ -49,7 +46,7 @@ const ShipmentList = () => {
     useEffect(() => {
         loadShipments();
         if (message) {
-            window.history.replaceState({}, document.title);
+            globalThis.history.replaceState({}, document.title);
         }
     }, [loadShipments, message]);
 
@@ -94,7 +91,7 @@ const ShipmentList = () => {
     if (loading) {
         return (
             <div className="text-center py-5">
-                <Spinner animation="border" variant="primary" role="status" />
+                <Spinner animation="border" variant="primary" />
                 <p className="text-muted mt-2">{t("general.loading")}</p>
             </div>
         );
@@ -119,7 +116,7 @@ const ShipmentList = () => {
                         className="font-monospace fw-bold text-primary"
                         // GUMB DODAJ: Aktivan za Admina i Dispečera
                         disabled={!canCreate}
-                        title={!canCreate ? t("messages.access_denied_add_drivers") : t("forms.create_shipment")}
+                        title={canCreate ? t("forms.create_shipment"): t("messages.access_denied_add_drivers") }
                     >
                         <FaPlus className="me-1" /> {t("forms.create_shipment")}
                     </Button>
@@ -180,7 +177,7 @@ const ShipmentList = () => {
                                                     onClick={() => navigate(`/shipments/edit/${s.id}`)}
                                                     // GUMB UREDI: Aktivan za Admina I Dispečera
                                                     disabled={!canEdit}
-                                                    title={!canEdit ? t("messages.access_denied_edit_drivers") : t("general.edit")}
+                                                    title={canEdit ?t("general.edit"): t("messages.access_denied_edit_drivers")  }
                                                 >
                                                     <FaEdit className="me-1"/> {t("general.edit")}
                                                 </Button>
@@ -191,7 +188,7 @@ const ShipmentList = () => {
                                                     onClick={() => handleDeleteClick(s)}
                                                     // GUMB IZBRIŠI: Aktivan SAMO za Admina
                                                     disabled={!canDelete}
-                                                    title={!canDelete ? t("messages.access_denied_delete_drivers") : t("general.delete")}
+                                                    title={canDelete ? t("general.delete") : t("messages.access_denied_delete_drivers") }
                                                 >
                                                     <FaTrash className="me-1"/> {t("general.delete")}
                                                 </Button>

@@ -9,6 +9,8 @@ RUN npm run build
 
 # Stage 2: Serve the application using Nginx
 FROM nginx:stable-alpine
-COPY --from=build /app/build /usr/share/nginx/html
+# KLJUČNI POPRAVAK: Mijenjamo /app/build u /app/dist
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
+

@@ -1,9 +1,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.domain;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Shipment;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Vehicle;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -15,11 +12,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "assignment")
-@Getter                 // Generira sve gettere
-@Setter                 // Generira sve settere
-@NoArgsConstructor      // Generira JPA zahtijevani konstruktor bez argumenata
-@AllArgsConstructor     // Generira konstruktor sa svim argumentima
-@ToString               // Generira toString() metodu
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 // Osigurava ispravno ponašanje u Setovima i Mapama
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Assignment {
@@ -48,7 +45,7 @@ public class Assignment {
     @Column(name = "end_time")
     private LocalDateTime endTime;
 
-    // KRITIČNA KOREKCIJA: Status kao String, nazvan 'status'
+
     @Column(name = "status", nullable = false)
     private String status;
 

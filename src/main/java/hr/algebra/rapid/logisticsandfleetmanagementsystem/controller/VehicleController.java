@@ -29,7 +29,7 @@ public class VehicleController {
         return ResponseEntity.ok(vehicles);
     }
 
-    // 2. DOHVAĆANJE PO ID-u (GET /{id})
+    // 2. DOHVAĆANJE PO ID-u
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER', 'ROLE_MANAGER', 'ROLE_DRIVER')")
     public ResponseEntity<VehicleResponse> getVehicleById(@PathVariable Long id) {

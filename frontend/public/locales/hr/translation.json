@@ -48,12 +48,16 @@
   },
 
   "alerts": {
-    "overdue_service": "Istekao Servis - Registracija: {{registration}}",
-    "low_fuel": "Nizak Nivo Goriva - Registracija: {{registration}}"
+    "overdue_service": "Istekao Servis - Registracija",
+    "low_fuel": "Nizak Nivo Goriva - Registracija",
+    "free_vehicles": "Slobodna vozila",
+    "service_warning": "Upozorenje o servisu",
+    "total_vehicles": "Ukupno vozila",
+    "average_weight": "Prosječna težina"
   },
 
   "forms": {
-    "create_vehicle": "Kreiraj Vozilo",
+    "create_vehicle_title": "Kreiraj Vozilo",
     "edit_vehicle": "Uredi Vozilo",
     "create_shipment": "Kreiraj Pošiljku",
     "edit_driver": "Uredi Vozača",
@@ -65,7 +69,24 @@
     "driver_name": "Ime vozača",
     "email": "Email",
     "license": "Broj važeće vozačke dozvole",
-    "phone": "Kontakt broj"
+    "phone": "Kontakt broj",
+    "license_plate": "Registarska pločica",
+    "model_year": "Godina modela",
+    "make": "Marka",
+    "model": "Model",
+    "create_vehicle": "Kreiraj novo vozilo",
+    "fuel_type": "Vrsta goriva",
+    "registration": "Registracija",
+    "confirm_password": "Potvrdi lozinku",
+    "driver_info_optional": "Podatci vozača (Opciono)",
+    "license_number": "Broj vozačke dozvole",
+    "license_expiration": "Datum isteka dozvole",
+    "optional_later": "Opcionalno - možeš unijeti kasnije",
+    "characters": "znakova",
+    "must_be_future": "Opcionalno - mora biti u budućnosti",
+    "phone_format": "Format: +385912345678 (9-15 brojeva)",
+    "already_have_account": "Već imaš račun?",
+    "register_button": "Registriraj se"
   },
 
   "shipments": {
@@ -120,7 +141,9 @@
     "address": "Adresa",
     "driver_list": "Popis Vozača",
     "driver_details": "Detalji Vozača",
-    "add_driver": "Dodaj novog vozača"
+    "add_driver": "Dodaj novog vozača",
+    "scheduled": "Zakazano",
+    "current_vehicle": "Trenutno vozilo"
   },
 
   "messages": {
@@ -156,5 +179,61 @@
     "fetch_drivers": "Greška pri dohvaćanju vozača.",
     "fetch_vehicles": "Greška pri dohvaćanju vozila.",
     "general_error": "Opća Greška"
+  },
+
+  "vehicles": {
+    "vehicle_list": "Lista vozila",
+    "add_vehicle": "Dodaj novo vozilo",
+    "service_status": "Servisni status",
+    "error_message": "Greška pri dohvaćanju vozača",
+    "load_capacity": "Nosivost",
+    "fuel_consumption": "Potrošnja goriva",
+    "current_mileage": "Trenutna kilometraža",
+    "next_service": "Sljedeći servis",
+    "unassigned": "Nedodijeljeno"
+  },
+  "validation": {
+    "username_required": "Korisničko ime je obavezno",
+    "username_min_length": "Korisničko ime mora imati najmanje 3 znaka",
+    "username_max_length": "Korisničko ime može imati maksimalno 50 znakova",
+    "email_required": "Email je obavezan",
+    "email_invalid": "Email format nije ispravan",
+    "password_required": "Lozinka je obavezna",
+    "password_min_length": "Lozinka mora imati najmanje 6 znakova",
+    "confirm_password_required": "Potvrda lozinke je obavezna",
+    "passwords_dont_match": "Lozinke se ne podudaraju",
+    "first_name_required": "Ime je obavezno",
+    "last_name_required": "Prezime je obavezno",
+    "phone_invalid": "Telefonski broj mora imati 9-15 brojeva",
+    "license_number_length": "Broj licence mora imati 5-20 znakova",
+    "license_expiration_future": "Datum isteka mora biti u budućnosti",
+    "fix_errors": "Molimo ispravite greške u formi",
+    "license_plate_required": "Registracija je obavezna",
+    "make_required": "Marka je obavezna",
+    "model_required": "Model je obavezan",
+    "model_year_required": "Godina proizvodnje je obavezna",
+    "model_year_invalid": "Godina mora biti između 1900 i trenutne godine",
+    "load_capacity_required": "Nosivost je obavezna",
+    "load_capacity_positive": "Nosivost mora biti pozitivna",
+    "current_mileage_required": "Trenutna kilometraža je obavezna",
+    "current_mileage_positive": "Kilometraža mora biti pozitivna",
+    "next_service_required": "Sljedeći servis je obavezan",
+    "next_service_positive": "Kilometraža servisa mora biti pozitivna",
+    "fuel_consumption_required": "Potrošnja goriva je obavezna",
+    "fuel_consumption_positive": "Potrošnja mora biti pozitivna",
+    "driver_id_required": "Vozač mora biti odabran",
+    "vehicle_id_required": "Vozilo mora biti odabrano",
+    "shipment_id_required": "Pošiljka mora biti odabrana",
+    "start_time_required": "Početno vrijeme je obavezno",
+    "tracking_number_required": "Tracking broj je obavezan",
+    "origin_address_required": "Adresa polazišta je obavezna",
+    "destination_address_required": "Adresa odredišta je obavezna",
+    "weight_required": "Težina je obavezna",
+    "weight_positive": "Težina mora biti pozitivna",
+    "delivery_date_required": "Datum dostave je obavezan",
+    "delivery_date_future": "Datum dostave mora biti u budućnosti ili danas",
+    "license_number_required": "Broj licence je obavezan",
+    "license_expiration_required": "Datum isteka licence je obavezan",
+    "phone_required": "Telefonski broj je obavezan"
   }
 }

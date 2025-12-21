@@ -36,14 +36,14 @@ public class UserInfo {
     @Column(name = "last_name")
     private String lastName;
 
-    // ✅ ISPRAVLJENO: Email je NOT NULL i UNIQUE
+
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @Column(name = "is_enabled")
     private Boolean isEnabled = true;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinTable(
             name = "user_roles",
             joinColumns = { @JoinColumn(name = "application_user_id") },

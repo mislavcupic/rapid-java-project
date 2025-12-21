@@ -1,6 +1,7 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.VehicleAnalyticsResponse;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.BulkMarkOverdueException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AnalyticsService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +61,7 @@ public class JdbcAnalyticsServiceImpl implements AnalyticsService {
             return updatedRows;
         } catch (Exception e) {
             log.error("KRITIČNA GREŠKA pri bulkMarkOverdue:", e);
-            throw new RuntimeException("Greška pri masovnom ažuriranju statusa pošiljaka.", e);
+            throw new BulkMarkOverdueException("Greška pri masovnom ažuriranju statusa pošiljaka.", e);
         }
     }
     @Override

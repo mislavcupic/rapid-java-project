@@ -97,7 +97,8 @@ class VehicleTest {
     void getCurrentDriverOptional_WhenDriverExists_ShouldReturnPresent() {
         vehicle.setCurrentDriver(driver);
         assertThat(vehicle.getCurrentDriverOptional()).isPresent();
-        assertThat(vehicle.getCurrentDriverOptional().get()).isEqualTo(driver);
+        assertThat(vehicle.getCurrentDriverOptional()).contains(driver);
+
     }
 
     @Test

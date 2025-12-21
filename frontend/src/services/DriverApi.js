@@ -1,77 +1,106 @@
 // frontend/src/services/DriverApi.js
 
-const getToken = () => localStorage.getItem('accessToken');
-// Koristimo širi BASE_API_URL za druge entitete
-const BASE_API_URL = 'http://localhost:8080/api';
-const DRIVERS_URL = `${BASE_API_URL}/drivers`; // URL za vozače
-// const USERS_URL = `${BASE_API_URL}/users`; // Ova konstanta se može ukloniti ako se nigdje ne koristi.
 
-// Pomoćna funkcija za obradu grešaka (ostaje ista)
-const handleResponse = async (response) => {
-    if (!response.ok) {
-        let errorDetail = {};
-        try {
-            errorDetail = await response.json();
-        } catch (e) {
-            errorDetail.message = response.statusText;
-        }
-        // Baci grešku s porukom backenda ili generičkom porukom
-        throw new Error(errorDetail.message || `Greška [${response.status}]: ${response.statusText}`);
-    }
-    return response.status !== 204 ? response.json() : null;
-};
+import { apiClient } from './apiClient';
 
-//drivers
+// Relativna putanja do glavnog resursa
+const BASE_PATH = '/api/drivers';
+
+// UKLONJENO: const getToken, const BASE_API_URL, const DRIVERS_URL, const handleResponse
+
+
+/**
+ * Dohvaća sve vozače.
+ */
 export const fetchDrivers = async () => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-    const response = await fetch(DRIVERS_URL, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return handleResponse(response);
+    try {
+        const data = await apiClient(BASE_PATH, {
+            method: 'GET',
+        });
+
+        // ✅ KRITIČNA KOREKCIJA: Osiguravamo da se za listu uvijek vraća niz.
+        return Array.isArray(data) ? data : [];
+
+    } catch (error) {
+        console.error("Greška pri dohvaćanju vozača:", error);
+        // Propagiramo grešku dalje da je komponenta može uhvatiti
+        throw error;
+    }
 };
 
+/**
+ * Dohvaća vozača po ID-ju.
+ */
 export const fetchDriverById = async (id) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-    const response = await fetch(`${DRIVERS_URL}/${id}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return handleResponse(response);
+    const path = `${BASE_PATH}/${id}`;
+
+    try {
+        return await apiClient(path, {
+            method: 'GET',
+        });
+    } catch (error) {
+        console.error(`Greška pri dohvaćanju vozača ID:${id}:`, error);
+        throw error;
+    }
 };
 
+/**
+ * Kreira novog vozača.
+ */
 export const createDriver = async (driverData) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-    const response = await fetch(DRIVERS_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(driverData)
-    });
-    return handleResponse(response);
+    try {
+        return await apiClient(BASE_PATH, {
+            method: 'POST',
+            // apiClient automatski postavlja Content-Type: application/json
+            body: JSON.stringify(driverData)
+        });
+    } catch (error) {
+        console.error("Greška pri kreiranju vozača:", error);
+        throw error;
+    }
 };
 
+/**
+ * Ažurira postojećeg vozača.
+ */
 export const updateDriver = async (id, driverData) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-    const response = await fetch(`${DRIVERS_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(driverData)
-    });
-    return handleResponse(response);
+    const path = `${BASE_PATH}/${id}`;
+
+    try {
+        return await apiClient(path, {
+            method: 'PUT',
+            body: JSON.stringify(driverData)
+        });
+    } catch (error) {
+        console.error(`Greška pri ažuriranju vozača ID:${id}:`, error);
+        throw error;
+    }
 };
 
+/**
+ * Briše vozača.
+ */
 export const deleteDriver = async (id) => {
-    const token = getToken();
-    if (!token) throw new Error("Korisnik nije prijavljen.");
-    const response = await fetch(`${DRIVERS_URL}/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return handleResponse(response);
+    const path = `${BASE_PATH}/${id}`;
+
+    try {
+        // apiClient automatski vraća null ili {} za 204 No Content
+        return await apiClient(path, {
+            method: 'DELETE',
+        });
+    } catch (error) {
+        console.error(`Greška pri brisanju vozača ID:${id}:`, error);
+        throw error;
+    }
 };
-
-
+export const fetchDriverSchedule = async () => {
+    try {
+        const data = await apiClient('/api/assignments/my-schedule', {
+            method: 'GET',
+        });
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Greška pri dohvaćanju rasporeda vozača:", error);
+        return [];
+    }
+};

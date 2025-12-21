@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-// U klasi ApplicationUser.java
+
 @Entity
 @Data
 @Builder
@@ -17,17 +17,15 @@ import java.util.List;
 @Table(name = "app_user")
 public class ApplicationUser {
 
-    // ... id, username, password polja ...
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToMany(fetch = FetchType.EAGER)
+
     @JoinTable(
             name = "user_roles",
-            // OVA LINIJA JE VEĆ BILA ISPRAVNA
-            joinColumns = @JoinColumn(name = "user_id"),
-
-            // DODATNA EKSPLICITNOST DA NADJAČATE KONVENCIJE
+            joinColumns = @JoinColumn(name = "application_user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private List<UserRole> roles;
