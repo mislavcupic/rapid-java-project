@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -154,8 +155,8 @@ class DriverDeliveryWorkflowIntegrationTest {
         assertEquals("SCHEDULED", initialAssignment.getStatus(), "Initial assignment status should be SCHEDULED");
 
         // Step 2: Driver starts assignment
-        AssignmentResponseDTO startedAssignment = assignmentService.startAssignment(assignmentId, testDriver.getId());
-        assertEquals("IN_PROGRESS", startedAssignment.getAssignmentStatus(), "Assignment should be IN_PROGRESS");
+        Optional<AssignmentResponseDTO> startedAssignment = assignmentService.startAssignment(assignmentId, testDriver.getId());
+        assertEquals("IN_PROGRESS", startedAssignment.get().getAssignmentStatus(), "Assignment should be IN_PROGRESS");
 
         ShipmentResponse startedShipment = shipmentService.findById(shipmentId).orElseThrow();
         assertEquals(ShipmentStatus.IN_TRANSIT, startedShipment.getStatus(), "Shipment should be IN_TRANSIT");
@@ -171,9 +172,9 @@ class DriverDeliveryWorkflowIntegrationTest {
         assertEquals(ShipmentStatus.DELIVERED, completedShipment.getStatus(), "Shipment should be DELIVERED");
 
         // Step 4: Driver completes assignment
-        AssignmentResponseDTO completedAssignment = assignmentService.completeAssignment(assignmentId, testDriver.getId());
-        assertEquals("COMPLETED", completedAssignment.getAssignmentStatus(), "Assignment should be COMPLETED");
-        assertNotNull(completedAssignment.getEndTime(), "End time should be set");
+        Optional<AssignmentResponseDTO> completedAssignment = assignmentService.completeAssignment(assignmentId, testDriver.getId());
+        assertEquals("COMPLETED", completedAssignment.get().getAssignmentStatus(), "Assignment should be COMPLETED");
+        assertNotNull(completedAssignment.get().getEndTime(), "End time should be set");
 
         // Final verification
         Shipment finalShipment = shipmentRepository.findById(shipmentId).orElseThrow();

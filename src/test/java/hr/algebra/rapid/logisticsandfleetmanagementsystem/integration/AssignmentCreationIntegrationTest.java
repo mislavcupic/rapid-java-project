@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,29 +28,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 class AssignmentCreationIntegrationTest {
 
-    @Autowired
-    private AssignmentService assignmentService;
-
-    @Autowired
-    private ShipmentRepository shipmentRepository;
-
-    @Autowired
-    private DriverRepository driverRepository;
-
-    @Autowired
-    private VehicleRepository vehicleRepository;
-
-    @Autowired
-    private AssignmentRepository assignmentRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private EntityManager entityManager;
+    @Autowired private AssignmentService assignmentService;
+    @Autowired private ShipmentRepository shipmentRepository;
+    @Autowired private DriverRepository driverRepository;
+    @Autowired private VehicleRepository vehicleRepository;
+    @Autowired private AssignmentRepository assignmentRepository;
+    @Autowired private UserRoleRepository userRoleRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private EntityManager entityManager;
 
     private Driver testDriver;
     private Vehicle testVehicle;
@@ -100,7 +86,6 @@ class AssignmentCreationIntegrationTest {
         testShipment = shipmentRepository.findById(testShipment.getId()).orElseThrow();
     }
 
-    // 1. OSNOVNI TEST (PROLAZI)
     @Test
     void testAssignmentPersistence() {
         AssignmentRequestDTO request = createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 1);
@@ -110,7 +95,6 @@ class AssignmentCreationIntegrationTest {
         assertEquals(testDriver.getId(), response.getDriver().getId());
     }
 
-    // 2. VIŠE DODJELA (PROLAZI)
     @Test
     void testMultipleAssignmentsForDriver() {
         Shipment secondShipment = createSimpleShipment("SHIP-456");
@@ -121,7 +105,6 @@ class AssignmentCreationIntegrationTest {
         assertEquals(2, assignments.size());
     }
 
-    // 3. PRETRAGA PO VOZAČU (PROLAZI)
     @Test
     void testFindAssignmentsByDriver() {
         assignmentService.createAssignment(createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 1));
@@ -130,7 +113,6 @@ class AssignmentCreationIntegrationTest {
         assertEquals(testDriver.getId(), result.get(0).getDriver().getId());
     }
 
-    // 4. BRANCH: DUPLIKAT (ERROR)
     @Test
     void testCreateAssignmentThrowsConflictWhenShipmentAlreadyAssigned() {
         assignmentService.createAssignment(createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 1));
@@ -139,43 +121,49 @@ class AssignmentCreationIntegrationTest {
         assertThrows(ConflictException.class, () -> assignmentService.createAssignment(duplicateRequest));
     }
 
-    // 5. BRANCH: NEPOSTOJEĆI VOZAČ (ERROR)
     @Test
     void testCreateAssignmentThrowsResourceNotFoundForInvalidDriver() {
         AssignmentRequestDTO request = createAssignmentRequest(999L, testVehicle.getId(), testShipment.getId(), 1);
         assertThrows(ResourceNotFoundException.class, () -> assignmentService.createAssignment(request));
     }
 
-    // 6. BRANCH: BRISANJE (PROVJERA PREKO REPOZITORIJA)
     @Test
     void testDeleteAssignmentFlow() {
         AssignmentResponseDTO response = assignmentService.createAssignment(createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 1));
         Long assignmentId = response.getId();
 
         assignmentService.deleteAssignment(assignmentId);
-
-        // Provjera direktno u repozitoriju jer servis možda ne baca exception na find
         assertFalse(assignmentRepository.existsById(assignmentId));
     }
 
-    // 7. BRANCH: START WORKFLOW (PROLAZI)
     @Test
     void testStartAssignmentWorkflow() {
         AssignmentResponseDTO response = assignmentService.createAssignment(createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 1));
 
-        AssignmentResponseDTO started = assignmentService.startAssignment(response.getId(), testDriver.getId());
+        // POPRAVAK: startAssignment sada vraća Optional
+        Optional<AssignmentResponseDTO> result = assignmentService.startAssignment(response.getId(), testDriver.getId());
 
-        assertEquals("IN_PROGRESS", started.getAssignmentStatus());
+        assertTrue(result.isPresent());
+        assertEquals("IN_PROGRESS", result.get().getAssignmentStatus());
+
         Shipment updatedShipment = shipmentRepository.findById(testShipment.getId()).orElseThrow();
         assertEquals(ShipmentStatus.IN_TRANSIT, updatedShipment.getStatus());
     }
 
-    // 8. BRANCH: POGREŠAN VOZAČ POKREĆE (ERROR)
+    @Test
+    void testUpdateAssignmentReturnsEmptyForNonExistentId() {
+        // POPRAVAK: Prema novoj logici, update vraća Optional.empty() umjesto exceptiona za glavni ID
+        AssignmentRequestDTO request = createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 2);
+        Optional<AssignmentResponseDTO> result = assignmentService.updateAssignment(999L, request);
+
+        assertTrue(result.isEmpty());
+    }
+
     @Test
     void testStartAssignmentThrowsConflictForWrongDriver() {
         AssignmentResponseDTO response = assignmentService.createAssignment(createAssignmentRequest(testDriver.getId(), testVehicle.getId(), testShipment.getId(), 1));
 
-        // Bacanje ConflictExceptiona jer ID vozača ne odgovara
+        // ConflictException se i dalje baca unutar servisa ako vozač nije vlasnik
         assertThrows(ConflictException.class, () -> assignmentService.startAssignment(response.getId(), 888L));
     }
 

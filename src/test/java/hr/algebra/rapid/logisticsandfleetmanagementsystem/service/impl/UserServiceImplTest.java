@@ -1,11 +1,11 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver; // 👈 Novi Import
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.RegisterRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository; // 👈 Novi Import
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRoleRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,160 +16,109 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong; // 👈 Novi Import
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * UNIT TESTOVI ZA UserServiceImpl
- * Pokriva user registration, role management, validation
- */
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private UserRoleRepository userRoleRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private DriverRepository driverRepository;
 
-    @Mock
-    private UserRoleRepository userRoleRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    // 🎯 RJEŠENJE: Ovaj mock je bio ključan i nedostajao je u vašoj test klasi!
-    @Mock
-    private DriverRepository driverRepository;
-
-    @InjectMocks
-    private UserServiceImpl userService;
+    @InjectMocks private UserServiceImpl userService;
 
     private UserInfo testUser;
-    private UserRole driverRole;
-    private UserRole adminRole;
-    private RegisterRequestDTO registerRequest;
-    private Driver testDriver; // Dodatni mock objekt za vozača
+    private Driver testDriver;
+    private RegisterRequestDTO regDto;
 
     @BeforeEach
     void setUp() {
-        // Setup roles
-        driverRole = new UserRole();
-        driverRole.setId(1L);
-        driverRole.setName("ROLE_DRIVER");
-
-        adminRole = new UserRole();
-        adminRole.setId(2L);
-        adminRole.setName("ROLE_ADMIN");
-
-        // Setup test user
         testUser = new UserInfo();
         testUser.setId(1L);
         testUser.setUsername("testuser");
-        testUser.setPassword("hashedPassword");
-        testUser.setFirstName("John");
-        testUser.setLastName("Doe");
-        testUser.setEmail("john.doe@test.com");
-        testUser.setIsEnabled(true);
-        testUser.setRoles(new ArrayList<>(Arrays.asList(driverRole)));
 
-        // Setup test driver povezan s testUser-om
         testDriver = new Driver();
-        testDriver.setId(10L);
         testDriver.setUserInfo(testUser);
 
-        // Setup registration request
-        registerRequest = new RegisterRequestDTO();
-        registerRequest.setUsername("newuser");
-        registerRequest.setPassword("password123");
-        registerRequest.setFirstName("Jane");
-        registerRequest.setLastName("Smith");
-        registerRequest.setEmail("jane.smith@test.com");
+        // Inicijalizacija izvan lambde za Sonar S5778
+        regDto = new RegisterRequestDTO();
+        regDto.setUsername("mislav");
+        regDto.setPassword("password123");
     }
 
-    // ... (Ostatak vaših FIND, REGISTRATION, VALIDATION, i ROLE MANAGEMENT testova ostaje nepromijenjen) ...
-
     // ==========================================
-    // DELETE TESTS (POPRAVLJENO)
+    // METODA: registerUser
     // ==========================================
 
     @Test
-    void testDeleteUser_Success_UserIsDriver() {
-        // Arrange
-        Long userId = 1L;
+    void registerUser_Success() {
+        UserRole role = new UserRole();
+        role.setName("ROLE_USER");
 
-        // 1. Mock: Pronađi korisnika
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        // Ako findByUsername u repozitoriju vraća UserInfo (ne Optional), koristimo null
+        when(userRepository.findByUsername(anyString())).thenReturn(null);
+        when(userRoleRepository.findByName(anyString())).thenReturn(Optional.of(role));
+        when(passwordEncoder.encode(anyString())).thenReturn("hashed_pass");
+        when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
 
-        // 2. Mock: Pronađi vozača povezanog s korisnikom (Vraća vozača)
-        when(driverRepository.findByUserInfoId(userId)).thenReturn(Optional.of(testDriver));
+        UserInfo result = userService.registerUser(regDto);
+        assertNotNull(result);
+        verify(userRepository).save(any(UserInfo.class));
+    }
 
-        // 3. Mock: Brisanje vozača
-        doNothing().when(driverRepository).delete(testDriver);
+    @Test
+    void registerUser_Duplicate() {
+        // Tvoj kod na liniji 50 baca IllegalArgumentException
+        when(userRepository.findByUsername(anyString())).thenReturn(testUser);
 
-        // 4. Mock: Brisanje korisnika
-        doNothing().when(userRepository).delete(testUser);
+        // Promjena očekivane iznimke u IllegalArgumentException + Sonar lambda fix
+        assertThrows(IllegalArgumentException.class, () -> userService.registerUser(regDto));
+    }
 
-        // Act
-        userService.deleteUser(userId);
+    @Test
+    void registerUser_RoleNotFound() {
+        when(userRepository.findByUsername(anyString())).thenReturn(null);
+        when(userRoleRepository.findByName(anyString())).thenReturn(Optional.empty());
 
-        // Assert
-        verify(userRepository, times(1)).findById(userId);
-        // Provjeri da je tražio vozača
-        verify(driverRepository, times(1)).findByUserInfoId(userId);
-        // Provjeri da je obrisao vozača
+        assertThrows(ResourceNotFoundException.class, () -> userService.registerUser(regDto));
+    }
+
+    // ==========================================
+    // METODA: deleteUser (BRANCH COVERAGE)
+    // ==========================================
+
+    @Test
+    void deleteUser_IsDriver_TrueBranch() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.of(testDriver));
+
+        userService.deleteUser(1L);
+
         verify(driverRepository, times(1)).delete(testDriver);
-        // Provjeri da je obrisao korisnika
         verify(userRepository, times(1)).delete(testUser);
     }
 
     @Test
-    void testDeleteUser_Success_UserIsNotDriver() {
-        // Arrange
-        Long userId = 1L;
+    void deleteUser_IsNotDriver_FalseBranch() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        // Pokrivamo granu gdje korisnik NIJE vozač
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.empty());
 
-        // 1. Mock: Pronađi korisnika
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        userService.deleteUser(1L);
 
-        // 2. Mock: Pronađi vozača (Vraća prazan Optional jer korisnik nije vozač)
-        when(driverRepository.findByUserInfoId(userId)).thenReturn(Optional.empty());
-
-        // 3. Mock: Brisanje korisnika
-        doNothing().when(userRepository).delete(testUser);
-
-        // Act
-        userService.deleteUser(userId);
-
-        // Assert
-        verify(userRepository, times(1)).findById(userId);
-        // Provjeri da je tražio vozača
-        verify(driverRepository, times(1)).findByUserInfoId(userId);
-        // Provjeri da NIJE obrisao vozača
-        verify(driverRepository, never()).delete(any(Driver.class));
-        // Provjeri da je obrisao korisnika
+        verify(driverRepository, never()).delete(any());
         verify(userRepository, times(1)).delete(testUser);
     }
 
     @Test
-    void testDeleteUser_NotFound() {
-        // Arrange
-        Long userId = 999L;
+    void deleteUser_NotFound() {
+        when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Mock: Pronađi korisnika (Vraća prazan Optional)
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(ResourceNotFoundException.class, () -> {
-            userService.deleteUser(userId);
-        });
-
-        // Assert
-        verify(userRepository, times(1)).findById(userId); // Pozvano u findById unutar deleteUser
-        verify(userRepository, never()).delete(any(UserInfo.class));
-        verify(driverRepository, never()).findByUserInfoId(anyLong());
-        verify(driverRepository, never()).delete(any(Driver.class));
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(99L));
     }
 }

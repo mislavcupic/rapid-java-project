@@ -2,19 +2,20 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.repository;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
-    // Upiti specifični za vozača (za Dashboard)
+    // Dohvaća sve dodjele za određenog vozača
     List<Assignment> findByDriverId(Long driverId);
 
-    // KRITIČNA KOREKCIJA: Preimenovano iz 'AssignmentStatusIn' u 'StatusIn'
+    // Dohvaća dodjele za vozača koje su u određenim statusima (npr. SCHEDULED, IN_PROGRESS)
     List<Assignment> findByDriverIdAndStatusIn(Long driverId, List<String> statuses);
 
-    // Dohvati dodjelu po ID-u pošiljke
+    // Provjera postoji li već dodjela za određenu pošiljku (Shipment)
     Optional<Assignment> findByShipmentId(Long shipmentId);
-
-
 }
