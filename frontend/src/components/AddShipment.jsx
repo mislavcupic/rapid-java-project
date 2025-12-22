@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types'; // 🛑 DODANO: Uvoz za rješavanje SonarQube problema
+import PropTypes from 'prop-types';
 import { Container, Card, Button, Form, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -42,7 +42,6 @@ function ChangeView({ center, zoom, bounds }) {
     return null;
 }
 
-// 🛑 RJEŠENJE SONARQUBE PROBLEMA ZA ChangeView komponentu
 ChangeView.propTypes = {
     // center je niz brojeva [lat, lng]
     center: PropTypes.arrayOf(PropTypes.number),
