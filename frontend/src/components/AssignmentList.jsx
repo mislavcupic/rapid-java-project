@@ -1,9 +1,7 @@
-// frontend/src/components/AssignmentList.jsx (KONAČNA VERZIJA)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAssignments, deleteAssignment } from '../services/AssignmentApi';
 import { Table, Alert, Button, Card, Spinner, Modal } from 'react-bootstrap';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -12,205 +10,88 @@ const AssignmentList = () => {
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isAuthenticated] = useState(!!localStorage.getItem('accessToken'));
-
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [assignmentToDelete, setAssignmentToDelete] = useState(null);
-
     const navigate = useNavigate();
-    const location = useLocation();
-    const message = location.state?.message;
-
-    // =========================================================================
-    // ✅ PROVJERE ULOGA
-    // =========================================================================
-    const userRole = localStorage.getItem('userRole');
-    const isAdmin = userRole?.includes('ROLE_ADMIN');
-    const isDispatcherOrAdmin = isAdmin || ( userRole?.includes('ROLE_DISPATCHER'));
-    // =========================================================================
 
     const loadAssignments = useCallback(async () => {
-        if (!isAuthenticated) {
-            setLoading(false);
-            return;
-        }
         try {
+            setLoading(true);
             const data = await fetchAssignments();
             setAssignments(data);
-            setError(null);
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated]);
+    }, []);
 
     useEffect(() => {
         loadAssignments();
-        if (message) {
-            globalThis.history.replaceState({}, document.title);
-        }
-    }, [loadAssignments, message]);
-
-    const handleDeleteClick = (assignment) => {
-        if (!isDispatcherOrAdmin) {
-            setError(t("messages.access_denied"));
-            return;
-        }
-        setError(null);
-        setAssignmentToDelete(assignment);
-        setShowDeleteModal(true);
-    };
+    }, [loadAssignments]);
 
     const confirmDelete = async () => {
-        if (!assignmentToDelete) return;
-        setShowDeleteModal(false);
         try {
-            setLoading(true);
             await deleteAssignment(assignmentToDelete.id);
-            await loadAssignments();
-            navigate('/assignments', { state: { message: `Dodjela ID ${assignmentToDelete.id} uspješno obrisana.` } });
-            setAssignmentToDelete(null);
+            setShowDeleteModal(false);
+            loadAssignments();
         } catch (err) {
-            setError(`Greška pri brisanju: ${err.message}`);
-        } finally {
-            setLoading(false);
+            setError(err.message);
         }
     };
 
-    const handleAddAssignment = () => {
-        navigate('/assignments/new');
-    };
-
-    // 🛑 RJEŠENJE SONARQUBE PROBLEMA ZA NEGAICJU (preokretanje logike)
-    // Ako nije autentificiran, returnaj Alert
-    if (!isAuthenticated) {
-        return (
-            <Alert variant="warning" className="text-center shadow font-monospace">
-                {t("messages.access_denied")}
-            </Alert>
-        );
-    }
-    // Ako je autentificiran, nastavlja se na loading/error provjere
-
-
-    if (loading) {
-        return (
-            <div className="text-center py-5">
-                <Spinner animation="border" variant="info"  />
-                <p className="text-muted mt-2">{t("assignments.loading_assignments")}</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <Alert variant="danger" className="text-center shadow font-monospace">
-                {t("error.general_error")}: {error}
-            </Alert>
-        );
-    }
-
     return (
-        <>
-            <Card className="shadow-lg border-primary border-top-0 border-5">
-                <Card.Header className="d-flex justify-content-between align-items-center bg-primary text-white">
-                    <h1 className="h4 mb-0 font-monospace">Popis Dodjela ({t("Assignments")})</h1>
-                    <Button
-                        variant="light"
-                        onClick={handleAddAssignment}
-                        className="font-monospace fw-bold text-primary"
-                        disabled={!isDispatcherOrAdmin}
-                        title={isDispatcherOrAdmin ? t( "assignments.create_button") : t( "messages.access_denied_add_drivers")}
-                    >
-                        <FaPlus className="me-1" /> {t("assignments.create_button")}
-                    </Button>
-                </Card.Header>
-                <Card.Body>
-                    {message && <Alert variant="success" className="font-monospace">{message}</Alert>}
+        <Card className="shadow-sm border-0">
+            <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 className="mb-0 font-monospace text-primary">{t("assignments.title")}</h4>
+                <Button variant="primary" onClick={() => navigate('/assignments/new')}>
+                    <FaPlus className="me-2" /> {t("assignments.new_assignment")}
+                </Button>
+            </Card.Header>
+            <Card.Body>
+                {loading ? <Spinner animation="border" /> : (
+                    <Table responsive hover className="align-middle">
+                        <thead className="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>{t("assignments.driver")}</th>
+                            <th>{t("assignments.vehicle")}</th>
+                            <th>{t("assignments.shipments")}</th>
+                            <th>{t("assignments.status")}</th>
+                            <th>{t("general.actions")}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {assignments.map(a => (
+                            <tr key={a.id}>
+                                <td className="fw-bold">#{a.id}</td>
+                                <td>{a.driver?.firstName} {a.driver?.lastName}</td>
+                                <td>{a.vehicle?.licensePlate}</td>
+                                <td>
+                                    {a.shipments?.map(s => (
+                                        <div key={s.id} className="small text-muted">📦 {s.trackingNumber}</div>
+                                    ))}
+                                </td>
+                                <td><span className="badge bg-info">{a.assignmentStatus}</span></td>
+                                <td>
+                                    <Button variant="link" onClick={() => navigate(`/assignments/edit/${a.id}`)}><FaEdit /></Button>
+                                    <Button variant="link" className="text-danger" onClick={() => { setAssignmentToDelete(a); setShowDeleteModal(true); }}><FaTrash /></Button>
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </Table>
+                )}
+            </Card.Body>
 
-                    {assignments.length === 0 ? (
-                        <Alert variant="info" className="text-center font-monospace">
-                            {t("messages.no_data")}
-                        </Alert>
-                    ) : (
-                        <div className="table-responsive">
-                            <Table striped bordered hover responsive className="text-center font-monospace">
-                                <thead className="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>{t("assignments.status")}</th>
-                                    <th>{t("assignments.driver")}</th>
-                                    <th>{t("vehicles.vehicle_reg")}</th>
-                                    <th>{t("shipments.shipment_tracking")}</th>
-                                    <th>{t("assignments.start_time")}</th>
-                                    <th className="text-nowrap">{t("general.actions")}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {assignments.map((a) => (
-                                    <tr key={a.id}>
-                                        <td>{a.id}</td>
-                                        <td>{a.assignmentStatus}</td>
-                                        <td>{a.driver?.fullName || 'N/A'}</td>
-                                        <td>{a.vehicle?.licensePlate || 'N/A'}</td>
-                                        <td>{a.shipment?.trackingNumber || 'N/A'}</td>
-                                        <td>{new Date(a.startTime).toLocaleString()}</td>
-
-                                        <td className="text-center text-nowrap">
-                                            <div className="d-flex justify-content-center">
-                                                <Button
-                                                    variant="outline-primary"
-                                                    size="sm"
-                                                    className="me-2 font-monospace fw-bold"
-                                                    onClick={() => navigate(`/assignments/edit/${a.id}`)}
-                                                    disabled={!isDispatcherOrAdmin}
-                                                    title={isDispatcherOrAdmin ? t("general.edit"):t("messages.access_denied_edit_drivers")}
-                                                >
-                                                    <FaEdit className="me-1"/> {t("general.edit")}
-                                                </Button>
-                                                <Button
-                                                    variant="outline-danger"
-                                                    size="sm"
-                                                    className="font-monospace fw-bold"
-                                                    onClick={() => handleDeleteClick(a)}
-                                                    disabled={!isDispatcherOrAdmin}
-                                                    title={isDispatcherOrAdmin ? t("general.delete") : t("messages.access_denied_delete_drivers") }
-                                                >
-                                                    <FaTrash className="me-1"/> {t("general.delete")}
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </Table>
-                        </div>
-                    )}
-                </Card.Body>
-            </Card>
-
-            {/* MODAL ZA BRISANJE */}
-            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title className="font-monospace text-danger">{t("messages.confirm_delete_title")}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body className="font-monospace">
-                    {t("assignments.confirm_delete_text", {
-                        id: assignmentToDelete?.id,
-                        trackingNumber: assignmentToDelete?.shipment?.trackingNumber
-                    })}
-                </Modal.Body>
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+                <Modal.Header closeButton><Modal.Title>{t("messages.confirm_delete_title")}</Modal.Title></Modal.Header>
                 <Modal.Footer>
-                    <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="font-monospace">
-                        {t("general.cancel")}
-                    </Button>
-                    <Button variant="danger" onClick={confirmDelete} className="font-monospace">
-                        {t("general.delete_permanently")}
-                    </Button>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>{t("general.cancel")}</Button>
+                    <Button variant="danger" onClick={confirmDelete}>{t("general.delete")}</Button>
                 </Modal.Footer>
             </Modal>
-        </>
+        </Card>
     );
 };
 

@@ -111,7 +111,7 @@ const EditShipment = () => {
         destinationAddress: '',
         status: '',
         weightKg: 0,
-        estimatedDeliveryTime: '',
+        expectedDeliveryDate: '',
         description: '',
         originLatitude: 0,
         originLongitude: 0,
@@ -241,16 +241,9 @@ const EditShipment = () => {
             debouncedGeocodeOrigin(value);
         } else if (name === 'destinationAddress') {
             debouncedGeocodeDestination(value);
-        } else if (name === 'currentDriverId' || name === 'currentVehicleId') {
-            const newDriverId = name === 'currentDriverId' ? value : formData.currentDriverId;
-            const newVehicleId = name === 'currentVehicleId' ? value : formData.currentVehicleId;
-
-            if (newDriverId && newVehicleId && formData.status === 'PENDING') {
-                setFormData(prev => ({ ...prev, status: 'ASSIGNED' }));
-            } else if (!newDriverId || !newVehicleId) {
-                setFormData(prev => ({ ...prev, status: 'PENDING' }));
-            }
         }
+        // ✅ UKLONJENO: Automatska promjena statusa
+        // Status se sada mijenja SAMO ručno preko dropdown-a
     };
 
 
@@ -418,11 +411,11 @@ const EditShipment = () => {
                             </Col>
                             {/* ✅ KRITIČNO: VRAĆENO POLJE ZA DATUM */}
                             <Col md={6}>
-                                <FloatingLabel controlId="estimatedDeliveryTime" label={t('shipments.delivery_time_label')}>
+                                <FloatingLabel controlId="expectedDeliveryDate" label={t('shipments.delivery_time_label')}>
                                     <Form.Control
                                         type="datetime-local"
-                                        name="estimatedDeliveryTime"
-                                        value={formData.estimatedDeliveryTime}
+                                        name="expectedDeliveryDate"
+                                        value={formData.expectedDeliveryDate}
                                         onChange={handleChange}
                                         required
                                         className="font-monospace"
@@ -449,9 +442,10 @@ const EditShipment = () => {
                                         className="font-monospace"
                                     >
                                         <option value="">{t('general.select')}</option>
+                                        <option value="">{t('general.select')}</option>
                                         {drivers.map(driver => (
                                             <option key={driver.id} value={driver.id}>
-                                                {driver.firstName} {driver.lastName} - ({driver.userInfo.username})
+                                                {driver.firstName} {driver.lastName} - ({driver.username || driver.userInfo?.username || 'N/A'})
                                             </option>
                                         ))}
                                     </Form.Select>

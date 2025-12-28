@@ -21,74 +21,61 @@ const AssignmentForm = ({ initialData, onSubmit, saving }) => {
     useEffect(() => {
         const loadFormData = async () => {
             try {
-                // ✅ SONARQUBE FIX: Jasnija imena varijabli u destrukturiranju
                 const [fetchedDrivers, fetchedVehicles, fetchedShipments] = await Promise.all([
                     fetchDrivers(),
                     fetchVehicles(),
                     fetchShipments()
                 ]);
-
                 setDrivers(fetchedDrivers);
                 setVehicles(fetchedVehicles);
-
-                // Filtriramo pošiljke: Prikazujemo PENDING ili one koje su već dodijeljene ovom nalogu
-                const currentShipmentIds = initialData?.shipmentIds?.map(String) || [];
-                const filteredShipments = fetchedShipments.filter(ship =>
-                    ship.status === 'PENDING' || currentShipmentIds.includes(String(ship.id))
-                );
-
-                setShipments(filteredShipments);
-            } catch (err) {
-                // ✅ SONARQUBE FIX: Obavezno logiranje greške
-                console.error("Greška pri dohvaćanju podataka za AssignmentForm:", err);
+                setShipments(fetchedShipments);
+            } catch (error) {
+                console.error("Error loading form data:", error);
             }
         };
         loadFormData();
-    }, [initialData]); // Koristimo initialData kao stabilan okidač
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         // KONVERZIJA U BROJEVE ZA BACKEND
         const finalData = {
-            ...formData,
-            driverId: Number(formData.driverId),
-            vehicleId: Number(formData.vehicleId),
-            shipmentIds: formData.shipmentIds.map(Number)
+            driverId: Number.parseInt(formData.driverId, 10),
+            vehicleId: Number.parseInt(formData.vehicleId, 10),
+            shipmentIds: formData.shipmentIds.map(id => Number.parseInt(id, 10)),
+            startTime: formData.startTime,
+            status: formData.status || ''
         };
         onSubmit(finalData);
     };
 
     return (
-        <Form onSubmit={handleSubmit} className="p-3">
-            <Row className="g-3 mb-3">
+        <Form onSubmit={handleSubmit}>
+            <Row className="g-3 mb-4">
                 <Col md={6}>
-                    <FloatingLabel label={t("general.driver")}>
+                    <FloatingLabel label={t("assignments.driver")}>
                         <Form.Select
                             value={formData.driverId}
                             onChange={e => setFormData({...formData, driverId: e.target.value})}
                             required
                         >
-                            <option value="">{t("general.choose_driver")}</option>
-                            {drivers.map(driver => (
-                                <option key={driver.id} value={String(driver.id)}>
-                                    {driver.firstName} {driver.lastName}
-                                </option>
+                            <option value="">{t("general.select")}</option>
+                            {drivers.map(d => (
+                                <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
                             ))}
                         </Form.Select>
                     </FloatingLabel>
                 </Col>
                 <Col md={6}>
-                    <FloatingLabel label={t("general.vehicle")}>
+                    <FloatingLabel label={t("assignments.vehicle")}>
                         <Form.Select
                             value={formData.vehicleId}
                             onChange={e => setFormData({...formData, vehicleId: e.target.value})}
                             required
                         >
-                            <option value="">{t("general.choose_vehicle")}</option>
-                            {vehicles.map(vehicle => (
-                                <option key={vehicle.id} value={String(vehicle.id)}>
-                                    {vehicle.licensePlate}
-                                </option>
+                            <option value="">{t("general.select")}</option>
+                            {vehicles.map(v => (
+                                <option key={v.id} value={v.id}>{v.licensePlate} ({v.vehicleType})</option>
                             ))}
                         </Form.Select>
                     </FloatingLabel>
@@ -96,11 +83,20 @@ const AssignmentForm = ({ initialData, onSubmit, saving }) => {
             </Row>
 
             <Form.Group className="mb-4">
-                <Form.Label className="fw-bold text-primary">
-                    {t("forms.select_multiple_shipments")} (CTRL + klik za više rješenja)
-                </Form.Label>
+                <Form.Label className="fw-bold text-secondary">{t("assignments.start_time")}</Form.Label>
+                <Form.Control
+                    type="datetime-local"
+                    value={formData.startTime}
+                    onChange={e => setFormData({...formData, startTime: e.target.value})}
+                    required
+                />
+            </Form.Group>
+
+            <Form.Group className="mb-4">
+                <Form.Label className="fw-bold text-secondary">{t("assignments.select_shipments")}</Form.Label>
                 <Form.Select
                     multiple
+                    className="font-monospace"
                     style={{ height: '200px' }}
                     value={formData.shipmentIds}
                     onChange={e => setFormData({
@@ -109,10 +105,8 @@ const AssignmentForm = ({ initialData, onSubmit, saving }) => {
                     })}
                     required
                 >
-                    {shipments.map(shipment => (
-                        <option key={shipment.id} value={String(shipment.id)}>
-                            📦 #{shipment.id} - {shipment.destinationAddress}
-                        </option>
+                    {shipments.map(s => (
+                        <option key={s.id} value={String(s.id)}>📦 #{s.trackingNumber} - {s.destinationAddress}</option>
                     ))}
                 </Form.Select>
             </Form.Group>
@@ -125,22 +119,10 @@ const AssignmentForm = ({ initialData, onSubmit, saving }) => {
     );
 };
 
-// ✅ SONARQUBE FIX: Detaljna validacija prop-ova
 AssignmentForm.propTypes = {
-    initialData: PropTypes.shape({
-        driverId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-        vehicleId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-        shipmentIds: PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.string, PropTypes.number])),
-        startTime: PropTypes.string
-    }),
+    initialData: PropTypes.object,
     onSubmit: PropTypes.func.isRequired,
     saving: PropTypes.bool
-};
-
-// Default props u slučaju da initialData nije poslan
-AssignmentForm.defaultProps = {
-    initialData: null,
-    saving: false
 };
 
 export default AssignmentForm;

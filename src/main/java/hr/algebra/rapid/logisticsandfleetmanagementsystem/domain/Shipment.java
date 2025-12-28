@@ -46,24 +46,20 @@ public class Shipment {
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "route_id", referencedColumnName = "id", unique = true)
     private Route route;
-
     @Column(name = "origin_address", nullable = false)
     private String originAddress;
-
     @Column(name = "destination_address", nullable = false)
     private String destinationAddress;
-
-    // --- OVO DODAJ DA PRIMIŠ PODATKE S FRONTENDA ---
-    @Transient // Ovo znači da se polja NEĆE kreirati u tablici 'shipment'
+    @Column(name = "origin_latitude")
     private Double originLatitude;
-    @Transient
+    @Column(name = "origin_longitude")
     private Double originLongitude;
-    @Transient
+    @Column(name = "destination_latitude")
     private Double destinationLatitude;
-    @Transient
+    @Column(name = "destination_longitude")
     private Double destinationLongitude;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "assignment_id")
     private Assignment assignment;
 

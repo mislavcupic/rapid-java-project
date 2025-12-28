@@ -1,10 +1,12 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.IssueReportDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ProofOfDeliveryDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentRequest;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentResponse;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AssignmentService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class ShipmentController {
 
     private final ShipmentService shipmentService;
     private final DriverService driverService;
+    private final AssignmentService assignmentService;
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
@@ -119,5 +122,13 @@ public class ShipmentController {
         ShipmentResponse updatedShipment = shipmentService.reportIssue(id, driverId, issue);
 
         return ResponseEntity.ok(updatedShipment);
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('ROLE_DISPATCHER')")
+    public ResponseEntity<String> updateStatusDirectly(@PathVariable Long id, @RequestParam ShipmentStatus status) {
+        // Ova metoda koju već imaš u servisu je "zakon" jer radi saveAndFlush
+        assignmentService.forceUpdateShipmentStatus(id, status);
+        return ResponseEntity.ok("Status u bazi je sada: " + status);
     }
 }

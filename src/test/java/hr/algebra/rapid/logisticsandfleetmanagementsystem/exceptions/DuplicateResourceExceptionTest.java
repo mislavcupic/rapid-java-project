@@ -21,7 +21,8 @@ class DuplicateResourceExceptionTest {
         String expectedMessage = "Duplikat: resurs već postoji u bazi";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(expectedMessage, "Tracking Number", request.getTrackingNumber());
+        DuplicateResourceException exception = new DuplicateResourceException(expectedMessage, "Tracking Number",
+                request.getTrackingNumber());
 
         // Assert
         assertEquals(expectedMessage, exception.getMessage(),

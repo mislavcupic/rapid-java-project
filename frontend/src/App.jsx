@@ -190,33 +190,40 @@ function App() {
             <AppNavbar userRoles={userRoles} onLogout={handleLogout} />
             <Container className="py-4 py-md-5">
                 <Routes>
+                    {/* Osnovne rute */}
                     <Route path="/" element={<Home />} />
-                    <Route path="/vehicles" element={<VehicleList />} />
                     <Route path="/login" element={<Login onLoginSuccess={checkUserRoles} />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="*" element={<NotFound />} />
+
+                    {/* VEHICLES */}
+                    <Route path="/vehicles" element={<VehicleList />} />
                     <Route path="/vehicles/add" element={<AddVehicle />} />
                     <Route path="/vehicles/edit/:id" element={<EditVehicle />} />
-                    <Route path="/assignments" element={<AssignmentList />} />
-                    <Route path="/assignments/new" element={<AssignmentForm />} />
-                    <Route path="/assignments/edit/:id" element={<AssignmentForm />} />
+
+                    {/* SHIPMENTS */}
                     <Route path="/shipments" element={<ShipmentList />} />
-                    <Route path="/shipments/new" element={<ShipmentForm />} />
-                    <Route path="/shipments/edit/:id" element={<ShipmentForm />} />
-                    <Route path="/shipments/add" element={<AddShipment />} />
-                    <Route path="/assignments/edit/:id" element={<EditAssignment />}/>
-                    <Route path="/assignments/add/:id" element={<AddAssignment />}/>
-                    <Route path="/shipments/edit/:id" element={<EditShipment />}/>
+                    <Route path="/shipments/new" element={<AddShipment />} />
+                    <Route path="/shipments/details/:id" element={<ShipmentDetails />} />
+                    <Route path="/shipments/edit/:id" element={<EditShipment />} />
+
+                    {/* ASSIGNMENTS - Ovdje su bili tvoji glavni problemi */}
+                    <Route path="/assignments" element={<AssignmentList />} />
+                    <Route path="/assignments/new" element={<AddAssignment />} />
+                    <Route path="/assignments/edit/:id" element={<EditAssignment />} /> {/* Popravljeno: maknut dupli AssignmentForm */}
+                    <Route path="/assignments/:id" element={<AssignmentDetails />} />
+
+                    {/* DRIVERS */}
                     <Route path="/drivers" element={<DriverList />} />
                     <Route path="/drivers/add" element={<DriverForm />} />
                     <Route path="/drivers/edit/:id" element={<DriverForm />} />
-                    <Route path="/analytics" element={<AnalyticsPage />} />
-                    <Route path="/shipments/details/:id" element={<ShipmentDetails />} />
-                    <Route path="/driver/assignment/:id" element={<DriverAssignmentDetails />} />
                     <Route path="/driver/dashboard" element={<DriverDashboard />} />
-                    <Route path="/deliveryconfirmation" element={<DeliveryConfirmationModal />} />
+                    <Route path="/driver/assignment/:id" element={<DriverAssignmentDetails />} />
+
+                    {/* OSTALO */}
+                    <Route path="/analytics" element={<AnalyticsPage />} />
                     <Route path="/admin/users" element={<AdminDashboard />} />
-                    <Route path="/assignments/:id" element={<AssignmentDetails />}/></Routes>
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
             </Container>
         </div>
     );

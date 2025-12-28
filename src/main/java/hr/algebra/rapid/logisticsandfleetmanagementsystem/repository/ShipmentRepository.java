@@ -21,4 +21,6 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
     List<Shipment> findByAssignmentIsNull();
 
     boolean existsByTrackingNumber(@NotBlank(message = "Tracking number is required") String trackingNumber);
+
+    List<Shipment> findByAssignmentId(Long id);
 }

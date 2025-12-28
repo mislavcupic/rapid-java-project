@@ -27,7 +27,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
     private final AssignmentRepository assignmentRepository;
-    private final RouteService routeService; // Ubrizgan tvoj RouteService
+    private final RouteService routeService;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,25 +46,47 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Override
     @Transactional
     public ShipmentResponse createShipment(ShipmentRequest request) {
+        logger.info("Započinjem kreiranje pošiljke: {}", request.getTrackingNumber());
+
+        // 1. Provjera duplikata
         if (shipmentRepository.existsByTrackingNumber(request.getTrackingNumber())) {
-            throw new DuplicateResourceException(SHIPMENT, "Tracking Number", request.getTrackingNumber());
+            throw new DuplicateResourceException(SHIPMENT, "trackingNumber", request.getTrackingNumber());
         }
 
+        // 2. Inicijalizacija entiteta
         Shipment shipment = new Shipment();
+
+        // 3. Prvo popunjavamo osnovna polja (težina, adrese itd.)
         updateShipmentFields(shipment, request);
 
-        // KREIRANJE RUTE: Pozivamo tvoj RouteServiceImpl da napravi izračun i objekt
-        Route newRoute = routeService.calculateAndCreateRoute(
-                request.getOriginAddress(), request.getOriginLatitude(), request.getOriginLongitude(),
-                request.getDestinationAddress(), request.getDestinationLatitude(), request.getDestinationLongitude()
+        // 4. Kreiranje rute (RouteService će izračunati koordinate ako su null u requestu)
+        Route route = routeService.calculateAndCreateRoute(
+                request.getOriginAddress(),
+                request.getOriginLatitude(),
+                request.getOriginLongitude(),
+                request.getDestinationAddress(),
+                request.getDestinationLatitude(),
+                request.getDestinationLongitude()
         );
-        shipment.setRoute(newRoute);
 
-        Shipment saved = shipmentRepository.save(shipment);
-        logger.info("Created shipment {} with route ID {}", saved.getTrackingNumber(), saved.getRoute().getId());
-        return mapToResponse(saved);
+        // 5. KLJUČNI DIO: Povezivanje i sinkronizacija
+        // Čak i ako su u 'request' koordinate bile NULL, u 'route' objektu su sada popunjene.
+        // Moramo ih prepisati u shipment entitet da ne ostanu prazne u tablici 'shipment'.
+        shipment.setRoute(route);
+
+        if (route != null) {
+            shipment.setOriginLatitude(route.getOriginLatitude());
+            shipment.setOriginLongitude(route.getOriginLongitude());
+            shipment.setDestinationLatitude(route.getDestinationLatitude());
+            shipment.setDestinationLongitude(route.getDestinationLongitude());
+            logger.info("Koordinate sinkronizirane iz rute: {}, {}", route.getOriginLatitude(), route.getOriginLongitude());
+        }
+
+        // 6. Spremanje pošiljke sa svim popunjenim poljima
+        Shipment savedShipment = shipmentRepository.save(shipment);
+
+        return mapToResponse(savedShipment);
     }
-
     @Override
     @Transactional
     public ShipmentResponse updateShipment(Long id, ShipmentRequest request) {
@@ -163,18 +185,30 @@ public class ShipmentServiceImpl implements ShipmentService {
         return response;
     }
 
-    // Pomoćna metoda za ažuriranje polja iz requesta
     private void updateShipmentFields(Shipment shipment, ShipmentRequest request) {
         shipment.setTrackingNumber(request.getTrackingNumber());
+
+        // Polazište - usklađeno s tvojim bitnim promjenama
         shipment.setOriginAddress(request.getOriginAddress());
+        shipment.setOriginLatitude(request.getOriginLatitude());
+        shipment.setOriginLongitude(request.getOriginLongitude());
+
+        // Odredište - usklađeno
         shipment.setDestinationAddress(request.getDestinationAddress());
+        shipment.setDestinationLatitude(request.getDestinationLatitude());
+        shipment.setDestinationLongitude(request.getDestinationLongitude());
+
+        // Ostali podaci
         shipment.setWeightKg(request.getWeightKg());
         shipment.setVolumeM3(request.getVolumeM3());
         shipment.setShipmentValue(request.getShipmentValue());
         shipment.setDescription(request.getDescription());
         shipment.setExpectedDeliveryDate(request.getExpectedDeliveryDate());
 
-        if (shipment.getStatus() == null) {
+        // KLJUČ: Ako request ima status, postavi ga. Ako nema, a shipment je nov, stavi PENDING.
+        if (request.getStatus() != null) {
+            shipment.setStatus(ShipmentStatus.valueOf(request.getStatus()));
+        } else if (shipment.getStatus() == null) {
             shipment.setStatus(ShipmentStatus.PENDING);
         }
     }

@@ -7,10 +7,7 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentResponse;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.AssignmentRepository;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.VehicleRepository;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.ShipmentRepository;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.*;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AssignmentService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.ShipmentService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
@@ -29,6 +26,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class AssignmentServiceImpl implements AssignmentService {
 
+    // Tvoji Assignment statusi (String u bazi)
     public static final String PENDING = "PENDING";
     public static final String SCHEDULED = "SCHEDULED";
     public static final String IN_PROGRESS = "IN_PROGRESS";
@@ -39,6 +37,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final ShipmentRepository shipmentRepository;
+    private final RouteRepository routeRepository;
     private final VehicleService vehicleService;
     private final ShipmentService shipmentService;
 
@@ -57,17 +56,17 @@ public class AssignmentServiceImpl implements AssignmentService {
             dto.setVehicle(vehicleService.mapToResponse(assignment.getVehicle()));
         }
 
-        // PROMJENA: Mapiramo listu pošiljaka umjesto jedne
         if (assignment.getShipments() != null) {
             List<ShipmentResponse> shipmentResponses = assignment.getShipments().stream()
-                    .map(shipmentService::mapToResponse).
-                    toList();
+                    .map(shipmentService::mapToResponse)
+                    .toList();
             dto.setShipments(shipmentResponses);
         }
 
         return dto;
     }
 
+    // --- POMOĆNE METODE ZA DOHVAT ---
     private Driver getDriver(Long driverId) {
         return driverRepository.findById(driverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver", "ID", driverId));
@@ -81,9 +80,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional(readOnly = true)
     public List<AssignmentResponseDTO> findAll() {
-        return assignmentRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .toList();
+        return assignmentRepository.findAll().stream().map(this::mapToResponse).toList();
     }
 
     @Override
@@ -97,35 +94,32 @@ public class AssignmentServiceImpl implements AssignmentService {
     public AssignmentResponseDTO createAssignment(AssignmentRequestDTO request) {
         Driver driver = getDriver(request.getDriverId());
         Vehicle vehicle = getVehicle(request.getVehicleId());
-
-        // PROMJENA: Dohvaćamo listu pošiljaka
         List<Shipment> shipments = shipmentRepository.findAllById(request.getShipmentIds());
 
-        if (shipments.isEmpty()) {
-            throw new ConflictException("No shipments found for IDs: " + request.getShipmentIds());
-        }
+        if (shipments.isEmpty()) throw new ConflictException("Nema odabranih pošiljaka.");
 
-        // Provjera jesu li neke pošiljke već dodijeljene
-        for (Shipment s : shipments) {
-            if (assignmentRepository.findByShipments_Id(s.getId()).isPresent()) {
-                throw new ConflictException("Shipment with ID " + s.getId() + " is already assigned.");
-            }
-        }
+        Route route = new Route();
+        route.setEstimatedDistanceKm(0.0);
+        route.setEstimatedDurationMinutes(0L);
+        route.setStatus(RouteStatus.DRAFT);
+        Route savedRoute = routeRepository.save(route);
 
         Assignment assignment = new Assignment();
         assignment.setDriver(driver);
         assignment.setVehicle(vehicle);
         assignment.setStartTime(request.getStartTime());
         assignment.setStatus(SCHEDULED);
-
-        // Povezivanje pošiljaka
-        shipments.forEach(s -> {
-            s.setAssignment(assignment);
-            s.setStatus(ShipmentStatus.valueOf(SCHEDULED));
-        });
-        assignment.setShipments(shipments);
+        assignment.setRoute(savedRoute);
 
         Assignment savedAssignment = assignmentRepository.save(assignment);
+
+        // Odmah korigiraj statuse pošiljaka
+        shipments.forEach(s -> {
+            s.setAssignment(savedAssignment);
+            s.setStatus(ShipmentStatus.SCHEDULED);
+        });
+        shipmentRepository.saveAll(shipments);
+
         return mapToResponse(savedAssignment);
     }
 
@@ -136,18 +130,23 @@ public class AssignmentServiceImpl implements AssignmentService {
             Driver newDriver = getDriver(request.getDriverId());
             Vehicle newVehicle = getVehicle(request.getVehicleId());
 
-            // Oslobađanje starih pošiljaka
-            assignment.getShipments().forEach(s -> {
+            // 1. Makni stare pošiljke (vrati ih na PENDING)
+            List<Shipment> currentShipments = shipmentRepository.findByAssignmentId(id);
+            currentShipments.forEach(s -> {
                 s.setAssignment(null);
-                s.setStatus(ShipmentStatus.valueOf(PENDING));
+                s.setStatus(ShipmentStatus.PENDING);
             });
+            shipmentRepository.saveAll(currentShipments);
 
-            // Postavljanje novih pošiljaka
+            // 2. Dodaj nove pošiljke i sinkroniziraj s trenutnim statusom naloga
             List<Shipment> newShipments = shipmentRepository.findAllById(request.getShipmentIds());
+            ShipmentStatus targetStatus = mapToShipmentStatus(assignment.getStatus());
+
             newShipments.forEach(s -> {
                 s.setAssignment(assignment);
-                s.setStatus(ShipmentStatus.valueOf(SCHEDULED));
+                s.setStatus(targetStatus);
             });
+            shipmentRepository.saveAll(newShipments);
 
             assignment.setDriver(newDriver);
             assignment.setVehicle(newVehicle);
@@ -159,17 +158,45 @@ public class AssignmentServiceImpl implements AssignmentService {
         });
     }
 
+    /**
+     * ✅ KLJUČNA METODA ZA DISPEČERA:
+     * Omogućuje promjenu statusa jedne pošiljke direktno s frontenda.
+     */
+    @Transactional
+    public void updateShipmentStatus(Long shipmentId, ShipmentStatus newStatus) {
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
+        shipment.setStatus(newStatus);
+        shipmentRepository.save(shipment);
+    }
+
+    @Override
+    @Transactional
+    public Optional<AssignmentResponseDTO> updateStatus(Long assignmentId, String newStatus) {
+        return assignmentRepository.findById(assignmentId).map(assignment -> {
+            assignment.setStatus(newStatus);
+            ShipmentStatus targetEnum = mapToShipmentStatus(newStatus);
+
+            if (assignment.getShipments() != null) {
+                assignment.getShipments().forEach(s -> s.setStatus(targetEnum));
+                shipmentRepository.saveAll(assignment.getShipments());
+            }
+
+            return mapToResponse(assignmentRepository.save(assignment));
+        });
+    }
+
     @Override
     @Transactional
     public void deleteAssignment(Long id) {
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT, "ID", id));
 
-        // Oslobodi pošiljke prije brisanja assignmenta
         assignment.getShipments().forEach(s -> {
             s.setAssignment(null);
-            s.setStatus(ShipmentStatus.valueOf(PENDING));
+            s.setStatus(ShipmentStatus.PENDING);
         });
+        shipmentRepository.saveAll(assignment.getShipments());
 
         assignmentRepository.delete(assignment);
     }
@@ -177,58 +204,56 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional(readOnly = true)
     public List<AssignmentResponseDTO> findAssignmentsByDriver(Long driverId) {
-        List<String> statuses = Arrays.asList(SCHEDULED, IN_PROGRESS);
-        return assignmentRepository.findByDriverIdAndStatusIn(driverId, statuses).stream()
-                .map(this::mapToResponse)
-                .toList();
+        return assignmentRepository.findByDriverIdAndStatusIn(driverId, Arrays.asList(SCHEDULED, IN_PROGRESS))
+                .stream().map(this::mapToResponse).toList();
     }
 
     @Override
     @Transactional
     public Optional<AssignmentResponseDTO> startAssignment(Long assignmentId, Long driverId) {
-        return assignmentRepository.findById(assignmentId)
-                .map(assignment -> {
-                    if (!assignment.getDriver().getId().equals(driverId)) {
-                        throw new ConflictException("Assignment ID " + assignmentId + " does not belong to driver ID " + driverId);
-                    }
+        return assignmentRepository.findById(assignmentId).map(assignment -> {
+            // Provjera vlasništva
+            if (!assignment.getDriver().getId().equals(driverId)) {
+                throw new ConflictException("Nalog ne pripada ovom vozaču.");
+            }
 
-                    assignment.setStatus(IN_PROGRESS);
-                    assignment.setStartTime(LocalDateTime.now());
+            // Postavljanje statusa naloga
+            assignment.setStatus(IN_PROGRESS);
+            assignment.setStartTime(LocalDateTime.now());
 
-                    // PROMJENA: Ažuriraj status svim pošiljkama u listi
-                    assignment.getShipments().forEach(s ->
-                        s.setStatus(ShipmentStatus.IN_TRANSIT)
-                    );
-
-                    return mapToResponse(assignmentRepository.save(assignment));
+            // Ažuriranje svih pošiljaka u nalogu na IN_TRANSIT
+            if (assignment.getShipments() != null) {
+                assignment.getShipments().forEach(s -> {
+                    s.setStatus(ShipmentStatus.IN_TRANSIT);
                 });
+                // Važno: spremamo pošiljke
+                shipmentRepository.saveAll(assignment.getShipments());
+            }
+
+            // KLJUČNO: saveAndFlush forsira bazu da odmah prihvati promjene
+            Assignment saved = assignmentRepository.saveAndFlush(assignment);
+            return mapToResponse(saved);
+        });
     }
 
     @Override
     @Transactional
     public Optional<AssignmentResponseDTO> completeAssignment(Long assignmentId, Long driverId) {
-        return assignmentRepository.findById(assignmentId)
-                .map(assignment -> {
-                    if (!assignment.getDriver().getId().equals(driverId)) {
-                        throw new ConflictException("Assignment ID " + assignmentId + " does not belong to driver ID " + driverId);
-                    }
+        return assignmentRepository.findById(assignmentId).map(assignment -> {
+            if (!assignment.getDriver().getId().equals(driverId)) throw new ConflictException("Nalog ne pripada ovom vozaču.");
 
-                    // Provjera jesu li svi paketi DELIVERED
-                    boolean allDelivered = assignment.getShipments().stream()
-                            .allMatch(s -> s.getStatus().equals(ShipmentStatus.DELIVERED));
+            assignment.setStatus(COMPLETED);
+            assignment.setEndTime(LocalDateTime.now());
 
-                    if (!allDelivered) {
-                        throw new ConflictException("Cannot complete assignment: Not all shipments are delivered.");
-                    }
+            assignment.getShipments().forEach(s -> s.setStatus(ShipmentStatus.DELIVERED));
+            shipmentRepository.saveAll(assignment.getShipments());
 
-                    assignment.setStatus(COMPLETED);
-                    assignment.setEndTime(LocalDateTime.now());
-
-                    return mapToResponse(assignmentRepository.save(assignment));
-                });
+            return mapToResponse(assignmentRepository.save(assignment));
+        });
     }
-    @Transactional
+
     @Override
+    @Transactional
     public AssignmentResponseDTO optimizeAssignmentOrder(Long assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT, "ID", assignmentId));
@@ -236,49 +261,59 @@ public class AssignmentServiceImpl implements AssignmentService {
         List<Shipment> toOptimize = new ArrayList<>(assignment.getShipments());
         if (toOptimize.isEmpty()) return mapToResponse(assignment);
 
-        // Početna točka (npr. origin prve pošiljke)
-        double currentLat = toOptimize.get(0).getRoute().getOriginLatitude().doubleValue();
-        double currentLon = toOptimize.get(0).getRoute().getOriginLongitude().doubleValue();
+        double currentLat = toOptimize.get(0).getOriginLatitude();
+        double currentLon = toOptimize.get(0).getOriginLongitude();
 
         int sequence = 1;
         while (!toOptimize.isEmpty()) {
             Shipment closest = null;
             double minDistance = Double.MAX_VALUE;
-
             for (Shipment s : toOptimize) {
-                double dist = calculateHaversine(currentLat, currentLon,
-                        s.getRoute().getDestinationLatitude().doubleValue(),
-                        s.getRoute().getDestinationLongitude().doubleValue());
+                double dist = calculateHaversine(currentLat, currentLon, s.getDestinationLatitude(), s.getDestinationLongitude());
                 if (dist < minDistance) {
                     minDistance = dist;
                     closest = s;
                 }
             }
-
             if (closest != null) {
                 closest.setDeliverySequence(sequence++);
                 toOptimize.remove(closest);
-                // Sljedeća točka pretrage je odredište zadnjeg dostavljenog paketa
-                currentLat = closest.getRoute().getDestinationLatitude().doubleValue();
-                currentLon = closest.getRoute().getDestinationLongitude().doubleValue();
+                currentLat = closest.getDestinationLatitude();
+                currentLon = closest.getDestinationLongitude();
                 shipmentRepository.save(closest);
-            }
+            } else break;
         }
         return mapToResponse(assignment);
     }
+
     private double calculateHaversine(double lat1, double lon1, double lat2, double lon2) {
-        // Polumjer Zemlje u kilometrima
         final int R = 6371;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
 
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
+    private ShipmentStatus mapToShipmentStatus(String assignmentStatus) {
+        if (assignmentStatus == null) return ShipmentStatus.PENDING;
+        return switch (assignmentStatus) {
+            case IN_PROGRESS -> ShipmentStatus.IN_TRANSIT;
+            case COMPLETED -> ShipmentStatus.DELIVERED;
+            case SCHEDULED -> ShipmentStatus.SCHEDULED;
+            default -> ShipmentStatus.PENDING;
+        };
+    }
+    @Transactional
+    @Override
+    public void forceUpdateShipmentStatus(Long shipmentId, ShipmentStatus newStatus) {
+        // 1. Pronađi pošiljku (koja je npr. SCHEDULED)
+        Shipment shipment = shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shipment", "ID", shipmentId));
 
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        // 2. Postavi status koji dispečer želi (npr. IN_TRANSIT)
+        shipment.setStatus(newStatus);
 
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
+        // 3. SPREMI u bazu - bez ovoga Postgres ne zna da si išta napravio
+        shipmentRepository.save(shipment);
     }
 }

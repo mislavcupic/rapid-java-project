@@ -17,18 +17,25 @@ const EditAssignment = () => {
 
     useEffect(() => {
         const load = async () => {
+            setLoading(true); // Resetiramo loading pri promjeni ID-a
             try {
                 const data = await fetchAssignmentById(id);
-                // Pretvaramo podatke iz baze u format koji forma razumije
+
+                // ✅ Formatiranje podataka za AssignmentForm
                 const formattedData = {
-                    driverId: data.driver?.id,
-                    vehicleId: data.vehicle?.id,
-                    shipmentIds: data.shipments?.map(s => String(s.id)),
-                    startTime: data.startTime
+                    driverId: data.driver?.id ? String(data.driver.id) : '',
+                    vehicleId: data.vehicle?.id ? String(data.vehicle.id) : '',
+                    shipmentIds: data.shipments?.map(s => String(s.id)) || [],
+                    // Osiguravamo da datum odgovara HTML input formatu (yyyy-MM-ddThh:mm)
+                    startTime: data.startTime ? data.startTime.slice(0, 16) : '',
+                    status: data.status || ''
                 };
+
                 setAssignment(formattedData);
+                setError(null);
             } catch (err) {
-                setError(t('messages.error_loading_assignment, {}',err));
+                console.error("Greška pri učitavanju:", err);
+                setError(t('messages.error_loading_assignment'));
             } finally {
                 setLoading(false);
             }
@@ -37,31 +44,62 @@ const EditAssignment = () => {
     }, [id, t]);
 
     const handleUpdate = async (formData) => {
+        // ✅ Sprječavanje višestrukih slanja dok je saving: true
+        if (saving) return;
+
         setSaving(true);
+        setError(null); // Čistimo prethodne greške pri novom pokušaju
+
         try {
             await updateAssignment(id, formData);
-            navigate('/assignments', { state: { message: t('messages.assignment_updated_success') } });
+            // Navigacija s porukom o uspjehu
+            navigate('/assignments', {
+                state: { message: t('messages.assignment_updated_success') },
+                replace: true
+            });
         } catch (err) {
-            setError(err.message || "Greška pri ažuriranju");
+            console.error("Greška pri spremanju:", err);
+            // Provjera ima li server specifičnu poruku greške
+            const errorMessage = err.response?.data?.message || err.message || "Greška pri ažuriranju";
+            setError(errorMessage);
             setSaving(false);
         }
     };
 
-    if (loading) return <div className="text-center p-5"><Spinner animation="border" /></div>;
+    if (loading) {
+        return (
+            <div className="text-center p-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-2 text-muted">{t('general.loading')}</p>
+            </div>
+        );
+    }
 
     return (
         <Container className="py-4">
             <Card className="shadow-sm border-0">
-                <Card.Header className="bg-warning py-3">
-                    <h4 className="mb-0">{t('general.edit_assignment')} #{id}</h4>
+                <Card.Header className="bg-warning py-3 text-dark d-flex justify-content-between align-items-center">
+                    <h4 className="mb-0 fw-bold">
+                        {t('general.edit_assignment')} #{id}
+                    </h4>
+                    <span className="badge bg-dark">ID: {id}</span>
                 </Card.Header>
-                <Card.Body>
-                    {error && <Alert variant="danger">{error}</Alert>}
-                    <AssignmentForm
-                        initialData={assignment}
-                        onSubmit={handleUpdate}
-                        saving={saving}
-                    />
+                <Card.Body className="p-4">
+                    {error && (
+                        <Alert variant="danger" onClose={() => setError(null)} dismissible>
+                            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                            {error}
+                        </Alert>
+                    )}
+
+                    {/* ✅ AssignmentForm mora primiti onSubmit prop točno pod tim imenom */}
+                    {assignment && (
+                        <AssignmentForm
+                            initialData={assignment}
+                            onSubmit={handleUpdate}
+                            saving={saving}
+                        />
+                    )}
                 </Card.Body>
             </Card>
         </Container>

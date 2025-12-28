@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient';
+
 const BASE_PATH = '/api/assignments';
 
 export const fetchAssignments = () => apiClient(BASE_PATH);
@@ -7,3 +8,12 @@ export const deleteAssignment = (id) => apiClient(`${BASE_PATH}/${id}`, { method
 export const createAssignment = (data) => apiClient(BASE_PATH, { method: 'POST', body: JSON.stringify(data) });
 export const updateAssignment = (id, data) => apiClient(`${BASE_PATH}/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const optimizeAssignmentRoute = (id) => apiClient(`${BASE_PATH}/${id}/optimize`, { method: 'POST' });
+
+// ✅ OVE DVIJE METODE ĆE SADA BITI AKTIVNE
+export const startAssignment = (id) => apiClient(`${BASE_PATH}/${id}/start`, {
+    method: 'PUT'
+});
+
+export const completeAssignment = (id) => apiClient(`${BASE_PATH}/${id}/complete`, {
+    method: 'PUT'
+});

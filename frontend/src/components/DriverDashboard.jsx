@@ -82,17 +82,17 @@ const DriverDashboard = () => {
     }
 
     return (
-        <Container className="py-4">
+        <Container className="py-4 font-monospace">
             <Card className="shadow-lg border-primary border-top-0 border-5 mb-4">
                 <Card.Header className="bg-primary text-white">
-                    <h2 className="mb-0 font-monospace">
+                    <h2 className="mb-0">
                         <FaTruck className="me-2"/> Moj Raspored
                     </h2>
                     <small>Pregled tvojih Assignment-a za danas</small>
                 </Card.Header>
                 <Card.Body>
                     {assignments.length === 0 ? (
-                        <Alert variant="info" className="text-center font-monospace">
+                        <Alert variant="info" className="text-center">
                             <FaBoxOpen size={48} className="mb-3 d-block mx-auto"/>
                             Nemaš aktivnih Assignment-a danas. Uživaj u slobodnom danu! 🎉
                         </Alert>
@@ -107,7 +107,7 @@ const DriverDashboard = () => {
                                     >
                                         <Card.Header className="bg-light">
                                             <div className="d-flex justify-content-between align-items-center">
-                                                <strong className="font-monospace">Assignment #{assignment.id}</strong>
+                                                <strong>Ruta #{assignment.id}</strong>
                                                 {getStatusBadge(assignment.assignmentStatus)}
                                             </div>
                                         </Card.Header>
@@ -119,18 +119,31 @@ const DriverDashboard = () => {
                                                 </div>
                                             </div>
 
+                                            {/* ✅ ISPRAVLJENO - Prikazuje SVE pošiljke */}
                                             <div className="mb-2">
-                                                <small className="text-muted">Pošiljka:</small>
-                                                <div className="d-flex justify-content-between">
-                                                    <span className="fw-bold">{assignment.shipment?.trackingNumber}</span>
-                                                    {getShipmentStatusBadge(assignment.shipment?.status)}
-                                                </div>
+                                                <small className="text-muted">Pošiljke:</small>
+                                                {assignment.shipments && assignment.shipments.length > 0 ? (
+                                                    <>
+                                                        <div className="fw-bold">
+                                                            {assignment.shipments.length} {assignment.shipments.length === 1 ? 'pošiljka' : 'pošiljaka'}
+                                                        </div>
+                                                        <div className="small text-muted text-truncate">
+                                                            {assignment.shipments.map(s => s.trackingNumber).join(', ')}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="text-muted">Nema pošiljaka</div>
+                                                )}
                                             </div>
 
+                                            {/* ✅ Prikazuje prvo odredište + koliko ih ima još */}
                                             <div className="mb-2">
-                                                <small className="text-muted">Odredište:</small>
+                                                <small className="text-muted">Odredišta:</small>
                                                 <div className="text-truncate">
-                                                    {assignment.shipment?.destinationAddress || 'N/A'}
+                                                    {assignment.shipments?.[0]?.destinationAddress || 'N/A'}
+                                                    {assignment.shipments?.length > 1 && (
+                                                        <span className="text-muted"> +{assignment.shipments.length - 1} više</span>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -150,7 +163,7 @@ const DriverDashboard = () => {
                                             <Button
                                                 variant="outline-primary"
                                                 size="sm"
-                                                className="w-100 fw-bold font-monospace"
+                                                className="w-100 fw-bold"
                                             >
                                                 Otvori Detalje →
                                             </Button>

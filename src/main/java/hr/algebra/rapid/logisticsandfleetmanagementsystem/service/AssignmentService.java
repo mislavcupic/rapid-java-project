@@ -1,6 +1,7 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentResponseDTO;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,4 +41,8 @@ public interface AssignmentService {
 
     @Transactional
     AssignmentResponseDTO optimizeAssignmentOrder(Long assignmentId);
+    Optional<AssignmentResponseDTO> updateStatus(Long assignmentId, String newStatus);
+
+    @Transactional
+    void forceUpdateShipmentStatus(Long shipmentId, ShipmentStatus newStatus);
 }
