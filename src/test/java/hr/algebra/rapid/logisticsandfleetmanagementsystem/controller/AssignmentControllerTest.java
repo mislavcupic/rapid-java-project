@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -44,7 +45,7 @@ class AssignmentControllerTest {
         AssignmentRequestDTO request = new AssignmentRequestDTO();
         request.setDriverId(1L);
         request.setVehicleId(1L);
-        request.setShipmentId(1L);
+        request.setShipmentIds(Collections.singletonList(1L));
         request.setStartTime(LocalDateTime.now().plusDays(1));
         request.setEndTime(LocalDateTime.now().plusDays(2));
         return request;

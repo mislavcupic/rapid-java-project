@@ -102,7 +102,7 @@ class ShipmentServiceImplTest {
         void startDelivery_WrongStatus_ThrowsConflict() {
             shipment.setStatus(ShipmentStatus.IN_TRANSIT); // Nije SCHEDULED
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipmentId(1L)).willReturn(Optional.of(assignment));
+            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
 
             assertThatThrownBy(() -> shipmentService.startDelivery(1L, 10L))
                     .isInstanceOf(ConflictException.class)
@@ -112,7 +112,7 @@ class ShipmentServiceImplTest {
         @Test
         void startDelivery_WrongDriver_ThrowsConflict() {
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipmentId(1L)).willReturn(Optional.of(assignment));
+            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
 
             assertThatThrownBy(() -> shipmentService.startDelivery(1L, 999L)) // Krivi vozač
                     .isInstanceOf(ConflictException.class);
@@ -122,7 +122,7 @@ class ShipmentServiceImplTest {
         void completeDelivery_Success_WithFullPOD() {
             shipment.setStatus(ShipmentStatus.IN_TRANSIT);
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipmentId(1L)).willReturn(Optional.of(assignment));
+            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
             given(shipmentRepository.save(any())).willReturn(shipment);
 
             ProofOfDeliveryDTO pod = new ProofOfDeliveryDTO();
@@ -139,7 +139,7 @@ class ShipmentServiceImplTest {
         void reportIssue_Success_WithDelayAndGPS() {
             shipment.setStatus(ShipmentStatus.IN_TRANSIT);
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipmentId(1L)).willReturn(Optional.of(assignment));
+            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
             given(shipmentRepository.save(any())).willReturn(shipment);
 
             IssueReportDTO issue = new IssueReportDTO();

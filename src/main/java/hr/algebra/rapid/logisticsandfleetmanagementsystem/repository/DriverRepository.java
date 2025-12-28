@@ -2,8 +2,10 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.repository;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional;
+import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+@Repository
 public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     // 1. Pronalazi Driver profil po ID-u povezanog UserInfo računa

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "assignment")
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "shipments") // DODAJ OVO
 // Osigurava ispravno ponašanje u Setovima i Mapama
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Assignment {
@@ -35,9 +36,9 @@ public class Assignment {
     private Vehicle vehicle;
 
     // Jedna dodjela po jednoj pošiljci
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shipment_id", nullable = false, unique = true)
-    private Shipment shipment;
+
+    @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    private List<Shipment> shipments;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;

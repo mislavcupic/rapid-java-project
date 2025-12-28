@@ -21,10 +21,10 @@ class DuplicateResourceExceptionTest {
         String expectedMessage = "Duplikat: resurs već postoji u bazi";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(expectedMessage);
+        DuplicateResourceException exception = new DuplicateResourceException(expectedMessage, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertEquals(expectedMessage, exception.getMessage(), 
+        assertEquals(expectedMessage, exception.getMessage(),
             "Poruka iznimke bi trebala biti identična predanoj poruci");
     }
 
@@ -32,10 +32,10 @@ class DuplicateResourceExceptionTest {
     @DisplayName("Iznimka je RuntimeException")
     void testExceptionIsRuntimeException() {
         // Arrange & Act
-        DuplicateResourceException exception = new DuplicateResourceException("Test message");
+        DuplicateResourceException exception = new DuplicateResourceException("Test message", "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertInstanceOf(RuntimeException.class, exception, 
+        assertInstanceOf(RuntimeException.class, exception,
             "DuplicateResourceException bi trebala biti podtip RuntimeException");
     }
 
@@ -46,7 +46,7 @@ class DuplicateResourceExceptionTest {
         ResponseStatus annotation = DuplicateResourceException.class.getAnnotation(ResponseStatus.class);
 
         // Assert
-        assertNotNull(annotation, 
+        assertNotNull(annotation,
             "@ResponseStatus anotacija bi trebala biti prisutna na klasi");
     }
 
@@ -57,7 +57,7 @@ class DuplicateResourceExceptionTest {
         ResponseStatus annotation = DuplicateResourceException.class.getAnnotation(ResponseStatus.class);
 
         // Assert
-        assertEquals(HttpStatus.CONFLICT, annotation.value(), 
+        assertEquals(HttpStatus.CONFLICT, annotation.value(),
             "HTTP status bi trebao biti 409 CONFLICT");
     }
 
@@ -71,7 +71,7 @@ class DuplicateResourceExceptionTest {
         DuplicateResourceException exception = assertThrows(
             DuplicateResourceException.class,
             () -> {
-                throw new DuplicateResourceException(expectedMessage);
+                throw new DuplicateResourceException(expectedMessage, "Tracking Number", request.getTrackingNumber());
             },
             "Iznimka bi trebala biti bacena i uhvaćena"
         );
@@ -83,10 +83,10 @@ class DuplicateResourceExceptionTest {
     @DisplayName("Null poruka - provjera ponašanja")
     void testNullMessage() {
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(null);
+        DuplicateResourceException exception = new DuplicateResourceException(null, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertNull(exception.getMessage(), 
+        assertNull(exception.getMessage(),
             "Poruka bi trebala biti null ako je null predana");
     }
 
@@ -97,12 +97,12 @@ class DuplicateResourceExceptionTest {
         String emptyMessage = "";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(emptyMessage);
+        DuplicateResourceException exception = new DuplicateResourceException(emptyMessage, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertEquals(emptyMessage, exception.getMessage(), 
+        assertEquals(emptyMessage, exception.getMessage(),
             "Prazna poruka bi trebala biti prihvaćena");
-        assertTrue(exception.getMessage().isEmpty(), 
+        assertTrue(exception.getMessage().isEmpty(),
             "Poruka bi trebala biti prazna");
     }
 
@@ -113,12 +113,12 @@ class DuplicateResourceExceptionTest {
         String message = "Duplicate resource found";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(message);
+        DuplicateResourceException exception = new DuplicateResourceException(message, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertNotNull(exception.getStackTrace(), 
+        assertNotNull(exception.getStackTrace(),
             "Stack trace ne bi trebao biti null");
-        assertTrue(exception.getStackTrace().length > 0, 
+        assertTrue(exception.getStackTrace().length > 0,
             "Stack trace bi trebao imati elemente");
     }
 
@@ -127,16 +127,16 @@ class DuplicateResourceExceptionTest {
     void testToStringMethod() {
         // Arrange
         String message = "Duplicate vehicle registration";
-        DuplicateResourceException exception = new DuplicateResourceException(message);
+        DuplicateResourceException exception = new DuplicateResourceException(message, "Tracking Number", request.getTrackingNumber());
 
         // Act
         String result = exception.toString();
 
         // Assert
         assertNotNull(result, "toString ne bi trebao vraćati null");
-        assertTrue(result.contains("DuplicateResourceException"), 
+        assertTrue(result.contains("DuplicateResourceException"),
             "toString bi trebao sadržavati ime klase");
-        assertTrue(result.contains(message), 
+        assertTrue(result.contains(message),
             "toString bi trebao sadržavati poruku");
     }
 
@@ -145,17 +145,17 @@ class DuplicateResourceExceptionTest {
     void testDifferentDuplicateResourceScenarios() {
         // Arrange & Act
         DuplicateResourceException duplicateEmail = new DuplicateResourceException(
-            "Korisnik s email adresom test@example.com već postoji"
-        );
+            "Korisnik s email adresom test@example.com već postoji",
+                "Tracking Number", request.getTrackingNumber());
         DuplicateResourceException duplicatePlate = new DuplicateResourceException(
-            "Vozilo s registracijom ZG-1234-AB već postoji u sustavu"
-        );
+            "Vozilo s registracijom ZG-1234-AB već postoji u sustavu",
+                "Tracking Number", request.getTrackingNumber());
         DuplicateResourceException duplicateTracking = new DuplicateResourceException(
-            "Pošiljka s tracking brojem TRACK123456 već postoji"
-        );
+            "Pošiljka s tracking brojem TRACK123456 već postoji",
+                "Tracking Number", request.getTrackingNumber());
         DuplicateResourceException duplicateOib = new DuplicateResourceException(
-            "Vozač s OIB-om 12345678901 već postoji"
-        );
+            "Vozač s OIB-om 12345678901 već postoji",
+                "Tracking Number", request.getTrackingNumber());
 
         // Assert
         assertAll("Različiti scenariji duplikata resursa",
@@ -173,10 +173,10 @@ class DuplicateResourceExceptionTest {
         String messageWithSpecialChars = "Greška: Duplikat pronađen! Znakovi: ćčđšž, @#$%, 🚨";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(messageWithSpecialChars);
+        DuplicateResourceException exception = new DuplicateResourceException(messageWithSpecialChars, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertEquals(messageWithSpecialChars, exception.getMessage(), 
+        assertEquals(messageWithSpecialChars, exception.getMessage(),
             "Poruka sa specijalnim znakovima bi trebala biti ispravno pohranjena");
     }
 
@@ -190,12 +190,12 @@ class DuplicateResourceExceptionTest {
                                   "Vrijednost: ZG-1234-AB";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(multiLineMessage);
+        DuplicateResourceException exception = new DuplicateResourceException(multiLineMessage, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertEquals(multiLineMessage, exception.getMessage(), 
+        assertEquals(multiLineMessage, exception.getMessage(),
             "Višelinijska poruka s detaljima bi trebala biti ispravno pohranjena");
-        assertTrue(exception.getMessage().contains("\n"), 
+        assertTrue(exception.getMessage().contains("\n"),
             "Poruka bi trebala sadržavati nove retke");
     }
 
@@ -206,12 +206,12 @@ class DuplicateResourceExceptionTest {
         String longMessage = "Duplikat resursa: " + "A".repeat(500);
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(longMessage);
+        DuplicateResourceException exception = new DuplicateResourceException(longMessage, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertEquals(longMessage, exception.getMessage(), 
+        assertEquals(longMessage, exception.getMessage(),
             "Duga poruka bi trebala biti ispravno pohranjena");
-        assertTrue(exception.getMessage().length() > 500, 
+        assertTrue(exception.getMessage().length() > 500,
             "Duljina poruke bi trebala biti veća od 500 karaktera");
     }
 
@@ -222,7 +222,7 @@ class DuplicateResourceExceptionTest {
         String message = "Duplikat: Vozilo ID=123 s registracijom 'ZG-5678-CD' već postoji u bazi podataka";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(message);
+        DuplicateResourceException exception = new DuplicateResourceException(message, "Tracking Number", request.getTrackingNumber());
 
         // Assert
         assertAll("Poruka s ID-jevima i vrijednostima",
@@ -239,10 +239,10 @@ class DuplicateResourceExceptionTest {
         String message = "Duplicate resource";
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(message);
+        DuplicateResourceException exception = new DuplicateResourceException(message, "Tracking Number", request.getTrackingNumber());
 
         // Assert
-        assertNull(exception.getCause(), 
+        assertNull(exception.getCause(),
             "Cause bi trebao biti null jer nema konstruktora sa cause parametrom");
     }
 
@@ -256,9 +256,9 @@ class DuplicateResourceExceptionTest {
             .getAnnotation(ResponseStatus.class);
 
         // Assert
-        assertEquals(duplicateAnnotation.value(), conflictAnnotation.value(), 
+        assertEquals(duplicateAnnotation.value(), conflictAnnotation.value(),
             "DuplicateResourceException i ConflictException bi trebali imati isti HTTP status");
-        assertEquals(HttpStatus.CONFLICT, duplicateAnnotation.value(), 
+        assertEquals(HttpStatus.CONFLICT, duplicateAnnotation.value(),
             "Obje iznimke bi trebale koristiti HTTP 409 CONFLICT");
     }
 
@@ -270,12 +270,12 @@ class DuplicateResourceExceptionTest {
         String fieldName = "registracija";
         String fieldValue = "ZG-9999-XY";
         String formattedMessage = String.format(
-            "Duplikat: %s s %s '%s' već postoji u sustavu", 
+            "Duplikat: %s s %s '%s' već postoji u sustavu",
             resourceType, fieldName, fieldValue
         );
 
         // Act
-        DuplicateResourceException exception = new DuplicateResourceException(formattedMessage);
+        DuplicateResourceException exception = new DuplicateResourceException(formattedMessage, "Tracking Number", request.getTrackingNumber());
 
         // Assert
         assertAll("Formatirana poruka s parametrima",

@@ -23,8 +23,7 @@ public class ShipmentRequest {
     @NotBlank(message = "Origin address is required")
     private String originAddress;
 
-    // ✅ UKLONJENA @NotNull VALIDACIJA: Koordinate smiju biti NULL/prazne.
-    // Frontend ih automatski popunjava.
+
     private Double originLatitude;
     private Double originLongitude;
 
@@ -32,7 +31,7 @@ public class ShipmentRequest {
     @NotBlank(message = "Destination address is required")
     private String destinationAddress;
 
-    // ✅ UKLONJENA @NotNull VALIDACIJA
+
     private Double destinationLatitude;
     private Double destinationLongitude;
 

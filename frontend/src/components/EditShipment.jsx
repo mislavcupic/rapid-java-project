@@ -110,12 +110,9 @@ const EditShipment = () => {
         originAddress: '',
         destinationAddress: '',
         status: '',
-        // ✅ SonarCube: Promijenjeno 0.0 u 0
         weightKg: 0,
-        // ✅ KRITIČNO: VRAĆENO JE POLJE estimatedDeliveryTime
         estimatedDeliveryTime: '',
         description: '',
-        // ✅ SonarCube: Promijenjeno 0.0 u 0
         originLatitude: 0,
         originLongitude: 0,
         destinationLatitude: 0,
@@ -124,7 +121,7 @@ const EditShipment = () => {
         currentVehicleId: '',
     });
 
-    // ✅ SonarCube: Promijenjeno 0 u inicijalnom stanju
+
     const [originCoords, setOriginCoords] = useState({ lat: 0, lng: 0 });
     const [destinationCoords, setDestinationCoords] = useState({ lat: 0, lng: 0 });
     const [geocodeLoading, setGeocodeLoading] = useState(false);
@@ -135,7 +132,6 @@ const EditShipment = () => {
         debounce(async (address) => {
             if (!address) {
                 setOriginCoords({ lat: 0, lng: 0 });
-                // ✅ SonarCube: Promijenjeno 0.0 u 0
                 setFormData(prev => ({ ...prev, originLatitude: 0, originLongitude: 0 }));
                 return;
             }
@@ -151,7 +147,6 @@ const EditShipment = () => {
                     }));
                 }
             } catch (err) {
-                // ✅ SonarCube: Ispravak rukovanja greškom - logiranje za debbugging
                 console.error("Geocoding Origin Error:", err);
             } finally {
                 setGeocodeLoading(false);
@@ -164,7 +159,6 @@ const EditShipment = () => {
         debounce(async (address) => {
             if (!address) {
                 setDestinationCoords({ lat: 0, lng: 0 });
-                // ✅ SonarCube: Promijenjeno 0.0 u 0
                 setFormData(prev => ({ ...prev, destinationLatitude: 0, destinationLongitude: 0 }));
                 return;
             }

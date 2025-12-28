@@ -1,12 +1,7 @@
-// hr.algebra.rapid.logisticsandfleetmanagementsystem.model.Route.java
-
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.domain;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "routes")
@@ -20,7 +15,6 @@ public class Route {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Početne i Krajnje koordinate (KLJUČNO ZA MAPU)
     private String originAddress;
     private Double originLatitude;
     private Double originLongitude;
@@ -29,18 +23,17 @@ public class Route {
     private Double destinationLatitude;
     private Double destinationLongitude;
 
-    // PRORAČUNATI PODACI (Potrebno od vanjskog API-ja)
-    @Column(nullable = false)
-    private Double estimatedDistanceKm;
+    // Promijenjeno u nullable=true kako bi se ruta mogla spremiti samo s koordinatama
+    @Column(nullable = true)
+    private Double estimatedDistanceKm = 0.0;
 
-    @Column(nullable = false)
-    private Long estimatedDurationMinutes;
+    @Column(nullable = true)
+    private Long estimatedDurationMinutes = 0L;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RouteStatus status = RouteStatus.DRAFT;
 
-    // Povezivanje s Assignmentom
     @OneToOne(mappedBy = "route")
     private Assignment assignment;
 }

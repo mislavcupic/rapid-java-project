@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -134,7 +135,7 @@ class DriverDeliveryWorkflowIntegrationTest {
         AssignmentRequestDTO assignmentRequest = new AssignmentRequestDTO();
         assignmentRequest.setDriverId(testDriver.getId());
         assignmentRequest.setVehicleId(testVehicle.getId());
-        assignmentRequest.setShipmentId(shipmentId);
+        assignmentRequest.setShipmentIds(Collections.singletonList(shipmentId));
         assignmentRequest.setStartTime(LocalDateTime.now().plusHours(1));
 
         AssignmentResponseDTO assignmentResponse = assignmentService.createAssignment(assignmentRequest);

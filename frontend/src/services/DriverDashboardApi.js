@@ -1,9 +1,12 @@
 // frontend/src/services/DriverDashboardApi.js
 
-import { apiClient } from './apiClient'; // ✅ Named import
+import { apiClient } from './apiClient';
 
 const BASE_ASSIGNMENT_PATH = '/api/assignments';
-const BASE_SHIPMENT_PATH = '/api/shipments'; // ✅ DODANO za direktne Shipment endpointe
+const BASE_SHIPMENT_PATH = '/api/shipments';
+
+// Pomoćna funkcija za dohvat trenutnog Driver ID-a (pretpostavka da je spremljen pri prijavi)
+const getCurrentDriverId = () => localStorage.getItem('driverId') || localStorage.getItem('userId');
 
 // 1. DOHVAĆANJE RASPOREDA ZA PRIJAVLJENOG VOZAČA
 export const fetchMySchedule = async () => {
@@ -16,80 +19,63 @@ export const fetchMySchedule = async () => {
     }
 };
 
-// 2. DOHVAĆANJE DETALJA ASSIGNMENTA
+// 2. DOHVAĆANJE DETALJA ASSIGNMENTA (Zbirna vožnja sa svim pošiljkama)
 export const fetchAssignmentDetails = async (id) => {
-    try {
-        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${id}`, { method: 'GET' });
-    } catch (error) {
-        console.error(`Greška pri dohvaćanju detalja assignmenta ${id}:`, error);
-        throw error;
-    }
+    return apiClient(`${BASE_ASSIGNMENT_PATH}/${id}`, { method: 'GET' });
 };
 
-// 3. POKRETANJE ASSIGNMENTA (SCHEDULED → IN_PROGRESS)
+// 3. POKRETANJE ASSIGNMENTA (Cijela ruta)
 export const startAssignment = async (id) => {
-    try {
-        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${id}/start`, { method: 'PUT' });
-    } catch (error) {
-        console.error(`Greška pri pokretanju assignmenta ${id}:`, error);
-        throw error;
-    }
+    const driverId = getCurrentDriverId();
+    // Šaljemo driverId kao query parametar jer ga backend traži u @PostMapping
+    return apiClient(`${BASE_ASSIGNMENT_PATH}/${id}/start?driverId=${driverId}`, {
+        method: 'POST'
+    });
 };
 
-// 4. ZAVRŠAVANJE ASSIGNMENTA (IN_PROGRESS → COMPLETED)
+// 4. ZAVRŠAVANJE ASSIGNMENTA
 export const completeAssignment = async (id) => {
-    try {
-        return await apiClient(`${BASE_ASSIGNMENT_PATH}/${id}/complete`, { method: 'PUT' });
-    } catch (error) {
-        console.error(`Greška pri završavanju assignmenta ${id}:`, error);
-        throw error;
-    }
+    return apiClient(`${BASE_ASSIGNMENT_PATH}/${id}/complete`, { method: 'POST' });
 };
 
-// 5. POKRETANJE DOSTAVE POŠILJKE (SCHEDULED → IN_TRANSIT)
-// ✅ DIREKTNO NA /api/shipments/{shipmentId}/start
+// 5. POKRETANJE DOSTAVE POJEDINAČNE POŠILJKE
+// Usklađeno s tvojim ShipmentService: startDelivery(Long shipmentId, Long driverId)
 export const startDelivery = async (shipmentId) => {
-    try {
-        return await apiClient(
-            `${BASE_SHIPMENT_PATH}/${shipmentId}/start`,
-            { method: 'PUT' }
-        );
-    } catch (error) {
-        console.error(`Greška pri pokretanju dostave ${shipmentId}:`, error);
-        throw error;
-    }
+    const driverId = getCurrentDriverId();
+    return apiClient(
+        `${BASE_SHIPMENT_PATH}/${shipmentId}/start?driverId=${driverId}`,
+        { method: 'POST' }
+    );
 };
 
-// 6. ZAVRŠAVANJE DOSTAVE (POD - Proof of Delivery, IN_TRANSIT → DELIVERED)
-// ✅ DIREKTNO NA /api/shipments/{shipmentId}/complete
+// 6. ZAVRŠAVANJE DOSTAVE (Proof of Delivery)
+// Usklađeno s: completeDelivery(Long shipmentId, Long driverId, ProofOfDeliveryDTO pod)
 export const completeDelivery = async (shipmentId, podData) => {
-    try {
-        return await apiClient(
-            `${BASE_SHIPMENT_PATH}/${shipmentId}/complete`,
-            {
-                method: 'POST',
-                body: JSON.stringify(podData)
-            }
-        );
-    } catch (error) {
-        console.error(`Greška pri završavanju dostave ${shipmentId}:`, error);
-        throw error;
-    }
+    const driverId = getCurrentDriverId();
+    return apiClient(
+        `${BASE_SHIPMENT_PATH}/${shipmentId}/complete`,
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                ...podData,
+                driverId: driverId // Šaljemo driverId unutar DTO-a
+            })
+        }
+    );
 };
 
-// 7. PRIJAVA PROBLEMA S DOSTAVOM (IN_TRANSIT → DELAYED)
-// ✅ DIREKTNO NA /api/shipments/{shipmentId}/report-issue
+// 7. PRIJAVA PROBLEMA S DOSTAVOM
+// Usklađeno s: reportIssue(Long shipmentId, Long driverId, IssueReportDTO issue)
 export const reportIssue = async (shipmentId, issueData) => {
-    try {
-        return await apiClient(
-            `${BASE_SHIPMENT_PATH}/${shipmentId}/report-issue`,
-            {
-                method: 'PUT',
-                body: JSON.stringify(issueData)
-            }
-        );
-    } catch (error) {
-        console.error(`Greška pri prijavi problema ${shipmentId}:`, error);
-        throw error;
-    }
+    const driverId = getCurrentDriverId();
+    return apiClient(
+        `${BASE_SHIPMENT_PATH}/${shipmentId}/report-issue`,
+        {
+            method: 'POST',
+            body: JSON.stringify({
+                ...issueData,
+                driverId: driverId
+            })
+        }
+    );
 };

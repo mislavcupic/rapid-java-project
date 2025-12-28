@@ -6,7 +6,6 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ProofOfDeliveryDTO
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentRequest;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.ShipmentResponse;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -24,10 +23,7 @@ public interface ShipmentService {
 
     void deleteShipment(Long id);
 
-    // ========================================================================
-    // NOVE METODE za Driver Workflow  ← DODAJ OVE 3 METODE
-    // ========================================================================
-
+    // Driver Workflow metode
     ShipmentResponse startDelivery(Long shipmentId, Long driverId);
 
     ShipmentResponse completeDelivery(Long shipmentId, Long driverId, ProofOfDeliveryDTO pod);

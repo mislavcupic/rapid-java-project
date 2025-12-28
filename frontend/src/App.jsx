@@ -29,6 +29,7 @@ import DriverDashboard from "./components/DriverDashboard.jsx";
 import DeliveryConfirmationModal from "./components/DeliveryConfirmationModal.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import PropTypes from 'prop-types';
+import AssignmentDetails from "./components/AssignmentsDetails.jsx";
 
 
 const AppNavbar = ({ userRoles, onLogout }) => {
@@ -215,7 +216,7 @@ function App() {
                     <Route path="/driver/dashboard" element={<DriverDashboard />} />
                     <Route path="/deliveryconfirmation" element={<DeliveryConfirmationModal />} />
                     <Route path="/admin/users" element={<AdminDashboard />} />
-                </Routes>
+                    <Route path="/assignments/:id" element={<AssignmentDetails />}/></Routes>
             </Container>
         </div>
     );

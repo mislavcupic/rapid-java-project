@@ -204,7 +204,7 @@ public class DriverServiceImpl implements DriverService {
         DriverService self = driverServiceProvider.getObject();
         try {
             Long driverId = self.getDriverIdFromUsername(username);
-            Optional<Assignment> assignment = assignmentRepository.findByShipmentId(shipmentId);
+            Optional<Assignment> assignment = assignmentRepository.findByShipments_Id(shipmentId);
 
             if (assignment.isEmpty()) {
                 return false;
@@ -216,4 +216,9 @@ public class DriverServiceImpl implements DriverService {
             return false;
         }
     }
+    /**
+     * Računa zračnu udaljenost između dvije točke koristeći Haversine formulu.
+     * @return Udaljenost u kilometrima
+     */
+
 }

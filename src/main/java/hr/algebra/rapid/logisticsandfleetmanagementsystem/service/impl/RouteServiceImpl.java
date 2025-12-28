@@ -1,5 +1,3 @@
-// hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl.RouteServiceImpl.java
-
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Route;
@@ -7,23 +5,16 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.RouteStatus;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.RouteService;
 import org.springframework.stereotype.Service;
 
-/**
- * Implementacija RouteService sučelja koja proračunava udaljenost između dvije točke.
- */
 @Service
 public class RouteServiceImpl implements RouteService {
 
-    /**
-     * Implementacija metode za proračun rute.
-     * U stvarnom svijetu, ovdje bi bio poziv prema vanjskom API-ju (npr. Google Distance Matrix).
-     */
     @Override
     public Route calculateAndCreateRoute(String originAddress, Double oLat, Double oLon,
                                          String destinationAddress, Double dLat, Double dLon) {
 
         Route newRoute = new Route();
 
-        // 1. Postavljanje adresa i koordinata
+        // 1. Postavljanje adresa i koordinata (OVO JE KLJUČNO ZA TVOJU MAPU)
         newRoute.setOriginAddress(originAddress);
         newRoute.setOriginLatitude(oLat);
         newRoute.setOriginLongitude(oLon);
@@ -32,13 +23,16 @@ public class RouteServiceImpl implements RouteService {
         newRoute.setDestinationLatitude(dLat);
         newRoute.setDestinationLongitude(dLon);
 
-        // 2. Logika proračuna (Simulacija vanjskog API-ja)
-        double fiktivnaUdaljenost = calculateHaversineDistance(oLat, oLon, dLat, dLon);
-        long fiktivnoTrajanje = (long) (fiktivnaUdaljenost * 1.5); // Pretpostavka: 1.5 min po km
+        // 2. Logika proračuna udaljenosti (Haversine formula)
+        double distance = 0.0;
+        if (oLat != null && oLon != null && dLat != null && dLon != null) {
+            distance = calculateHaversineDistance(oLat, oLon, dLat, dLon);
+        }
 
-        // Zaokruživanje udaljenosti na dvije decimale
-        newRoute.setEstimatedDistanceKm(Math.round(fiktivnaUdaljenost * 100.0) / 100.0);
-        newRoute.setEstimatedDurationMinutes(fiktivnoTrajanje);
+        long duration = (long) (distance * 1.2); // Simulacija: 1.2 min po km
+
+        newRoute.setEstimatedDistanceKm(Math.round(distance * 100.0) / 100.0);
+        newRoute.setEstimatedDurationMinutes(duration);
 
         // 3. Postavljanje statusa
         newRoute.setStatus(RouteStatus.CALCULATED);
@@ -46,10 +40,6 @@ public class RouteServiceImpl implements RouteService {
         return newRoute;
     }
 
-    /**
-     * Pomoćna funkcija za proračun udaljenosti na Zemlji (Haversine formula).
-     * Koristi se za simulaciju cestovne udaljenosti (daje zračnu liniju).
-     */
     private double calculateHaversineDistance(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; // Radijus Zemlje u km
         double latDistance = Math.toRadians(lat2 - lat1);

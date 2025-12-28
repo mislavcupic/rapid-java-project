@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,10 +68,10 @@ class AssignmentTest {
     @Test
     void setAndGetShipment_ShouldWorkCorrectly() {
 
-        assignment.setShipment(shipment);
+        assignment.setShipments(Collections.singletonList(shipment));
 
-        assertThat(assignment.getShipment()).isEqualTo(shipment);
-        assertThat(assignment.getShipment().getId()).isEqualTo(3L);
+        assertThat(assignment.getShipments()).isEqualTo(shipment);
+        assertThat(assignment.getShipments()).isEqualTo(3L);
     }
 
     @Test
@@ -114,7 +116,7 @@ class AssignmentTest {
         assignment.setId(100L);
         assignment.setDriver(driver);
         assignment.setVehicle(vehicle);
-        assignment.setShipment(shipment);
+        assignment.setShipments((List<Shipment>) shipment);
         assignment.setStartTime(startTime);
         assignment.setEndTime(endTime);
         assignment.setStatus("COMPLETED");
@@ -124,7 +126,7 @@ class AssignmentTest {
         assertThat(assignment.getId()).isEqualTo(100L);
         assertThat(assignment.getDriver()).isEqualTo(driver);
         assertThat(assignment.getVehicle()).isEqualTo(vehicle);
-        assertThat(assignment.getShipment()).isEqualTo(shipment);
+        assertThat(assignment.getShipments()).isEqualTo(shipment);
         assertThat(assignment.getStartTime()).isEqualTo(startTime);
         assertThat(assignment.getEndTime()).isEqualTo(endTime);
         assertThat(assignment.getStatus()).isEqualTo("COMPLETED");
@@ -141,7 +143,7 @@ class AssignmentTest {
         assertThat(emptyAssignment.getId()).isNull();
         assertThat(emptyAssignment.getDriver()).isNull();
         assertThat(emptyAssignment.getVehicle()).isNull();
-        assertThat(emptyAssignment.getShipment()).isNull();
+        assertThat(emptyAssignment.getShipments()).isNull();
     }
 
     @Test
@@ -152,14 +154,14 @@ class AssignmentTest {
 
         // Act
         Assignment fullAssignment = new Assignment(
-            1L, driver, vehicle, shipment, startTime, endTime, "ACTIVE", route
+            1L, driver, vehicle, (List<Shipment>) shipment, startTime, endTime, "ACTIVE", route
         );
 
         // Assert
         assertThat(fullAssignment.getId()).isEqualTo(1L);
         assertThat(fullAssignment.getDriver()).isEqualTo(driver);
         assertThat(fullAssignment.getVehicle()).isEqualTo(vehicle);
-        assertThat(fullAssignment.getShipment()).isEqualTo(shipment);
+        assertThat(fullAssignment.getShipments()).isEqualTo(shipment);
         assertThat(fullAssignment.getStartTime()).isEqualTo(startTime);
         assertThat(fullAssignment.getEndTime()).isEqualTo(endTime);
         assertThat(fullAssignment.getStatus()).isEqualTo("ACTIVE");

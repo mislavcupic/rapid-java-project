@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,13 +59,13 @@ class AssignmentServiceImplTest {
         testAssignment.setId(1L);
         testAssignment.setDriver(testDriver);
         testAssignment.setVehicle(testVehicle);
-        testAssignment.setShipment(testShipment);
+        testAssignment.setShipments((List<Shipment>) testShipment);
         testAssignment.setStatus("SCHEDULED");
 
         testRequest = new AssignmentRequestDTO();
         testRequest.setDriverId(1L);
         testRequest.setVehicleId(1L);
-        testRequest.setShipmentId(1L);
+        testRequest.setShipmentIds(Collections.singletonList(1L));
         testRequest.setStartTime(LocalDateTime.now().plusHours(2));
 
         // Default stubbing za mapiranje (koristi se u skoro svim testovima)
@@ -98,7 +99,7 @@ class AssignmentServiceImplTest {
         when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(testVehicle));
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(testShipment));
-        when(assignmentRepository.findByShipmentId(1L)).thenReturn(Optional.empty());
+        when(assignmentRepository.findByShipments_Id(1L)).thenReturn(Optional.empty());
         when(assignmentRepository.save(any(Assignment.class))).thenReturn(testAssignment);
 
         AssignmentResponseDTO result = assignmentService.createAssignment(testRequest);
@@ -148,7 +149,7 @@ class AssignmentServiceImplTest {
         assertTrue(result.isPresent());
         assertEquals("IN_PROGRESS", testAssignment.getStatus());
         // Ključna ispravka: gledamo status shipmenta koji je zakačen na assignment
-        assertEquals(ShipmentStatus.IN_TRANSIT, testAssignment.getShipment().getStatus());
+        assertEquals(ShipmentStatus.IN_TRANSIT, testAssignment.getShipments().get(0).getStatus());
     }
 
     @Test

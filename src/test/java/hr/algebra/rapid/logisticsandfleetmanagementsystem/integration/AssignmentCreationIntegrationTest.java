@@ -191,7 +191,7 @@ class AssignmentCreationIntegrationTest {
         AssignmentRequestDTO request = new AssignmentRequestDTO();
         request.setDriverId(driverId);
         request.setVehicleId(vehicleId);
-        request.setShipmentId(shipmentId);
+        request.setShipmentIds(List.of(shipmentId));
         request.setStartTime(LocalDateTime.now().plusHours(hoursOffset));
         request.setEndTime(LocalDateTime.now().plusHours(hoursOffset + 4));
         return request;

@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdminUserController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc(addFilters = false) //bez sigurnosnih provjera (jwt tokena i ostalog)
 class AdminUserControllerTest {
 
     @Autowired
@@ -51,6 +51,7 @@ class AdminUserControllerTest {
 
     private UserInfo sampleUser;
     private UserRole adminRole;
+    private UserRole driverRole;
 
     @BeforeEach
     void setUp() {
@@ -58,11 +59,17 @@ class AdminUserControllerTest {
         adminRole.setId(1L);
         adminRole.setName("ROLE_ADMIN");
 
+        driverRole = new UserRole();
+        driverRole.setId(2L);
+        driverRole.setName("ROLE_DRIVER");
+
+
         sampleUser = new UserInfo();
         sampleUser.setId(1L);
         sampleUser.setUsername("test_user");
         sampleUser.setEmail("test@algebra.hr");
         sampleUser.setRoles(List.of(adminRole));
+
     }
 
     // ==========================================
