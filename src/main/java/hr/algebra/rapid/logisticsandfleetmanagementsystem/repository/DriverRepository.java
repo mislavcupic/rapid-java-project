@@ -1,6 +1,7 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.repository;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,7 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     Optional<Driver> findByLicenseNumber(String licenseNumber);
 
 
+    void deleteByUserInfo(UserInfo user);
+
+    boolean existsByUserInfo(UserInfo user);
 }
