@@ -205,4 +205,66 @@ class ShipmentTest {
                 () -> assertThat(shipment).isNotEqualTo(new Object())
         );
     }
+    @Test
+    @DisplayName("Lombok: No-Args Constructor Coverage")
+    void noArgsConstructor_ShouldCreateEmptyShipment() {
+        // Eksplicitno pozivanje praznog konstruktora za Class i Constructor coverage
+        Shipment emptyShipment = new Shipment();
+
+        assertNotNull(emptyShipment);
+        assertThat(emptyShipment.getId()).isNull();
+    }
+
+    @Test
+    @DisplayName("Lombok: All-Args Constructor Coverage - Usklađen s poljima")
+    void allArgsConstructor_ShouldCreateFullShipment() {
+        // Priprema podataka
+        Long id = 1L;
+        String tracking = "TRK-ALL-ARGS";
+        BigDecimal weight = BigDecimal.valueOf(100.5);
+        BigDecimal volume = BigDecimal.valueOf(2.0);
+        BigDecimal value = BigDecimal.valueOf(500.0);
+        LocalDateTime expected = LocalDateTime.now().plusDays(1);
+        LocalDateTime actual = LocalDateTime.now().plusDays(2);
+
+        Assignment mockAssignment = new Assignment();
+        mockAssignment.setId(10L);
+
+        Route mockRoute = new Route();
+        mockRoute.setId(5L);
+
+        // Pozivanje All-Args konstruktora točnim redoslijedom iz klase:
+        // id, trackingNumber, description, weightKg, volumeM3, shipmentValue, status,
+        // expectedDeliveryDate, actualDeliveryDate, route, originAddress, destinationAddress,
+        // originLatitude, originLongitude, destinationLatitude, destinationLongitude, assignment, deliverySequence
+        Shipment fullShipment = new Shipment(
+                id,                     // id
+                tracking,               // trackingNumber
+                "Paket elektronike",    // description
+                weight,                 // weightKg
+                volume,                 // volumeM3
+                value,                  // shipmentValue
+                ShipmentStatus.PENDING, // status
+                expected,               // expectedDeliveryDate
+                actual,                 // actualDeliveryDate
+                mockRoute,              // route
+                "Ilica 1, Zagreb",      // originAddress
+                "Riva 1, Split",        // destinationAddress
+                45.815,                 // originLatitude
+                15.981,                 // originLongitude
+                43.508,                 // destinationLatitude
+                16.440,                 // destinationLongitude
+                mockAssignment,         // assignment
+                1                       // deliverySequence
+        );
+
+        // Provjera
+        assertAll(
+                () -> assertThat(fullShipment.getId()).isEqualTo(id),
+                () -> assertThat(fullShipment.getTrackingNumber()).isEqualTo(tracking),
+                () -> assertThat(fullShipment.getRoute().getId()).isEqualTo(5L),
+                () -> assertThat(fullShipment.getAssignment().getId()).isEqualTo(10L),
+                () -> assertThat(fullShipment.getDeliverySequence()).isEqualTo(1)
+        );
+    }
 }
