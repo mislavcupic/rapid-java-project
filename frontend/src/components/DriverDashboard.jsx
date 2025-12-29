@@ -1,5 +1,3 @@
-// frontend/src/components/DriverDashboard.jsx
-
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Alert, Spinner, Badge, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
@@ -33,30 +31,11 @@ const DriverDashboard = () => {
     const getStatusBadge = (status) => {
         switch (status) {
             case 'SCHEDULED':
-                return <Badge bg="warning" text="dark"><FaClock className="me-1"/> Zakazano</Badge>;
+                return <Badge bg="warning" text="dark"><FaClock className="me-1"/> {t('status.scheduled')}</Badge>;
             case 'IN_PROGRESS':
-                return <Badge bg="info"><FaTruck className="me-1"/> U tijeku</Badge>;
+                return <Badge bg="info"><FaTruck className="me-1"/> {t('status.in_progress')}</Badge>;
             case 'COMPLETED':
-                return <Badge bg="success"><FaCheckCircle className="me-1"/> Završeno</Badge>;
-            default:
-                return <Badge bg="secondary">{status}</Badge>;
-        }
-    };
-
-    const getShipmentStatusBadge = (status) => {
-        switch (status) {
-            case 'PENDING':
-                return <Badge bg="secondary">Čeka</Badge>;
-            case 'SCHEDULED':
-                return <Badge bg="warning" text="dark">{t('drivers.scheduled')}</Badge>;
-            case 'IN_TRANSIT':
-                return <Badge bg="info">U dostavi</Badge>;
-            case 'DELIVERED':
-                return <Badge bg="success">Dostavljeno</Badge>;
-            case 'DELAYED':
-                return <Badge bg="danger">Kašnjenje</Badge>;
-            case 'CANCELLED':
-                return <Badge bg="dark">Otkazano</Badge>;
+                return <Badge bg="success"><FaCheckCircle className="me-1"/> {t('status.completed')}</Badge>;
             default:
                 return <Badge bg="secondary">{status}</Badge>;
         }
@@ -66,7 +45,7 @@ const DriverDashboard = () => {
         return (
             <Container className="text-center py-5">
                 <Spinner animation="border" variant="primary" />
-                <p className="mt-3">Učitavam tvoj raspored...</p>
+                <p className="mt-3">{t('general.loading_data')}</p>
             </Container>
         );
     }
@@ -75,7 +54,7 @@ const DriverDashboard = () => {
         return (
             <Container>
                 <Alert variant="danger" className="mt-3">
-                    <strong>Greška:</strong> {error}
+                    <strong>{t('error.general_error')}:</strong> {error}
                 </Alert>
             </Container>
         );
@@ -86,15 +65,15 @@ const DriverDashboard = () => {
             <Card className="shadow-lg border-primary border-top-0 border-5 mb-4">
                 <Card.Header className="bg-primary text-white">
                     <h2 className="mb-0">
-                        <FaTruck className="me-2"/> Moj Raspored
+                        <FaTruck className="me-2"/> {t('driver.my_schedule')}
                     </h2>
-                    <small>Pregled tvojih Assignment-a za danas</small>
+                    <small>{t('driver.today_overview')}</small>
                 </Card.Header>
                 <Card.Body>
                     {assignments.length === 0 ? (
                         <Alert variant="info" className="text-center">
                             <FaBoxOpen size={48} className="mb-3 d-block mx-auto"/>
-                            Nemaš aktivnih Assignment-a danas. Uživaj u slobodnom danu! 🎉
+                            {t('driver.no_assignments')}
                         </Alert>
                     ) : (
                         <Row>
@@ -107,54 +86,52 @@ const DriverDashboard = () => {
                                     >
                                         <Card.Header className="bg-light">
                                             <div className="d-flex justify-content-between align-items-center">
-                                                <strong>Ruta #{assignment.id}</strong>
+                                                <strong>{t('assignments.route')} #{assignment.id}</strong>
                                                 {getStatusBadge(assignment.assignmentStatus)}
                                             </div>
                                         </Card.Header>
                                         <Card.Body>
                                             <div className="mb-2">
-                                                <small className="text-muted">Vozilo:</small>
+                                                <small className="text-muted">{t('shipments.vehicle')}:</small>
                                                 <div className="fw-bold">
                                                     {assignment.vehicle?.licensePlate} ({assignment.vehicle?.make})
                                                 </div>
                                             </div>
 
-                                            {/* ✅ ISPRAVLJENO - Prikazuje SVE pošiljke */}
                                             <div className="mb-2">
-                                                <small className="text-muted">Pošiljke:</small>
+                                                <small className="text-muted">{t('shipments.shipments')}:</small>
                                                 {assignment.shipments && assignment.shipments.length > 0 ? (
                                                     <>
                                                         <div className="fw-bold">
-                                                            {assignment.shipments.length} {assignment.shipments.length === 1 ? 'pošiljka' : 'pošiljaka'}
+                                                            {assignment.shipments.length} {t('shipments.count')}
                                                         </div>
                                                         <div className="small text-muted text-truncate">
                                                             {assignment.shipments.map(s => s.trackingNumber).join(', ')}
                                                         </div>
                                                     </>
                                                 ) : (
-                                                    <div className="text-muted">Nema pošiljaka</div>
+                                                    <div className="text-muted">{t('shipments.no_shipments')}</div>
                                                 )}
                                             </div>
 
-                                            {/* ✅ Prikazuje prvo odredište + koliko ih ima još */}
                                             <div className="mb-2">
-                                                <small className="text-muted">Odredišta:</small>
+                                                <small className="text-muted">{t('shipments.destinations')}:</small>
                                                 <div className="text-truncate">
                                                     {assignment.shipments?.[0]?.destinationAddress || 'N/A'}
                                                     {assignment.shipments?.length > 1 && (
-                                                        <span className="text-muted"> +{assignment.shipments.length - 1} više</span>
+                                                        <span className="text-muted"> +{assignment.shipments.length - 1} {t('general.more')}</span>
                                                     )}
                                                 </div>
                                             </div>
 
                                             <div className="mb-2">
-                                                <small className="text-muted"><FaClock className="me-1"/> Početak:</small>
+                                                <small className="text-muted"><FaClock className="me-1"/> {t('shipments.departure_time')}:</small>
                                                 <div>{new Date(assignment.startTime).toLocaleString('hr-HR')}</div>
                                             </div>
 
                                             {assignment.endTime && (
                                                 <div className="mb-2">
-                                                    <small className="text-muted">Završetak:</small>
+                                                    <small className="text-muted">{t('assignments.end_time')}:</small>
                                                     <div>{new Date(assignment.endTime).toLocaleString('hr-HR')}</div>
                                                 </div>
                                             )}
@@ -165,7 +142,7 @@ const DriverDashboard = () => {
                                                 size="sm"
                                                 className="w-100 fw-bold"
                                             >
-                                                Otvori Detalje →
+                                                {t('general.open_details')} →
                                             </Button>
                                         </Card.Footer>
                                     </Card>
@@ -183,7 +160,7 @@ const DriverDashboard = () => {
                         <Card.Body>
                             <FaClock size={32} className="text-warning mb-2"/>
                             <h3>{assignments.filter(a => a.assignmentStatus === 'SCHEDULED').length}</h3>
-                            <small className="text-muted">Zakazano</small>
+                            <small className="text-muted">{t('status.scheduled')}</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -192,7 +169,7 @@ const DriverDashboard = () => {
                         <Card.Body>
                             <FaTruck size={32} className="text-info mb-2"/>
                             <h3>{assignments.filter(a => a.assignmentStatus === 'IN_PROGRESS').length}</h3>
-                            <small className="text-muted">U tijeku</small>
+                            <small className="text-muted">{t('status.in_progress')}</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -201,7 +178,7 @@ const DriverDashboard = () => {
                         <Card.Body>
                             <FaCheckCircle size={32} className="text-success mb-2"/>
                             <h3>{assignments.filter(a => a.assignmentStatus === 'COMPLETED').length}</h3>
-                            <small className="text-muted">Završeno</small>
+                            <small className="text-muted">{t('status.completed')}</small>
                         </Card.Body>
                     </Card>
                 </Col>

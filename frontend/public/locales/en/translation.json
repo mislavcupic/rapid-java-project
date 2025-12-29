@@ -13,6 +13,7 @@
     "execute_bulk_update": "Execute Bulk Update",
     "status_ready": "Status: READY",
     "loading": "Loading...",
+    "loading_data": "Loading data...",
     "executing_dml": "EXECUTING DML...",
     "add_new": "Add New",
     "edit": "Edit",
@@ -25,13 +26,22 @@
     "actions": "Actions",
     "view": "View",
     "close": "Close",
+    "back": "Back",
     "back_to_list": "Back to the list",
     "current_driver": "Current Driver",
     "reg_mark": "Registry mark",
     "vehicle": "Vehicle",
     "capacity": "Capacity",
-    "add_vehicle": "Add New Vehicle"
+    "add_vehicle": "Add New Vehicle",
+    "open_details": "Open Details",
+    "more": "more",
+    "resource_not_found": "Resource not found"
+  },
 
+  "driver": {
+    "my_schedule": "My Schedule",
+    "today_overview": "Overview of your assignments for today",
+    "no_assignments": "No active assignments today. Enjoy your day off! 🎉"
   },
 
   "analytics": {
@@ -81,7 +91,6 @@
     "phone_format": "Format: +385912345678 (9-15 digits)",
     "already_have_account": "Already have an account?",
     "register_button": "Register"
-
   },
 
   "shipments": {
@@ -126,8 +135,34 @@
     "license_plate": "Licence plate",
     "model_year": "Model year",
     "make": "Make",
-    "model": "Model"
+    "model": "Model",
+    "shipment": "Shipment",
+    "shipments": "Shipments",
+    "no_shipments": "No shipments",
+    "destinations": "Destinations",
+    "count": "shipments",
+    "recipient_name_label": "Recipient Name *",
+    "recipient_placeholder": "Who received the package?",
+    "recipient_error": "Recipient name is required to complete delivery.",
+    "confirm_delivery": "Delivery Confirmation",
+    "confirm_btn": "CONFIRM DELIVERY"
+  },
 
+  "assignments": {
+    "route": "Route",
+    "assignment_details": "Assignment Details",
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "route_plan": "Route Plan",
+    "start_time": "Start Time",
+    "end_time": "End Time"
+  },
+
+  "status": {
+    "scheduled": "Scheduled",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "pending": "Pending"
   },
 
   "drivers": {
@@ -171,7 +206,8 @@
     "delete_failed": "Delete failed.",
     "loading_drivers": "Loading drivers...",
     "shipment_deleted": "Shipment with Tracking Number: {{trackingNumber}} has been deleted.",
-    "shipment_delete_error": "Error deleting: {{error}}. Shipment must not be deleted if assigned (SCHEDULED) or in transit!"
+    "shipment_delete_error": "Error deleting: {{error}}. Shipment must not be deleted if assigned (SCHEDULED) or in transit!",
+    "resource_not_found": "The requested resource was not found."
   },
 
   "error": {
@@ -182,7 +218,7 @@
   },
 
   "vehicles": {
-  "vehicle_list": "Vehicle list",
+    "vehicle_list": "Vehicle list",
     "add_vehicle": "Add new vehicle",
     "service_status": "Service status",
     "error_message": "Error while fetching driver",
@@ -192,7 +228,8 @@
     "current_mileage": "Current mileage",
     "next_service": "Next service",
     "unassigned": "Unassigned"
-},
+  },
+
   "validation": {
     "username_required": "Username is required",
     "username_min_length": "Username must be at least 3 characters",

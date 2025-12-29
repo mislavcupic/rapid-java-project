@@ -142,7 +142,7 @@ class AssignmentCreationIntegrationTest {
     @Test
     @DisplayName("Coverage 3: Force update statusa pošiljke (Admin logic)")
     void testForceUpdateShipmentStatus() {
-        assignmentService.forceUpdateShipmentStatus(savedShipment.getId(), ShipmentStatus.CANCELED);
+        assignmentService.updateShipmentStatus(savedShipment.getId(), ShipmentStatus.CANCELED);
         Shipment updated = shipmentRepository.findById(savedShipment.getId()).orElseThrow();
         assertEquals(ShipmentStatus.CANCELED, updated.getStatus());
     }
@@ -162,10 +162,18 @@ class AssignmentCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Negative 2: Start naloga od strane pogrešnog vozača")
-    void testStartAssignmentByWrongDriver() {
-        AssignmentResponseDTO res = assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1));
-        assertThrows(ConflictException.class, () -> assignmentService.startAssignment(res.getId(), 999L));
+    @DisplayName("Branch: Pokretanje naloga s krivim vozačem (Conflict)")
+    void testStartAssignmentWithWrongDriver() {
+        AssignmentRequestDTO req = createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 0);
+        AssignmentResponseDTO res = assignmentService.createAssignment(req);
+
+        // Rješenje za SonarQube: ID-ovi moraju biti varijable izvan lambde
+        Long assignmentId = res.getId();
+        Long wrongDriverId = 999L;
+
+        assertThrows(ConflictException.class, () ->
+                assignmentService.startAssignment(assignmentId, wrongDriverId)
+        );
     }
 
     @Test
@@ -183,20 +191,24 @@ class AssignmentCreationIntegrationTest {
                 createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1)
         );
 
-        // 2. DOHVATI entitet i RUČNO mu postavi status na PENDING (ili bilo što što NIJE IN_PROGRESS)
+        // 2. Ručno postavi status na PENDING
         Assignment a = assignmentRepository.findById(res.getId()).orElseThrow();
-        a.setStatus("PENDING"); // Prisiljavamo status koji NIJE "IN_PROGRESS"
+        a.setStatus("PENDING");
 
-        // 3. Osiguraj da pošiljka postoji u listi da izbjegnemo onaj NPE od prije
+        // 3. Osiguraj pošiljke i spremi
         Shipment s = shipmentRepository.findById(savedShipment.getId()).orElseThrow();
         a.setShipments(new ArrayList<>(List.of(s)));
 
         assignmentRepository.saveAndFlush(a);
-        entityManager.clear(); // Očisti cache da servis mora povući ovo iz baze
+        entityManager.clear();
 
-        // 4. SADA mora baciti ConflictException jer "PENDING" nalog ne možeš završiti
+        // --- REFAKTORIRANO ZA SONARQUBE ---
+        // Izvlačimo ID-ove u varijable da lambda ima samo JEDAN poziv
+        Long assignmentId = res.getId();
+        Long driverId = savedDriver.getId();
+
         assertThrows(ConflictException.class, () ->
-                assignmentService.completeAssignment(res.getId(), savedDriver.getId())
+                assignmentService.completeAssignment(assignmentId, driverId)
         );
     }
 

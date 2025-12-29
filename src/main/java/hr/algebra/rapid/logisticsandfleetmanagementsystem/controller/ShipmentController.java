@@ -128,7 +128,7 @@ public class ShipmentController {
     @PreAuthorize("hasAuthority('ROLE_DISPATCHER')")
     public ResponseEntity<String> updateStatusDirectly(@PathVariable Long id, @RequestParam ShipmentStatus status) {
         // Ova metoda koju već imaš u servisu je "zakon" jer radi saveAndFlush
-        assignmentService.forceUpdateShipmentStatus(id, status);
+        assignmentService.updateShipmentStatus(id, status);
         return ResponseEntity.ok("Status u bazi je sada: " + status);
     }
 }

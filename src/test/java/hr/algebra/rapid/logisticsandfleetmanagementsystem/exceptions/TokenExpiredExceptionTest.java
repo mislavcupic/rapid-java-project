@@ -304,11 +304,7 @@ class TokenExpiredExceptionTest {
     @DisplayName("Višelinijska poruka s detaljima")
     void testMultiLineMessageWithDetails() {
         // Arrange
-        String multiLineMessage = "Token Expiration Error\n" +
-                                  "Type: JWT Access Token\n" +
-                                  "Issued: 2024-12-20 14:00:00\n" +
-                                  "Expired: 2024-12-20 15:00:00\n" +
-                                  "Action: Please login again";
+        String multiLineMessage = new StringBuilder().append("Token Expiration Error\n").append("Type: JWT Access Token\n").append("Issued: 2024-12-20 14:00:00\n").append("Expired: 2024-12-20 15:00:00\n").append("Action: Please login again").toString();
 
         // Act
         TokenExpiredException exception = new TokenExpiredException(multiLineMessage);

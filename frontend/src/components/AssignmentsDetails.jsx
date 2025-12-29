@@ -8,6 +8,7 @@ import { fetchAssignmentById } from '../services/AssignmentApi';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import PropTypes from "prop-types";
 
 // Putanje do ikona moraju biti iste kao u AddShipment
 const customIcon = new L.Icon({
@@ -136,3 +137,7 @@ const AssignmentDetails = () => {
 };
 
 export default AssignmentDetails;
+
+MapUpdater.propTypes = {
+    shipments: PropTypes.array.isRequired
+};

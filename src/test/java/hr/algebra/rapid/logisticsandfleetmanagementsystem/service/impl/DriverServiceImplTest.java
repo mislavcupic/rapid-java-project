@@ -390,8 +390,6 @@ class DriverServiceImplTest {
         // 1. Mora proći prva linija: findById (linija 118 u servisu)
         when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
 
-        // Mockiram findByDriverId da vrati listu koja NIJE prazna
-        // (U DriverServiceImpl.java linija 121 piše: if (!assignments.isEmpty()))
         hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment mockAssignment =
                 new hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment();
 
@@ -408,7 +406,7 @@ class DriverServiceImplTest {
     @DisplayName("Branch: GetID - UserInfo postoji ali Driver profil ne")
     void getDriverIdFromUsername_ProfileMissing_ShouldThrowException() {
         when(userRepository.findByUsername("driver1")).thenReturn(testUser);
-        // Simuliramo granu: if(driver.isEmpty())
+
         when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> driverService.getDriverIdFromUsername("driver1"))

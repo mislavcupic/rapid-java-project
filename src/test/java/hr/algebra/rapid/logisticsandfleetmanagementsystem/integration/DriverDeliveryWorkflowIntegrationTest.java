@@ -302,19 +302,5 @@ class DriverDeliveryWorkflowIntegrationTest {
     // HELPER METHODS
     // ==========================================
 
-    private ShipmentRequest createShipmentRequest(String trackingNumber) {
-        ShipmentRequest request = new ShipmentRequest();
-        request.setTrackingNumber(trackingNumber);
-        request.setDescription("Additional test shipment");
-        request.setWeightKg(BigDecimal.valueOf(50.0));
-        request.setVolumeM3(BigDecimal.valueOf(2.0));
-        request.setOriginAddress("Zagreb, Croatia");
-        request.setOriginLatitude(45.8150);
-        request.setOriginLongitude(15.9819);
-        request.setDestinationAddress("Rijeka, Croatia");
-        request.setDestinationLatitude(45.3271);
-        request.setDestinationLongitude(14.4422);
-        request.setExpectedDeliveryDate(LocalDateTime.now().plusDays(1));
-        return request;
-    }
+
 }

@@ -50,7 +50,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         // 1. Provjera duplikata
         if (shipmentRepository.existsByTrackingNumber(request.getTrackingNumber())) {
-            throw new DuplicateResourceException(SHIPMENT, "trackingNumber", request.getTrackingNumber());
+            throw new DuplicateResourceException(SHIPMENT);
         }
 
         // 2. Inicijalizacija entiteta

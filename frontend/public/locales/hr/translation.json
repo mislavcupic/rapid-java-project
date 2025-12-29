@@ -26,18 +26,28 @@
     "view_details": "Prikaži Detalje",
     "view": "Pregled",
     "close": "Zatvori",
+    "back": "Povratak",
     "dashboard_title": "Nadzorna Ploča za Upravljanje Flotom",
     "status_ready": "Statut: SPREMNO",
     "executing_dml": "IZVRŠAVANJE DML...",
     "index": "#",
-    "vehicle": "Vozilo (God.)",
+    "vehicle": "Vozilo",
     "reg_mark": "Reg. Oznaka",
     "current_driver": "Trenutni Vozač",
     "mileage": "Kilometraža",
     "service_interval": "Servisni Interval",
     "next_service": "Sljedeći Servis",
     "active": "Aktivno",
-    "back_to_list": "Povratak na listu"
+    "back_to_list": "Povratak na listu",
+    "open_details": "Otvori Detalje",
+    "more": "više",
+    "resource_not_found": "Resurs nije pronađen"
+  },
+
+  "driver": {
+    "my_schedule": "Moj Raspored",
+    "today_overview": "Pregled tvojih Assignment-a za danas",
+    "no_assignments": "Nemaš aktivnih Assignment-a danas. Uživaj u slobodnom danu! 🎉"
   },
 
   "analytics": {
@@ -127,7 +137,34 @@
     "route_status": "Status Rute",
     "no_coordinates": "Nema koordinata za prikaz karte.",
     "back_to_list": "Natrag na Popis Pošiljki",
-    "details_button": "Detalji"
+    "details_button": "Detalji",
+    "shipment": "Pošiljka",
+    "shipments": "Pošiljke",
+    "no_shipments": "Nema pošiljaka",
+    "destinations": "Odredišta",
+    "count": "pošiljaka",
+    "recipient_name_label": "Ime i prezime primatelja *",
+    "recipient_placeholder": "Tko je preuzeo paket?",
+    "recipient_error": "Unos imena je obavezan za završetak isporuke.",
+    "confirm_delivery": "Potvrda Isporuke",
+    "confirm_btn": "POTVRDI DOSTAVU"
+  },
+
+  "assignments": {
+    "route": "Ruta",
+    "assignment_details": "Detalji naloga",
+    "driver": "Vozač",
+    "vehicle": "Vozilo",
+    "route_plan": "Plan rute",
+    "start_time": "Početak",
+    "end_time": "Završetak"
+  },
+
+  "status": {
+    "scheduled": "Zakazano",
+    "in_progress": "U tijeku",
+    "completed": "Završeno",
+    "pending": "Na čekanju"
   },
 
   "drivers": {
@@ -171,7 +208,8 @@
     "delete_failed": "Brisanje nije uspjelo.",
     "loading_drivers": "Učitavanje vozača...",
     "shipment_deleted": "Pošiljka s Brojem za Praćenje: {{trackingNumber}} je obrisana.",
-    "shipment_delete_error": "Greška pri brisanju: {{error}}. Pošiljka se ne smije brisati ako je dodijeljena (SCHEDULED) ili u tranzitu!"
+    "shipment_delete_error": "Greška pri brisanju: {{error}}. Pošiljka se ne smije brisati ako je dodijeljena (SCHEDULED) ili u tranzitu!",
+    "resource_not_found": "Traženi resurs nije pronađen."
   },
 
   "error": {
@@ -186,12 +224,14 @@
     "add_vehicle": "Dodaj novo vozilo",
     "service_status": "Servisni status",
     "error_message": "Greška pri dohvaćanju vozača",
+    "error_creating": "Greška pri kreiranju vozila",
     "load_capacity": "Nosivost",
     "fuel_consumption": "Potrošnja goriva",
     "current_mileage": "Trenutna kilometraža",
     "next_service": "Sljedeći servis",
     "unassigned": "Nedodijeljeno"
   },
+
   "validation": {
     "username_required": "Korisničko ime je obavezno",
     "username_min_length": "Korisničko ime mora imati najmanje 3 znaka",

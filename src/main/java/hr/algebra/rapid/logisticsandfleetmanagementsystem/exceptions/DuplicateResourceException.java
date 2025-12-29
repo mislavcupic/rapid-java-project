@@ -1,6 +1,5 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions;
 
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -9,7 +8,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ResponseStatus(HttpStatus.CONFLICT)
 public class DuplicateResourceException extends RuntimeException {
 
-    public DuplicateResourceException(String message, String trackingNumber, @NotBlank String number) {
+    public DuplicateResourceException(String message) {
         super(message);
     }
 

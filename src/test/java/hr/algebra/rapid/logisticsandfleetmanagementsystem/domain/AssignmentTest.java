@@ -71,7 +71,7 @@ class AssignmentTest {
         assignment.setShipments(Collections.singletonList(shipment));
 
         assertThat(assignment.getShipments()).isEqualTo(shipment);
-        assertThat(assignment.getShipments()).isEqualTo(3L);
+        assertThat(assignment.getShipments().get(0).getId()).isEqualTo(3L);
     }
 
     @Test

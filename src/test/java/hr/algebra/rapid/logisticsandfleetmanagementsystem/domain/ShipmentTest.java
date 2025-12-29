@@ -143,7 +143,7 @@ class ShipmentTest {
         assertAll(
                 () -> assertThat(toStringResult).contains("trackingNumber=SHIP-LOMBOK"),
                 () -> assertThat(shipment.hashCode()).isNotZero(),
-                () -> assertThat(shipment).isNotEqualTo(null),
+                () -> assertThat(shipment).isNotNull(),
                 () -> assertThat(shipment).isNotEqualTo(new Object())
         );
     }

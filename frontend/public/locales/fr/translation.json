@@ -13,6 +13,7 @@
     "execute_bulk_update": "Exécuter la mise à jour en masse",
     "status_ready": "Statut: PRÊT",
     "loading": "Chargement...",
+    "loading_data": "Chargement des données...",
     "executing_dml": "EXÉCUTION DML...",
     "add_new": "Ajouter Nouveau",
     "edit": "Modifier",
@@ -25,8 +26,22 @@
     "actions": "Actions",
     "view": "Voir",
     "close": "Fermer",
-    "back_to_list": "Retour à la liste"
+    "back": "Retour",
+    "back_to_list": "Retour à la liste",
+    "current_driver": "Conducteur actuel",
+    "reg_mark": "Immatriculation",
+    "vehicle": "Véhicule",
+    "capacity": "Capacité",
+    "add_vehicle": "Ajouter un véhicule",
+    "open_details": "Voir Détails",
+    "more": "plus",
+    "resource_not_found": "Ressource non trouvée"
+  },
 
+  "driver": {
+    "my_schedule": "Mon Emploi du Temps",
+    "today_overview": "Aperçu de vos affectations pour aujourd'hui",
+    "no_assignments": "Aucune affectation active aujourd'hui. Profitez de votre journée! 🎉"
   },
 
   "analytics": {
@@ -76,8 +91,8 @@
     "characters": "caractères",
     "must_be_future": "Facultatif - doit être une date future",
     "phone_format": "Format: +385912345678 (9-15 chiffres)",
-    "already_have_account": "Vous avez déjà un compte?",
-    "register_button": "Register"
+    "already_have_account": "Vous avez déjà un compte ?",
+    "register_button": "S'inscrire"
   },
 
   "shipments": {
@@ -118,22 +133,53 @@
     "route_status": "Statut de l'Itinéraire",
     "no_coordinates": "Aucune coordonnée pour afficher la carte.",
     "back_to_list": "Retour à la Liste des Expéditions",
-    "details_button": "Détails"
+    "details_button": "Détails",
+    "license_plate": "Plaque d'immatriculation",
+    "model_year": "Année du modèle",
+    "make": "Marque",
+    "model": "Modèle",
+    "shipment": "Expédition",
+    "shipments": "Expéditions",
+    "no_shipments": "Aucune expédition",
+    "destinations": "Destinations",
+    "count": "expéditions",
+    "recipient_name_label": "Nom du Destinataire *",
+    "recipient_placeholder": "Qui a reçu le colis ?",
+    "recipient_error": "Le nom du destinataire est requis pour confirmer la livraison.",
+    "confirm_delivery": "Confirmation de Livraison",
+    "confirm_btn": "CONFIRMER LA LIVRAISON"
+  },
+
+  "assignments": {
+    "route": "Itinéraire",
+    "assignment_details": "Détails de l'Affectation",
+    "driver": "Conducteur",
+    "vehicle": "Véhicule",
+    "route_plan": "Plan de Route",
+    "start_time": "Heure de Début",
+    "end_time": "Heure de Fin"
+  },
+
+  "status": {
+    "scheduled": "Programmé",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "pending": "En attente"
   },
 
   "drivers": {
     "username": "Nom d'utilisateur",
     "password": "Mot de passe",
     "first_name": "Prénom",
-    "last_name": "Nom",
+    "last_name": "Nom de famille",
     "email": "E-mail",
     "phone": "Téléphone",
     "licence": "Numéro de Permis",
     "address": "Adresse",
     "driver_list": "Liste des Conducteurs",
     "driver_details": "Détails du Conducteur",
-    "add_driver": "Ajouter un nouveau pilote",
-    "scheduled": "Programme",
+    "add_driver": "Ajouter un conducteur",
+    "scheduled": "Programmé",
     "current_vehicle": "Véhicule actuel"
   },
 
@@ -146,7 +192,7 @@
     "not_found_text": "Nous sommes désolés, la page que vous recherchez n'existe pas.",
     "back_to_home": "Retour à l'accueil",
     "no_data": "Aucune donnée à afficher.",
-    "delete_shipment_condition": "La suppression n'est possible que si l'expédition est au statut **EN ATTENTE** (PENDING).",
+    "delete_shipment_condition": "La suppression n'est possible que si l'expédition est au statut **EN ATTENTE**.",
     "confirm_delete_title": "Confirmation de Suppression",
     "confirm_delete_shipment_text": "Êtes-vous sûr de vouloir supprimer définitivement l'expédition avec le Numéro de Suivi : {{trackingNumber}}?",
     "user_not_logged_in": "L'utilisateur n'est pas connecté.",
@@ -162,7 +208,8 @@
     "delete_failed": "La suppression a échoué.",
     "loading_drivers": "Chargement des conducteurs...",
     "shipment_deleted": "L'expédition avec le Numéro de Suivi : {{trackingNumber}} a été supprimée.",
-    "shipment_delete_error": "Erreur de suppression : {{error}}. L'expédition ne doit pas être supprimée si elle est assignée (SCHEDULED) ou en transit!"
+    "shipment_delete_error": "Erreur de suppression : {{error}}. L'expédition ne doit pas être supprimée si elle est assignée (SCHEDULED) ou en transit!",
+    "resource_not_found": "La ressource demandée n'a pas été trouvée."
   },
 
   "error": {
@@ -175,14 +222,16 @@
   "vehicles": {
     "vehicle_list": "Liste des véhicules",
     "add_vehicle": "Ajouter un nouveau véhicule",
-    "service_status": "Récupération des véhicules status",
-    "error_message": "Erreur lors de la récupération du pilote",
+    "service_status": "Statut d'entretien",
+    "error_message": "Erreur lors de la récupération du conducteur",
+    "error_creating": "Erreur lors de la création du véhicule",
     "load_capacity": "Capacité de charge",
     "fuel_consumption": "Consommation de carburant",
     "current_mileage": "Kilométrage actuel",
     "next_service": "Prochain entretien",
     "unassigned": "Non attribué"
   },
+
   "validation": {
     "username_required": "Le nom d'utilisateur est requis",
     "username_min_length": "Le nom d'utilisateur doit contenir au moins 3 caractères",
@@ -214,7 +263,7 @@
     "fuel_consumption_positive": "La consommation doit être positive",
     "driver_id_required": "Le conducteur doit être sélectionné",
     "vehicle_id_required": "Le véhicule doit être sélectionné",
-    "shipment_id_required": "L'envoi doit être sélectionné",
+    "shipment_id_required": "L'expédition doit être sélectionnée",
     "start_time_required": "L'heure de début est requise",
     "tracking_number_required": "Le numéro de suivi est requis",
     "origin_address_required": "L'adresse d'origine est requise",

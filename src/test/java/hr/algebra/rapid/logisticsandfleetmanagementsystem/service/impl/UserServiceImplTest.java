@@ -156,8 +156,18 @@ class UserServiceImplTest {
     void updateUserRoles_EmptyRoles_ThrowsIllegalArgument() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-        assertThrows(IllegalArgumentException.class, () -> userService.updateUserRoles(1L, List.of()));
-        assertThrows(IllegalArgumentException.class, () -> userService.updateUserRoles(1L, null));
+        // REFAKTORIRANO: Svaki test ima pripremljenu listu izvan poziva
+        List<String> emptyList = List.of();
+        List<String> nullList = null;
+        Long userId = 1L;
+
+        assertThrows(IllegalArgumentException.class, () ->
+                userService.updateUserRoles(userId, emptyList)
+        );
+
+        assertThrows(IllegalArgumentException.class, () ->
+                userService.updateUserRoles(userId, nullList)
+        );
     }
 
     @Test
@@ -166,7 +176,13 @@ class UserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRoleRepository.findByName("FAKE_ROLE")).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> userService.updateUserRoles(1L, List.of("FAKE_ROLE")));
+        // REFAKTORIRANO: Parametri su pripremljeni izvan lambde
+        List<String> roles = List.of("FAKE_ROLE");
+        Long userId = 1L;
+
+        assertThrows(ResourceNotFoundException.class, () ->
+                userService.updateUserRoles(userId, roles)
+        );
     }
 
     // ==========================================

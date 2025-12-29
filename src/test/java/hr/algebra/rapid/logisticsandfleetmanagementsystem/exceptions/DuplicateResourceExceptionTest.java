@@ -13,17 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("DuplicateResourceException Tests")
 class DuplicateResourceExceptionTest {
 
-    // Pomoćne konstante da izbjegnemo "request" grešku
-    private static final String TEST_FIELD = "Tracking Number";
-    private static final String TEST_VALUE = "TRACK123456";
-
     @Test
     @DisplayName("Konstruktor s porukom - provjera poruke")
     void testConstructorWithMessage_MessageIsCorrect() {
         String expectedMessage = "Duplikat: resurs već postoji u bazi";
 
         // Ispravljeno: Proslijeđeni fiksni stringovi umjesto nepostojećeg 'request' objekta
-        DuplicateResourceException exception = new DuplicateResourceException(expectedMessage, TEST_FIELD, TEST_VALUE);
+        DuplicateResourceException exception = new DuplicateResourceException(expectedMessage);
 
         assertEquals(expectedMessage, exception.getMessage());
     }
@@ -31,7 +27,7 @@ class DuplicateResourceExceptionTest {
     @Test
     @DisplayName("Iznimka je RuntimeException")
     void testExceptionIsRuntimeException() {
-        DuplicateResourceException exception = new DuplicateResourceException("Test message", TEST_FIELD, TEST_VALUE);
+        DuplicateResourceException exception = new DuplicateResourceException("Test message");
         assertInstanceOf(RuntimeException.class, exception);
     }
 
@@ -57,7 +53,7 @@ class DuplicateResourceExceptionTest {
         DuplicateResourceException exception = assertThrows(
                 DuplicateResourceException.class,
                 () -> {
-                    throw new DuplicateResourceException(expectedMessage, TEST_FIELD, TEST_VALUE);
+                    throw new DuplicateResourceException(expectedMessage);
                 }
         );
 
@@ -67,7 +63,7 @@ class DuplicateResourceExceptionTest {
     @Test
     @DisplayName("Null poruka - provjera ponašanja")
     void testNullMessage() {
-        DuplicateResourceException exception = new DuplicateResourceException(null, TEST_FIELD, TEST_VALUE);
+        DuplicateResourceException exception = new DuplicateResourceException(null);
         assertNull(exception.getMessage());
     }
 
@@ -75,7 +71,7 @@ class DuplicateResourceExceptionTest {
     @DisplayName("Prazna poruka")
     void testEmptyMessage() {
         String emptyMessage = "";
-        DuplicateResourceException exception = new DuplicateResourceException(emptyMessage, TEST_FIELD, TEST_VALUE);
+        DuplicateResourceException exception = new DuplicateResourceException(emptyMessage);
         assertEquals(emptyMessage, exception.getMessage());
     }
 
@@ -83,9 +79,9 @@ class DuplicateResourceExceptionTest {
     @DisplayName("Scenariji duplikata za različite resurse")
     void testDifferentDuplicateResourceScenarios() {
         DuplicateResourceException duplicateEmail = new DuplicateResourceException(
-                "Korisnik s email adresom test@example.com već postoji", TEST_FIELD, TEST_VALUE);
+                "Korisnik s email adresom test@example.com već postoji");
         DuplicateResourceException duplicatePlate = new DuplicateResourceException(
-                "Vozilo s registracijom ZG-1234-AB već postoji u sustavu", TEST_FIELD, TEST_VALUE);
+                "Vozilo s registracijom ZG-1234-AB već postoji u sustavu");
 
         assertAll("Različiti scenariji duplikata resursa",
                 () -> assertTrue(duplicateEmail.getMessage().contains("email")),

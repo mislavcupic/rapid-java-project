@@ -260,7 +260,7 @@ class AssignmentServiceImplTest {
     void forceUpdateShipmentStatus_Success() {
         when(shipmentRepository.findById(1L)).thenReturn(Optional.of(testShipment));
 
-        assignmentService.forceUpdateShipmentStatus(1L, ShipmentStatus.IN_TRANSIT);
+        assignmentService.updateShipmentStatus(1L, ShipmentStatus.IN_TRANSIT);
 
         assertEquals(ShipmentStatus.IN_TRANSIT, testShipment.getStatus());
         verify(shipmentRepository).save(testShipment);

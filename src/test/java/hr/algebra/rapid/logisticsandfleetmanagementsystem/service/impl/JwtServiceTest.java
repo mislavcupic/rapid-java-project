@@ -33,13 +33,13 @@ class JwtServiceTest {
     private JwtService jwtService;
 
     // Base64 kodirani ključ (mora biti dovoljno dug za HMAC-SHA)
-    private final String SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
-    private final String USERNAME = "testUser";
+    private final String secret = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    private final String username = "testUser";
 
     @BeforeEach
     void setUp() {
         // Ručno postavljamo @Value polja jer Unit test ne čita application.properties
-        ReflectionTestUtils.setField(jwtService, "secret", SECRET);
+        ReflectionTestUtils.setField(jwtService, "secret", secret);
         ReflectionTestUtils.setField(jwtService, "expirationTimeInSeconds", 3600L);
     }
 
@@ -47,17 +47,17 @@ class JwtServiceTest {
     @DisplayName("generateToken - uspjeh (dohvaća role iz baze)")
     void generateToken_Success() {
         UserInfo userInfo = new UserInfo();
-        userInfo.setUsername(USERNAME);
+        userInfo.setUsername(username);
         UserRole role = new UserRole();
         role.setName("ROLE_USER");
         userInfo.setRoles(List.of(role));
 
-        when(userRepository.findByUsername(USERNAME)).thenReturn(userInfo);
+        when(userRepository.findByUsername(username)).thenReturn(userInfo);
 
-        String token = jwtService.generateToken(USERNAME);
+        String token = jwtService.generateToken(username);
 
         assertThat(token).isNotBlank();
-        assertThat(jwtService.extractUsername(token)).isEqualTo(USERNAME);
+        assertThat(jwtService.extractUsername(token)).isEqualTo(username);
     }
 
     @Test
@@ -74,12 +74,12 @@ class JwtServiceTest {
     void validateToken_Valid() {
         // Priprema tokena
         UserInfo userInfo = new UserInfo();
-        userInfo.setUsername(USERNAME);
+        userInfo.setUsername(username);
         userInfo.setRoles(Collections.emptyList());
-        when(userRepository.findByUsername(USERNAME)).thenReturn(userInfo);
-        String token = jwtService.generateToken(USERNAME);
+        when(userRepository.findByUsername(username)).thenReturn(userInfo);
+        String token = jwtService.generateToken(username);
 
-        UserDetails userDetails = new User(USERNAME, "password", Collections.emptyList());
+        UserDetails userDetails = new User(username, "password", Collections.emptyList());
 
         boolean isValid = jwtService.validateToken(token, userDetails);
         assertThat(isValid).isTrue();
@@ -89,10 +89,10 @@ class JwtServiceTest {
     @DisplayName("validateToken - vraća false kad se username ne podudara")
     void validateToken_InvalidUsername() {
         UserInfo userInfo = new UserInfo();
-        userInfo.setUsername(USERNAME);
+        userInfo.setUsername(username);
         userInfo.setRoles(Collections.emptyList());
-        when(userRepository.findByUsername(USERNAME)).thenReturn(userInfo);
-        String token = jwtService.generateToken(USERNAME);
+        when(userRepository.findByUsername(username)).thenReturn(userInfo);
+        String token = jwtService.generateToken(username);
 
         UserDetails differentUser = new User("otherUser", "password", Collections.emptyList());
 
