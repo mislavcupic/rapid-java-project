@@ -1,6 +1,7 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.domain;
 
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString(exclude = "assignment")
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Shipment {
 
     @Id

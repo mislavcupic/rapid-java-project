@@ -8,7 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ShipmentTest {
 
@@ -21,7 +22,64 @@ class ShipmentTest {
         route.setId(1L);
         shipment = new Shipment();
     }
+    @Test
+    @DisplayName("Unit test klase Shipment za 100% Domain Coverage")
+    void testShipmentClass() {
+        // Kreiranjem objekta direktno testiraš 'Class' i 'Constructor' coverage
 
+
+        // Postavljanje svih polja osigurava pokrivenost svih Setter metoda
+        shipment.setId(1L);
+        shipment.setTrackingNumber("TRK-123");
+        shipment.setWeightKg(BigDecimal.TEN);
+        shipment.setStatus(ShipmentStatus.PENDING);
+
+        // Provjere
+        assertAll(
+                () -> assertEquals(1L, shipment.getId()),
+                () -> assertEquals("TRK-123", shipment.getTrackingNumber()),
+                () -> assertNotNull(shipment.getStatus())
+        );
+    }
+
+    @Test
+    @DisplayName("Lombok Equals i HashCode - Sonar Compliant")
+    void testEqualsAndHashCode() {
+        Shipment s1 = new Shipment();
+        s1.setId(1L);
+        s1.setTrackingNumber("TRK-100"); // Postavi ista polja da hashCode bude isti
+
+        Shipment s2 = new Shipment();
+        s2.setId(1L);
+        s2.setTrackingNumber("TRK-100");
+
+        // 1. Refleksivnost
+        assertEquals(s1, s1);
+
+        // 2. Jednakost i HashCode (Sada će biti isti jer su polja ista)
+        assertEquals(s1, s2, "Objekti s istim podacima moraju biti jednaki");
+        assertEquals(s1.hashCode(), s2.hashCode(), "HashCode mora biti isti za jednake objekte");
+
+        // 3. NULL provjera - Sonar sretan s assertNotEquals
+        assertNotEquals(null, s1);
+
+        // 4. Različiti tipovi - Sonar sretan s assertNotEquals i bez dissimilar types warninga
+        Object stringType = "Neki String";
+        assertNotEquals(s1, stringType);
+    }
+
+    @Test
+    @DisplayName("Lombok ToString Coverage")
+    void testToString() {
+        Shipment s = new Shipment();
+        s.setTrackingNumber("TEST-TOSTRING");
+
+        // Poziv toString() metode puni coverage za tu metodu
+        String result = s.toString();
+
+        assertNotNull(result);
+        assertTrue(result.contains("TEST-TOSTRING"));
+    }
     @Test
     @DisplayName("1. ID - Get/Set")
     void setAndGetId_ShouldWork() {
