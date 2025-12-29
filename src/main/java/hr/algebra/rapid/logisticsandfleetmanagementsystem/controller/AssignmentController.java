@@ -31,6 +31,13 @@ public class AssignmentController {
         return ResponseEntity.status(HttpStatus.OK).body(assignments);
     }
 
+    @GetMapping("/my-schedule")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DRIVER')")
+    public ResponseEntity<List<AssignmentResponseDTO>> getDriverSchedule(@AuthenticationPrincipal UserDetails userDetails) {
+        Long currentDriverId = driverService.getDriverIdFromUsername(userDetails.getUsername());
+        List<AssignmentResponseDTO> schedule = assignmentService.findAssignmentsByDriver(currentDriverId);
+        return ResponseEntity.status(HttpStatus.OK).body(schedule);
+    }
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER') or @driverService.isAssignmentOwnedByDriver(#id, authentication.name)")
     public ResponseEntity<AssignmentResponseDTO> getAssignmentById(@PathVariable Long id) {
@@ -65,16 +72,10 @@ public class AssignmentController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @GetMapping("/my-schedule")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DRIVER')")
-    public ResponseEntity<List<AssignmentResponseDTO>> getDriverSchedule(@AuthenticationPrincipal UserDetails userDetails) {
-        Long currentDriverId = driverService.getDriverIdFromUsername(userDetails.getUsername());
-        List<AssignmentResponseDTO> schedule = assignmentService.findAssignmentsByDriver(currentDriverId);
-        return ResponseEntity.status(HttpStatus.OK).body(schedule);
-    }
+
 
     @PutMapping("/{id}/start")
-    @PreAuthorize("hasAuthority('ROLE_DRIVER')") // Pojednostavljeno za test, makni dodatni @driverService provjeru ako i dalje zeza
+    @PreAuthorize("hasAuthority('ROLE_DRIVER')")
     public ResponseEntity<AssignmentResponseDTO> startAssignment(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         // Izvlačenje driverId iz username-a
         Long driverId = driverService.getDriverIdFromUsername(userDetails.getUsername());

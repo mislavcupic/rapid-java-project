@@ -38,7 +38,6 @@ const AssignmentForm = ({ initialData, onSubmit, saving }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // KONVERZIJA U BROJEVE ZA BACKEND
         const finalData = {
             driverId: Number.parseInt(formData.driverId, 10),
             vehicleId: Number.parseInt(formData.vehicleId, 10),

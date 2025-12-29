@@ -49,6 +49,12 @@ const AssignmentList = () => {
                 </Button>
             </Card.Header>
             <Card.Body>
+                {error && (
+                    <Alert variant="danger" dismissible onClose={() => setError(null)}>
+                        <Alert.Heading>{t("messages.error_title") || "Error"}</Alert.Heading>
+                        {error}
+                    </Alert>
+                )}
                 {loading ? <Spinner animation="border" /> : (
                     <Table responsive hover className="align-middle">
                         <thead className="table-light">

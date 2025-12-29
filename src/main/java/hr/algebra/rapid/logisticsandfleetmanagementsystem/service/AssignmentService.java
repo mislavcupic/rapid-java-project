@@ -44,5 +44,5 @@ public interface AssignmentService {
     Optional<AssignmentResponseDTO> updateStatus(Long assignmentId, String newStatus);
 
     @Transactional
-    void forceUpdateShipmentStatus(Long shipmentId, ShipmentStatus newStatus);
+    void updateShipmentStatus(Long shipmentId, ShipmentStatus newStatus);
 }

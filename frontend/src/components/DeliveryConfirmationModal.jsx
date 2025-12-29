@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
+import PropTypes from "prop-types";
 
 const DeliveryConfirmationModal = ({ show, onHide, onSubmit, shipment }) => {
     const [recipientName, setRecipientName] = useState('');
@@ -53,3 +54,12 @@ const DeliveryConfirmationModal = ({ show, onHide, onSubmit, shipment }) => {
 };
 
 export default DeliveryConfirmationModal;
+
+DeliveryConfirmationModal.propTypes = {
+    show: PropTypes.bool.isRequired,
+    onHide: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    shipment: PropTypes.shape({
+        trackingNumber: PropTypes.string
+    })
+};

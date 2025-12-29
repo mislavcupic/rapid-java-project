@@ -176,7 +176,7 @@ class DriverServiceImplTest {
             assertThat(result.getUsername()).isEqualTo("driver1");
             assertThat(result.getFullName()).isEqualTo("John Doe");
             assertThat(result.getLicenseNumber()).isEqualTo("DL123456");
-            
+
             verify(userRepository).findByUsername("driver1");
             verify(passwordEncoder).encode("password123");
             verify(userRepository).save(any(UserInfo.class));
@@ -334,5 +334,85 @@ class DriverServiceImplTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Driver profile not found");
         }
+    }
+    // --- DODATAK ZA CREATE DRIVER ---
+    @Test
+    @DisplayName("Branch: Create - Missing Email (IllegalArgumentException)")
+    void createDriver_WhenEmailIsNull_ShouldThrowException() {
+        // Postavljamo email na null da pogodimo prvu 'if' granu u servisu
+        driverRequest.setEmail(null);
+
+        assertThatThrownBy(() -> driverService.createDriver(driverRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Username, password, first name, last name, and email are required");
+    }
+
+    @Test
+    @DisplayName("Branch: Create - License Number Conflict (Složena grana s brisanjem)")
+    void createDriver_WhenLicenseExists_ShouldDeleteUserAndThrowConflict() {
+        // 1. Prolazi provjeru usernamea
+        when(userRepository.findByUsername(anyString())).thenReturn(null);
+        // 2. Prolazi provjeru role
+        when(userRoleRepository.findByName("ROLE_DRIVER")).thenReturn(Optional.of(driverRole));
+        // 3. Sprema UserInfo
+        when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
+
+        // 4. OVDJE POGAĐAMO GRANU: Licenca već postoji u bazi
+        when(driverRepository.findByLicenseNumber(driverRequest.getLicenseNumber()))
+                .thenReturn(Optional.of(testDriver));
+
+        assertThatThrownBy(() -> driverService.createDriver(driverRequest))
+                .isInstanceOf(ConflictException.class);
+
+        // Provjera 'cleanup' grane: mora obrisati usera jer driver nije uspio
+        verify(userRepository).delete(any(UserInfo.class));
+    }
+    @Test
+    @DisplayName("Branch: Update - Licenca već postoji kod drugog vozača")
+    void updateDriver_WhenLicenseConflict_ShouldThrowException() {
+        // 1. Pronađi vozača
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+
+        // 2. Postavi novu licencu koja je različita od trenutne ("DL123456")
+        driverRequest.setLicenseNumber("NEW-LICENSE-999");
+
+        // 3. Simuliraj da ta nova licenca već postoji u bazi
+        when(driverRepository.findByLicenseNumber("NEW-LICENSE-999")).thenReturn(Optional.of(new Driver()));
+
+        assertThatThrownBy(() -> driverService.updateDriver(1L, driverRequest))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already exists");
+    }
+
+    @Test
+    @DisplayName("Branch: Delete - Vozač ima aktivne naloge (Conflict)")
+    void deleteDriver_WithActiveAssignments_ShouldThrowException() {
+        // 1. Mora proći prva linija: findById (linija 118 u servisu)
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+
+        // Mockiram findByDriverId da vrati listu koja NIJE prazna
+        // (U DriverServiceImpl.java linija 121 piše: if (!assignments.isEmpty()))
+        hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment mockAssignment =
+                new hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment();
+
+        // Moraš vratiti listu s barem jednim elementom
+        when(assignmentRepository.findByDriverId(1L)).thenReturn(List.of(mockAssignment));
+
+        // Act & Assert
+        assertThatThrownBy(() -> driverService.deleteDriver(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Cannot delete driver with active assignments");
+    }
+    // --- DODATAK ZA GET ID FROM USERNAME ---
+    @Test
+    @DisplayName("Branch: GetID - UserInfo postoji ali Driver profil ne")
+    void getDriverIdFromUsername_ProfileMissing_ShouldThrowException() {
+        when(userRepository.findByUsername("driver1")).thenReturn(testUser);
+        // Simuliramo granu: if(driver.isEmpty())
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> driverService.getDriverIdFromUsername("driver1"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Driver profile not found");
     }
 }

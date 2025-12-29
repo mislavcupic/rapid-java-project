@@ -14,5 +14,5 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     // 2. Pronalazi Driver profil po broju dozvole
     Optional<Driver> findByLicenseNumber(String licenseNumber);
 
-    // Standardne JpaRepository metode (findAll, findById, save, delete...) su implicitno uključene.
+
 }

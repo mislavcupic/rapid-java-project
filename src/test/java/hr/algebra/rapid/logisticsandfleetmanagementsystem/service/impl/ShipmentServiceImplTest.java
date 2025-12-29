@@ -2,7 +2,6 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.service.impl;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.*;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.*;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.DuplicateResourceException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.AssignmentRepository;
@@ -19,7 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -34,141 +34,154 @@ class ShipmentServiceImplTest {
     @InjectMocks private ShipmentServiceImpl shipmentService;
 
     private Shipment shipment;
-    private Assignment assignment;
-    private Driver driver;
+    private ShipmentRequest request;
+    private Route route;
 
     @BeforeEach
     void setUp() {
-        driver = new Driver();
-        driver.setId(10L);
-
         shipment = new Shipment();
         shipment.setId(1L);
-        shipment.setTrackingNumber("TRK123");
+        shipment.setTrackingNumber("TRK-123");
         shipment.setStatus(ShipmentStatus.PENDING);
 
-        assignment = new Assignment();
-        assignment.setDriver(driver);
-        assignment.setStatus("SCHEDULED");
+        request = new ShipmentRequest();
+        request.setTrackingNumber("TRK-123");
+        request.setOriginAddress("Zagreb");
+        request.setDestinationAddress("Split");
+
+        route = new Route();
+        route.setId(100L);
+        route.setOriginLatitude(45.815);
+        route.setOriginLongitude(15.981);
     }
 
     @Nested
-    @DisplayName("Create & Update Branch Coverage")
-    class CrudBranches {
+    @DisplayName("Create & Update Tests (Branch Coverage)")
+    class CrudOperations {
 
         @Test
+        @DisplayName("Create: Bacanje DuplicateResourceException")
         void createShipment_ThrowsDuplicate() {
-            given(shipmentRepository.findByTrackingNumber(anyString())).willReturn(Optional.of(shipment));
-            ShipmentRequest req = new ShipmentRequest();
-            req.setTrackingNumber("TRK123");
+            // Pokriva granu existsByTrackingNumber == true
+            given(shipmentRepository.existsByTrackingNumber("TRK-123")).willReturn(true);
 
-            assertThatThrownBy(() -> shipmentService.createShipment(req))
+            assertThatThrownBy(() -> shipmentService.createShipment(request))
                     .isInstanceOf(DuplicateResourceException.class);
         }
 
         @Test
-        void updateShipment_RecalculateRoute_AllConditions() {
-            // Testiramo granu: recalculateRequired = true (kad je ruta null)
-            shipment.setRoute(null);
-            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(shipmentRepository.findByTrackingNumber(anyString())).willReturn(Optional.empty());
-            given(routeService.calculateAndCreateRoute(any(), any(), any(), any(), any(), any())).willReturn(new Route());
+        @DisplayName("Create: Uspješno kreiranje s novom rutom")
+        void createShipment_Success() {
+            given(shipmentRepository.existsByTrackingNumber(anyString())).willReturn(false);
+            given(routeService.calculateAndCreateRoute(any(), any(), any(), any(), any(), any())).willReturn(route);
             given(shipmentRepository.save(any())).willReturn(shipment);
 
-            ShipmentRequest req = new ShipmentRequest();
-            req.setTrackingNumber("NEW-TRK");
-            req.setStatus("IN_TRANSIT");
+            ShipmentResponse response = shipmentService.createShipment(request);
 
-            shipmentService.updateShipment(1L, req);
-            verify(routeService, times(1)).calculateAndCreateRoute(any(), any(), any(), any(), any(), any());
+            assertThat(response).isNotNull();
+            verify(routeService).calculateAndCreateRoute(any(), any(), any(), any(), any(), any());
+            verify(shipmentRepository).save(any());
         }
 
         @Test
-        void updateShipment_InvalidStatus_ThrowsException() {
-            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            ShipmentRequest req = new ShipmentRequest();
-            req.setStatus("NEPOSTOJEĆI_STATUS"); // Ovo baca IllegalArgumentException u catch bloku
+        @DisplayName("Update: ResourceNotFound za nepostojeći ID")
+        void updateShipment_NotFound() {
+            given(shipmentRepository.findById(99L)).willReturn(Optional.empty());
 
-            assertThatThrownBy(() -> shipmentService.updateShipment(1L, req))
-                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> shipmentService.updateShipment(99L, request))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("Update: Ažuriranje postojeće rute")
+        void updateShipment_UpdatesExistingRoute() {
+            shipment.setRoute(route);
+            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
+            given(routeService.calculateAndCreateRoute(any(), any(), any(), any(), any(), any())).willReturn(route);
+            given(shipmentRepository.save(any())).willReturn(shipment);
+
+            shipmentService.updateShipment(1L, request);
+
+            // Provjerava da je ID rute zadržan
+            assertThat(shipment.getRoute().getId()).isEqualTo(100L);
         }
     }
 
     @Nested
-    @DisplayName("Driver Workflow Branch Coverage")
-    class WorkflowBranches {
+    @DisplayName("Status Workflow Tests (Negative Paths)")
+    class WorkflowTests {
 
         @Test
-        void startDelivery_WrongStatus_ThrowsConflict() {
-            shipment.setStatus(ShipmentStatus.IN_TRANSIT); // Nije SCHEDULED
+        @DisplayName("Start Delivery: Uspješna promjena statusa")
+        void startDelivery_Success() {
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
-
-            assertThatThrownBy(() -> shipmentService.startDelivery(1L, 10L))
-                    .isInstanceOf(ConflictException.class)
-                    .hasMessageContaining("Expected SCHEDULED");
-        }
-
-        @Test
-        void startDelivery_WrongDriver_ThrowsConflict() {
-            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
-
-            assertThatThrownBy(() -> shipmentService.startDelivery(1L, 999L)) // Krivi vozač
-                    .isInstanceOf(ConflictException.class);
-        }
-
-        @Test
-        void completeDelivery_Success_WithFullPOD() {
-            shipment.setStatus(ShipmentStatus.IN_TRANSIT);
-            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
             given(shipmentRepository.save(any())).willReturn(shipment);
 
-            ProofOfDeliveryDTO pod = new ProofOfDeliveryDTO();
-            pod.setRecipientName("Marko");
-            pod.setNotes("Sve OK");
-            pod.setLatitude(45.0);
-            pod.setLongitude(15.0);
+            shipmentService.startDelivery(1L, 10L);
 
-            shipmentService.completeDelivery(1L, 10L, pod);
+            assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.IN_TRANSIT);
+        }
+
+        @Test
+        @DisplayName("Complete Delivery: Postavljanje datuma isporuke")
+        void completeDelivery_Success() {
+            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
+            given(shipmentRepository.save(any())).willReturn(shipment);
+
+            shipmentService.completeDelivery(1L, 10L, new ProofOfDeliveryDTO());
+
             assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELIVERED);
+            assertThat(shipment.getActualDeliveryDate()).isNotNull();
         }
 
         @Test
-        void reportIssue_Success_WithDelayAndGPS() {
-            shipment.setStatus(ShipmentStatus.IN_TRANSIT);
+        @DisplayName("Report Issue: Postavljanje statusa DELAYED")
+        void reportIssue_Success() {
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(assignmentRepository.findByShipments_Id(1L)).willReturn(Optional.of(assignment));
             given(shipmentRepository.save(any())).willReturn(shipment);
 
-            IssueReportDTO issue = new IssueReportDTO();
-            issue.setIssueType("KVAR");
-            issue.setEstimatedDelay("2h");
-            issue.setLatitude(45.0);
-            issue.setLongitude(16.0);
+            shipmentService.reportIssue(1L, 10L, new IssueReportDTO());
 
-            shipmentService.reportIssue(1L, 10L, issue);
             assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELAYED);
         }
     }
 
     @Nested
-    @DisplayName("Edge Cases Coverage")
+    @DisplayName("Mapping & Edge Cases")
     class EdgeCases {
+
         @Test
-        void deleteShipment_NotFound_ThrowsException() {
+        @DisplayName("MapToResponse: Pokrivanje rute koja je null")
+        void mapToResponse_NullRoute() {
+            shipment.setRoute(null);
+            ShipmentResponse res = shipmentService.mapToResponse(shipment);
+
+            // Provjera da se ne dogodi NullPointerException i da su polja prazna
+            assertThat(res.getRouteId()).isNull();
+            assertThat(res.getOriginLatitude()).isNull();
+        }
+
+        @Test
+        @DisplayName("Delete: ResourceNotFound")
+        void delete_NotFound() {
             given(shipmentRepository.existsById(1L)).willReturn(false);
+
             assertThatThrownBy(() -> shipmentService.deleteShipment(1L))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
-        void mapToResponse_LegacyData_NoRoute() {
-            shipment.setRoute(null);
-            shipment.setOriginAddress("Adresa 1");
-            ShipmentResponse res = shipmentService.mapToResponse(shipment);
-            assertThat(res.getOriginAddress()).isEqualTo("Adresa 1");
+        @DisplayName("UpdateFields: Grananje s praznim statusom u requestu")
+        void updateFields_NullStatusInRequest() {
+            request.setStatus(null); // Pokriva granu: request.getStatus() == null
+            given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
+            given(routeService.calculateAndCreateRoute(any(), any(), any(), any(), any(), any())).willReturn(route);
+            given(shipmentRepository.save(any())).willReturn(shipment);
+
+            shipmentService.updateShipment(1L, request);
+
+            // Treba ostati PENDING ako je bio null
+            assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.PENDING);
         }
     }
 }

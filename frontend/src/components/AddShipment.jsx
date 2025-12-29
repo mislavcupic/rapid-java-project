@@ -36,7 +36,7 @@ const AddShipment = () => {
     const [error, setError] = useState(null);
 
     const [formData, setFormData] = useState({
-        trackingNumber: 'SHIP-' + Math.random().toString(36).substr(2, 7).toUpperCase(),
+        trackingNumber: 'SHIP-' + Math.random().toString(36).slice(2, 9).toUpperCase(),
         description: '',
         weightKg: 10,
         volumeM3: 0.5,

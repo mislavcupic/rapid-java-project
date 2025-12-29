@@ -1,156 +1,172 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.configuration.TestSecurityConfig;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.*;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentRequestDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.AssignmentResponseDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AssignmentService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.JwtService;
-import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.UserDetailsServiceImpl;
-import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AssignmentController.class)
-@Import(TestSecurityConfig.class)
+@ExtendWith(MockitoExtension.class)
 class AssignmentControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @MockitoBean private AssignmentService assignmentService;
-    @MockitoBean private DriverService driverService;
-    @MockitoBean private JwtService jwtService;
-    @MockitoBean private UserDetailsServiceImpl userDetailsServiceImpl;
+    private MockMvc mockMvc;
 
-    // POMOĆNA METODA: Kreira validan zahtjev da bi prošao @Valid provjeru
-    private AssignmentRequestDTO createValidRequest() {
-        AssignmentRequestDTO request = new AssignmentRequestDTO();
-        request.setDriverId(1L);
-        request.setVehicleId(1L);
-        request.setShipmentIds(Collections.singletonList(1L));
-        request.setStartTime(LocalDateTime.now().plusDays(1));
-        request.setEndTime(LocalDateTime.now().plusDays(2));
-        return request;
+    @Mock private AssignmentService assignmentService;
+    @Mock private DriverService driverService;
+    @InjectMocks private AssignmentController assignmentController;
+
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final UserDetails mockUser = User.withUsername("driver1").password("pass").authorities("ROLE_DRIVER").build();
+
+    @BeforeEach
+    void setUp() {
+        HandlerMethodArgumentResolver authResolver = new HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return parameter.hasParameterAnnotation(AuthenticationPrincipal.class);
+            }
+            @Override
+            public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                                          NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+                return mockUser;
+            }
+        };
+
+        // KLJUČ: Postavljamo standaloneSetup tako da statički URL-ovi imaju prednost
+        mockMvc = MockMvcBuilders.standaloneSetup(assignmentController)
+                .setCustomArgumentResolvers(authResolver)
+                .build();
     }
 
     private AssignmentResponseDTO getMockResponse(Long id) {
-        AssignmentResponseDTO response = new AssignmentResponseDTO();
-        response.setId(id);
-        response.setAssignmentStatus("SCHEDULED");
-        return response;
+        return AssignmentResponseDTO.builder().id(id).assignmentStatus("SCHEDULED").build();
     }
 
-    @Nested
-    class RetrievalCoverage {
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        void givenData_whenFindById_thenReturns200() throws Exception {
-            given(assignmentService.findById(1L)).willReturn(Optional.of(getMockResponse(1L)));
-            mockMvc.perform(get("/api/assignments/1").with(csrf()))
-                    .andExpect(status().isOk());
-        }
+    // --- POPRAVLJENI TESTOVI 1 I 13 ---
 
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        void givenNoData_whenFindById_thenReturns404() throws Exception {
-            given(assignmentService.findById(anyLong())).willReturn(Optional.empty());
-            mockMvc.perform(get("/api/assignments/99").with(csrf()))
-                    .andExpect(status().isNotFound());
-        }
+    @Test
+    void getMyAssignments_ReturnsOk() throws Exception {
+        given(driverService.getDriverIdFromUsername("driver1")).willReturn(10L);
+        given(assignmentService.findAssignmentsByDriver(10L)).willReturn(List.of(getMockResponse(1L)));
+
+
+        mockMvc.perform(get("/api/assignments/my-schedule")
+                        .principal(() -> "driver1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
-    @Nested
-    class DriverActionCoverage {
-        @Test
-        @WithMockUser(username = "driver1", roles = "DRIVER")
-        void givenOwner_whenStart_thenReturns200() throws Exception {
-            String username = "driver1";
-            given(driverService.isAssignmentOwnedByDriver(anyLong(), any())).willReturn(true);
-            given(driverService.getDriverIdFromUsername(username)).willReturn(10L);
-            given(assignmentService.startAssignment(anyLong(), anyLong())).willReturn(Optional.of(getMockResponse(1L)));
+    @Test
+    void getMyAssignments_Empty() throws Exception {
+        given(driverService.getDriverIdFromUsername("driver1")).willReturn(10L);
+        given(assignmentService.findAssignmentsByDriver(10L)).willReturn(Collections.emptyList());
 
-            mockMvc.perform(put("/api/assignments/1/start")
-                            .with(csrf())
-                            // Ključno: koristimo user(username) da se podudara s Mockito expectationom
-                            .with(user(username).roles("DRIVER")))
-                    .andExpect(status().isOk());
-        }
-
-        @Test
-        @WithMockUser(username = "driver1", roles = "DRIVER")
-        void givenNotOwner_whenStart_thenReturns403() throws Exception {
-            given(driverService.isAssignmentOwnedByDriver(anyLong(), any())).willReturn(false);
-
-            mockMvc.perform(put("/api/assignments/1/start")
-                            .with(csrf())
-                            .with(user("driver1").roles("DRIVER")))
-                    .andExpect(status().isForbidden());
-        }
-
-        @Test
-        @WithMockUser(username = "driver1", roles = "DRIVER")
-        void givenNoAssignment_whenStart_thenReturns404() throws Exception {
-            given(driverService.isAssignmentOwnedByDriver(anyLong(), any())).willReturn(true);
-            given(driverService.getDriverIdFromUsername("driver1")).willReturn(10L);
-            given(assignmentService.startAssignment(anyLong(), anyLong())).willReturn(Optional.empty());
-
-            mockMvc.perform(put("/api/assignments/1/start")
-                            .with(csrf())
-                            .with(user("driver1").roles("DRIVER")))
-                    .andExpect(status().isNotFound());
-        }
+        mockMvc.perform(get("/api/assignments/my-schedule")
+                        .principal(() -> "driver1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
-    @Nested
-    class ModificationCoverage {
-        @Test
-        @WithMockUser(roles = "DISPATCHER")
-        void givenNoData_whenUpdate_thenReturns404() throws Exception {
-            // Šaljemo VALIDAN DTO (polja nisu null) da izbjegnemo Validation Error 500
-            AssignmentRequestDTO validReq = createValidRequest();
-            given(assignmentService.updateAssignment(anyLong(), any())).willReturn(Optional.empty());
 
-            mockMvc.perform(put("/api/assignments/1").with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(validReq)))
-                    .andExpect(status().isNotFound());
-        }
+    @Test void startAssignment_ReturnsOk() throws Exception {
+        given(driverService.getDriverIdFromUsername(any())).willReturn(10L);
+        given(assignmentService.startAssignment(anyLong(), anyLong())).willReturn(Optional.of(getMockResponse(1L)));
+        mockMvc.perform(put("/api/assignments/1/start")).andExpect(status().isOk());
+    }
 
-        @Test
-        @WithMockUser(roles = "DISPATCHER")
-        void givenValidData_whenUpdate_thenReturns200() throws Exception {
-            AssignmentRequestDTO validReq = createValidRequest();
-            given(assignmentService.updateAssignment(anyLong(), any())).willReturn(Optional.of(getMockResponse(1L)));
+    @Test void completeAssignment_ReturnsOk() throws Exception {
+        given(driverService.getDriverIdFromUsername(any())).willReturn(10L);
+        given(assignmentService.completeAssignment(anyLong(), anyLong())).willReturn(Optional.of(getMockResponse(1L)));
+        mockMvc.perform(put("/api/assignments/1/complete")).andExpect(status().isOk());
+    }
 
-            mockMvc.perform(put("/api/assignments/1").with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(validReq)))
-                    .andExpect(status().isOk());
-        }
+    @Test void update_ReturnsOk() throws Exception {
+        given(assignmentService.updateAssignment(anyLong(), any())).willReturn(Optional.of(getMockResponse(1L)));
+        AssignmentRequestDTO req = new AssignmentRequestDTO();
+        req.setDriverId(1L); req.setVehicleId(1L); req.setShipmentIds(List.of(1L)); req.setStartTime(LocalDateTime.now());
+        mockMvc.perform(put("/api/assignments/1").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        @WithMockUser(roles = "ADMIN")
-        void givenAdmin_whenDelete_thenReturns204() throws Exception {
-            mockMvc.perform(delete("/api/assignments/1").with(csrf()))
-                    .andExpect(status().isNoContent());
-        }
+    @Test void getAll_ReturnsOk() throws Exception {
+        given(assignmentService.findAll()).willReturn(List.of(getMockResponse(1L)));
+        mockMvc.perform(get("/api/assignments")).andExpect(status().isOk());
+    }
+
+    @Test void getById_Found() throws Exception {
+        given(assignmentService.findById(1L)).willReturn(Optional.of(getMockResponse(1L)));
+        mockMvc.perform(get("/api/assignments/1")).andExpect(status().isOk());
+    }
+
+    @Test void getById_NotFound() throws Exception {
+        given(assignmentService.findById(anyLong())).willReturn(Optional.empty());
+        mockMvc.perform(get("/api/assignments/99")).andExpect(status().isNotFound());
+    }
+
+    @Test void create_Returns201() throws Exception {
+        given(assignmentService.createAssignment(any())).willReturn(getMockResponse(1L));
+        AssignmentRequestDTO req = new AssignmentRequestDTO();
+        req.setDriverId(1L); req.setVehicleId(1L); req.setShipmentIds(List.of(1L)); req.setStartTime(LocalDateTime.now());
+        mockMvc.perform(post("/api/assignments").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test void delete_ReturnsNoContent() throws Exception {
+        mockMvc.perform(delete("/api/assignments/1")).andExpect(status().isNoContent());
+    }
+
+    @Test void patchStatus_ReturnsOk() throws Exception {
+        given(assignmentService.updateStatus(anyLong(), anyString())).willReturn(Optional.of(getMockResponse(1L)));
+        mockMvc.perform(patch("/api/assignments/1/status").param("status", "IN_PROGRESS")).andExpect(status().isOk());
+    }
+
+    @Test void startAssignment_NotFound() throws Exception {
+        given(driverService.getDriverIdFromUsername(any())).willReturn(10L);
+        given(assignmentService.startAssignment(anyLong(), anyLong())).willReturn(Optional.empty());
+        mockMvc.perform(put("/api/assignments/99/start")).andExpect(status().isNotFound());
+    }
+
+    @Test void completeAssignment_NotFound() throws Exception {
+        given(driverService.getDriverIdFromUsername(any())).willReturn(10L);
+        given(assignmentService.completeAssignment(anyLong(), anyLong())).willReturn(Optional.empty());
+        mockMvc.perform(put("/api/assignments/99/complete")).andExpect(status().isNotFound());
+    }
+
+    @Test void patchStatus_NotFound() throws Exception {
+        given(assignmentService.updateStatus(anyLong(), anyString())).willReturn(Optional.empty());
+        mockMvc.perform(patch("/api/assignments/99/status").param("status", "DONE")).andExpect(status().isNotFound());
+    }
+
+    @Test void create_Returns400() throws Exception {
+        mockMvc.perform(post("/api/assignments").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
     }
 }

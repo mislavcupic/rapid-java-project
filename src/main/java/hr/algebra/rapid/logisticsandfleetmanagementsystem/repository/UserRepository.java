@@ -1,6 +1,8 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.repository;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,6 +17,10 @@ public interface UserRepository extends JpaRepository<UserInfo, Long> {
     UserInfo findByUsername(String username);
 
     void deleteByUsername(String username);
+
+    boolean existsByUsername(String s);
+
+    boolean existsByEmail(@NotBlank(message = "E-mail je obavezan.") @Email(message = "E-mail format nije ispravan.") String email);
 }
 
 

@@ -35,8 +35,6 @@ public class Assignment {
     @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;
 
-    // Jedna dodjela po jednoj pošiljci
-
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
     private List<Shipment> shipments;
 

@@ -20,7 +20,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-class JdbcAnalyticsServiceTest {
+class JdbcAnalyticsServiceImplTest {
 
     @Mock
     private JdbcTemplate jdbcTemplate;

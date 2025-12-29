@@ -33,7 +33,6 @@ const AddAssignment = () => {
                 </Card.Header>
                 <Card.Body>
                     {error && <Alert variant="danger">{error}</Alert>}
-                    {/* KLJUČNO: onSubmit je handleCreate */}
                     <AssignmentForm
                         onSubmit={handleCreate}
                         saving={loading}
