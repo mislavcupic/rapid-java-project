@@ -2,6 +2,9 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.service;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverUpdateDTO;
+import jakarta.validation.Valid;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +22,7 @@ public interface DriverService {
 
     DriverResponseDTO createDriver(DriverRequestDTO request);
 
-    DriverResponseDTO updateDriver(Long id, DriverRequestDTO request);
+    DriverResponseDTO updateDriver(Long id, @Valid DriverUpdateDTO request);
 
     void deleteDriver(Long id);
 

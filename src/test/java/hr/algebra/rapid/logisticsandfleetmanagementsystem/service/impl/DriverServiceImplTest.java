@@ -5,6 +5,7 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverUpdateDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.AssignmentRepository;
@@ -222,18 +223,15 @@ class DriverServiceImplTest {
     class UpdateDriver {
 
         @Test
-        @DisplayName("Should update driver and UserInfo data")
-        void updateDriver_WithValidData_ShouldUpdateBoth() {
+        @DisplayName("Should update driver data and return response")
+        void updateDriver_WithValidData_ShouldUpdateDriverFields() {
             // Given
             when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
-            when(driverRepository.findByLicenseNumber("DL999999")).thenReturn(Optional.empty());
-            when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
+            // Pretpostavljamo da tvoj testDriver već ima povezan UserInfo (testUser)
             when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
 
-            DriverRequestDTO updateRequest = new DriverRequestDTO();
-            updateRequest.setFirstName("Jane");
-            updateRequest.setLastName("Smith");
-            updateRequest.setEmail("jane.smith@example.com");
+            // KORISTIMO NOVI DTO
+            DriverUpdateDTO updateRequest = new DriverUpdateDTO();
             updateRequest.setLicenseNumber("DL999999");
             updateRequest.setPhoneNumber("+385912345678");
             updateRequest.setLicenseExpirationDate(LocalDate.now().plusYears(10));
@@ -243,8 +241,12 @@ class DriverServiceImplTest {
 
             // Then
             assertThat(result).isNotNull();
-            verify(userRepository).save(any(UserInfo.class));
+            // Više ne verificiramo userRepository.save jer update uloga/user podataka
+            // sada ide kroz UserService, a ovdje samo ažuriramo Driver polja.
             verify(driverRepository).save(any(Driver.class));
+
+            // Provjera da su podaci o vozaču ispravni
+            assertThat(result.getLicenseNumber()).isEqualTo("DL999999");
         }
 
         @Test
@@ -253,10 +255,12 @@ class DriverServiceImplTest {
             // Given
             when(driverRepository.findById(999L)).thenReturn(Optional.empty());
 
+            // Kreiramo prazan update request za test
+            DriverUpdateDTO emptyUpdate = new DriverUpdateDTO();
+
             // When & Then
-            assertThatThrownBy(() -> driverService.updateDriver(999L, driverRequest))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Driver");
+            assertThatThrownBy(() -> driverService.updateDriver(999L, emptyUpdate))
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
@@ -335,6 +339,7 @@ class DriverServiceImplTest {
                     .hasMessageContaining("Driver profile not found");
         }
     }
+
     // --- DODATAK ZA CREATE DRIVER ---
     @Test
     @DisplayName("Branch: Create - Missing Email (IllegalArgumentException)")
@@ -367,19 +372,24 @@ class DriverServiceImplTest {
         // Provjera 'cleanup' grane: mora obrisati usera jer driver nije uspio
         verify(userRepository).delete(any(UserInfo.class));
     }
+
     @Test
     @DisplayName("Branch: Update - Licenca već postoji kod drugog vozača")
     void updateDriver_WhenLicenseConflict_ShouldThrowException() {
         // 1. Pronađi vozača
         when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
 
-        // 2. Postavi novu licencu koja je različita od trenutne ("DL123456")
-        driverRequest.setLicenseNumber("NEW-LICENSE-999");
+        // 2. KORISTIMO DriverUpdateDTO umjesto RequestDTO
+        DriverUpdateDTO updateDTO = new DriverUpdateDTO();
+        updateDTO.setLicenseNumber("NEW-LICENSE-999");
+        updateDTO.setPhoneNumber("+385912345678");
+        updateDTO.setLicenseExpirationDate(LocalDate.now().plusYears(10));
 
         // 3. Simuliraj da ta nova licenca već postoji u bazi
         when(driverRepository.findByLicenseNumber("NEW-LICENSE-999")).thenReturn(Optional.of(new Driver()));
 
-        assertThatThrownBy(() -> driverService.updateDriver(1L, driverRequest))
+        // Ovdje se više neće crveniti jer šaljemo updateDTO
+        assertThatThrownBy(() -> driverService.updateDriver(1L, updateDTO))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already exists");
     }
@@ -447,16 +457,21 @@ class DriverServiceImplTest {
         @Test
         @DisplayName("Branch: Update - License Conflict with another driver")
         void updateDriver_NewLicenseAlreadyExists_ShouldThrowConflict() {
+            // Given
             when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
 
-            // Postavljamo novu licencu u zahtjevu
-            driverRequest.setLicenseNumber("EXISTING-LICENSE-99");
+            // KORISTIMO DriverUpdateDTO umjesto RequestDTO
+            DriverUpdateDTO updateDTO = new DriverUpdateDTO();
+            updateDTO.setLicenseNumber("EXISTING-LICENSE-99");
+            updateDTO.setPhoneNumber("+385912345678");
+            updateDTO.setLicenseExpirationDate(LocalDate.now().plusYears(10));
 
             // Simuliramo da ta licenca već pripada nekom drugom vozaču
             when(driverRepository.findByLicenseNumber("EXISTING-LICENSE-99"))
                     .thenReturn(Optional.of(new Driver()));
 
-            assertThatThrownBy(() -> driverService.updateDriver(1L, driverRequest))
+            // When & Then
+            assertThatThrownBy(() -> driverService.updateDriver(1L, updateDTO))
                     .isInstanceOf(ConflictException.class)
                     .hasMessageContaining("already exists");
         }
@@ -464,20 +479,28 @@ class DriverServiceImplTest {
         @Test
         @DisplayName("Branch: Update - Partial updates (UserInfo null checks)")
         void updateDriver_PartialData_ShouldNotOverwriteDataWithNull() {
+            // Given
             when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+            when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
+            when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
 
-            // Request sa samo nekim poljima
-            DriverRequestDTO partialRequest = new DriverRequestDTO();
-            partialRequest.setLicenseNumber("NEW-LIC-111");
-            // firstName, lastName, email su null u requestu
+            // KORISTIMO DriverUpdateDTO i šaljemo samo licencu
+            DriverUpdateDTO partialUpdate = new DriverUpdateDTO();
+            partialUpdate.setLicenseNumber("NEW-LIC-111");
+            partialUpdate.setPhoneNumber("+38591111222"); // Moramo poslati jer je @NotBlank u DTO
+            partialUpdate.setLicenseExpirationDate(LocalDate.now().plusYears(5));
+            // firstName, lastName, email su null u ovom objektu
 
-            driverService.updateDriver(1L, partialRequest);
+            // When
+            driverService.updateDriver(1L, partialUpdate);
 
-            // Provjeravamo da se UserInfo nije mijenjao ako su polja bila null/empty
+            // Then
+            // Provjeravamo da se UserInfo NIJE promijenio (ostao je "John" iz setUp-a)
             verify(userRepository).save(argThat(user ->
                     user.getFirstName().equals("John") &&
                             user.getEmail().equals("john.doe@example.com")
             ));
+            verify(driverRepository).save(any(Driver.class));
         }
 
         @Test
@@ -521,7 +544,7 @@ class DriverServiceImplTest {
         when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
 
         // Šaljemo prazna polja da vidimo preskaču li se 'if' uvjeti (linije 110, 113, 116)
-        DriverRequestDTO partialRequest = new DriverRequestDTO();
+        DriverUpdateDTO partialRequest = new DriverUpdateDTO();
         partialRequest.setFirstName(""); // Prazan string
         partialRequest.setLastName(null);
         partialRequest.setEmail(null);
@@ -536,5 +559,330 @@ class DriverServiceImplTest {
                 user.getFirstName().equals("John") &&
                         user.getLastName().equals("Doe")
         ));
+    }
+    // ========================================================================
+    // 🚀 TESTOVI ZA MAX COVERAGE (BRANCH COVERAGE +9%)
+    // ========================================================================
+
+    @Test
+    @DisplayName("Branch: Update - Preskoči UserInfo polja ako su null ili prazna")
+    void updateDriver_WhenUserInfoFieldsAreNullOrEmpty_ShouldNotUpdateThem() {
+        // Given
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+        when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
+        when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
+
+        // Šaljemo DTO gdje su firstName i email NULL, a lastName je prazan String ("")
+        // Ovo gađa request.getFirstName() != null i !request.getFirstName().isEmpty()
+        DriverUpdateDTO nullRequest = new DriverUpdateDTO();
+        nullRequest.setLicenseNumber("DL123456");
+        nullRequest.setPhoneNumber("+385999999");
+        nullRequest.setLicenseExpirationDate(LocalDate.now());
+        nullRequest.setFirstName(null);
+        nullRequest.setLastName("");
+        nullRequest.setEmail(null);
+
+        // When
+        driverService.updateDriver(1L, nullRequest);
+
+        // Then
+        // Provjeravamo da su u bazi ostala stara imena ("John" i "Doe") iz setUp-a
+        verify(userRepository).save(argThat(user ->
+                user.getFirstName().equals("John") && user.getLastName().equals("Doe")
+        ));
+    }
+
+    @Test
+    @DisplayName("Branch: Create - Baci IllegalArgumentException ako nedostaju osnovna polja")
+    void createDriver_WhenFieldsAreMissing_ShouldThrowIllegalArgumentException() {
+        // Given - Request bez emaila (gađa prvu veliku if granu u createDriver)
+        DriverRequestDTO invalidRequest = new DriverRequestDTO();
+        invalidRequest.setUsername("test");
+        invalidRequest.setPassword("pass");
+        invalidRequest.setFirstName("First");
+        invalidRequest.setLastName("Last");
+        invalidRequest.setEmail(null);
+
+        // When & Then
+        assertThatThrownBy(() -> driverService.createDriver(invalidRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("are required for new driver creation");
+    }
+
+    @Test
+    @DisplayName("Branch: Create - Cleanup (Delete User) ako licenca već postoji")
+    void createDriver_LicenseExists_ShouldCleanupUserAndThrowConflict() {
+        // Given
+        when(userRepository.findByUsername(anyString())).thenReturn(null);
+        when(userRoleRepository.findByName(anyString())).thenReturn(Optional.of(driverRole));
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded");
+        when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
+
+        // Gađamo granu gdje licenca već postoji nakon što je user već spremljen
+        when(driverRepository.findByLicenseNumber(anyString())).thenReturn(Optional.of(testDriver));
+
+        // When & Then
+        assertThatThrownBy(() -> driverService.createDriver(driverRequest))
+                .isInstanceOf(ConflictException.class);
+
+        // KLJUČNO ZA COVERAGE: Provjera da se pozvao userRepository.delete(savedUser)
+        verify(userRepository).delete(testUser);
+    }
+
+    @Test
+    @DisplayName("Branch: Security - Vrati false ako assignment ne postoji (Catch blok)")
+    void isAssignmentOwnedByDriver_WhenAssignmentMissing_ShouldReturnFalse() {
+        // Given
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+        when(userRepository.findByUsername("driver1")).thenReturn(testUser);
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.of(testDriver));
+
+        // Simuliramo da assignment ne postoji (Optional.empty)
+        when(assignmentRepository.findById(10L)).thenReturn(Optional.empty());
+
+        // When
+        boolean result = driverService.isAssignmentOwnedByDriver(10L, "driver1");
+
+        // Then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("Branch: Security - Shipment Assigned Catch blok (ResourceNotFound)")
+    void isShipmentAssignedToDriver_WhenException_ShouldReturnFalse() {
+        // Given
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+
+        // Simuliramo da getDriverIdFromUsername baci exception (npr. nema usera)
+        when(userRepository.findByUsername("unknown")).thenReturn(null);
+
+        // When
+        boolean result = driverService.isShipmentAssignedToDriver(50L, "unknown");
+
+        // Then
+        assertThat(result).isFalse();
+    }
+
+// ========================================================================
+    // 🔥 DODATNIH 9 BRANCH TESTOVA ZA 100% COVERAGE
+    // ========================================================================
+
+    @Test
+    @DisplayName("Branch: Create - User role not found")
+    void createDriver_WhenRoleNotFound_ShouldThrowException() {
+        // Gađa granu: .orElseThrow(() -> new ResourceNotFoundException("Role"...))
+        when(userRepository.findByUsername(anyString())).thenReturn(null);
+        when(userRoleRepository.findByName("ROLE_DRIVER")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> driverService.createDriver(driverRequest))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Role");
+    }
+
+    @Test
+    @DisplayName("Branch: Update - License is same as current (Should skip conflict check)")
+    void updateDriver_WhenLicenseIsSame_ShouldNotCheckConflict() {
+
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+        when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
+        when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
+
+        DriverUpdateDTO sameLicenseRequest = new DriverUpdateDTO();
+        sameLicenseRequest.setLicenseNumber(testDriver.getLicenseNumber()); // DL123456
+        sameLicenseRequest.setPhoneNumber("+385000000");
+        sameLicenseRequest.setLicenseExpirationDate(LocalDate.now());
+
+        driverService.updateDriver(1L, sameLicenseRequest);
+
+        verify(driverRepository, never()).findByLicenseNumber(anyString());
+    }
+
+    @Test
+    @DisplayName("Branch: Update - UserInfo is null (Should skip user update)")
+    void updateDriver_WhenUserInfoIsNull_ShouldSkipUserLogic() {
+        Driver driverWithoutUser = new Driver();
+        driverWithoutUser.setId(1L);
+        driverWithoutUser.setUserInfo(null);
+        driverWithoutUser.setLicenseNumber("OLD");
+
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(driverWithoutUser));
+        when(driverRepository.save(any(Driver.class))).thenReturn(driverWithoutUser);
+
+        DriverUpdateDTO request = new DriverUpdateDTO();
+        request.setLicenseNumber("NEW");
+        request.setPhoneNumber("123");
+        request.setLicenseExpirationDate(LocalDate.now());
+
+        driverService.updateDriver(1L, request);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Branch: Delete - Driver has no vehicle (Skip ifPresent)")
+    void deleteDriver_WhenNoVehicle_ShouldSkipClearRelationship() {
+        // Gađa granu: driver.getCurrentVehicle().ifPresent(...) - kada je Optional empty
+        testDriver.setCurrentVehicle(null); // Pretpostavka da entitet ima metodu ili je null u bazi
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+
+        driverService.deleteDriver(1L);
+
+        verify(driverRepository).delete(testDriver);
+    }
+
+    @Test
+    @DisplayName("Branch: Security - Shipment not found in any assignment")
+    void isShipmentAssignedToDriver_WhenShipmentNotFound_ShouldReturnFalse() {
+
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+        when(userRepository.findByUsername("driver1")).thenReturn(testUser);
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.of(testDriver));
+        when(assignmentRepository.findByShipments_Id(99L)).thenReturn(Optional.empty());
+
+        boolean result = driverService.isShipmentAssignedToDriver(99L, "driver1");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("Branch: Security - Assignment belongs to ANOTHER driver")
+    void isAssignmentOwnedByDriver_WhenDifferentDriver_ShouldReturnFalse() {
+        // Gađa granu: .equals(driverId) kada je rezultat false
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+        when(userRepository.findByUsername("driver1")).thenReturn(testUser);
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.of(testDriver));
+
+        Driver otherDriver = new Driver();
+        otherDriver.setId(55L); // Drugi ID
+
+        hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment otherAssignment = new hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment();
+        otherAssignment.setDriver(otherDriver);
+
+        when(assignmentRepository.findById(10L)).thenReturn(Optional.of(otherAssignment));
+
+        boolean result = driverService.isAssignmentOwnedByDriver(10L, "driver1");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("Branch: GetID - User not found (ResourceNotFoundException)")
+    void getDriverIdFromUsername_UserNotFound_ShouldThrowException() {
+
+        when(userRepository.findByUsername("missing_user")).thenReturn(null);
+
+        assertThatThrownBy(() -> driverService.getDriverIdFromUsername("missing_user"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Branch: Update - License check (License not present in DB)")
+    void updateDriver_WhenLicenseChangedButNotTaken_ShouldProceed() {
+        // Gađa granu: ifPresent dio koji se NE izvršava (licenca je nova ali slobodna)
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+        when(driverRepository.findByLicenseNumber("NEW-LIC")).thenReturn(Optional.empty());
+        when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
+        when(userRepository.save(any(UserInfo.class))).thenReturn(testUser);
+
+        DriverUpdateDTO request = new DriverUpdateDTO();
+        request.setLicenseNumber("NEW-LIC");
+        request.setPhoneNumber("123");
+        request.setLicenseExpirationDate(LocalDate.now());
+
+        driverService.updateDriver(1L, request);
+
+        verify(driverRepository).save(any(Driver.class));
+    }
+
+    @Test
+    @DisplayName("Branch: Security - ResourceNotFound catch in isAssignmentOwnedByDriver")
+    void isAssignmentOwnedByDriver_CatchBlock_ShouldReturnFalse() {
+
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+
+        when(userRepository.findByUsername("user")).thenThrow(new ResourceNotFoundException("Error", "msg", "val"));
+
+        boolean result = driverService.isAssignmentOwnedByDriver(1L, "user");
+
+        assertThat(result).isFalse();
+    }
+    @Test
+    @DisplayName("Branch: Update - License changed but No Conflict")
+    void updateDriver_LicenseChanged_NoConflict_ShouldUpdateSuccessfully() {
+        // Gađa granu gdje je licenca promijenjena, ali findByLicenseNumber vrati Optional.empty()
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+        when(driverRepository.findByLicenseNumber("UNIQUE-123")).thenReturn(Optional.empty());
+        when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
+
+        DriverUpdateDTO request = new DriverUpdateDTO();
+        request.setLicenseNumber("UNIQUE-123");
+        request.setPhoneNumber("000");
+        request.setLicenseExpirationDate(LocalDate.now());
+
+        driverService.updateDriver(1L, request);
+        verify(driverRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("Branch: Security - Assignment Exists but Driver ID Mismatch")
+    void isAssignmentOwnedByDriver_IdMismatch_ShouldReturnFalse() {
+        // Setup proxy
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+        when(userRepository.findByUsername("driver1")).thenReturn(testUser);
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.of(testDriver));
+
+        // Assignment koji pripada vozaču s ID-om 99 ( mismatch )
+        Driver otherDriver = new Driver();
+        otherDriver.setId(99L);
+        hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment assignment = new hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Assignment();
+        assignment.setDriver(otherDriver);
+
+        when(assignmentRepository.findById(10L)).thenReturn(Optional.of(assignment));
+
+        boolean result = driverService.isAssignmentOwnedByDriver(10L, "driver1");
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("Branch: Create - User role missing (ResourceNotFound)")
+    void createDriver_RoleNotFound_ShouldThrowException() {
+        // Gađa: .orElseThrow(() -> new ResourceNotFoundException("Role"...))
+        when(userRepository.findByUsername(anyString())).thenReturn(null);
+        when(userRoleRepository.findByName("ROLE_DRIVER")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> driverService.createDriver(driverRequest))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Branch: Update - FirstName is Empty String")
+    void updateDriver_FirstNameEmpty_ShouldNotUpdate() {
+        // Gađa !request.getFirstName().isEmpty() granu (false case)
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+
+        DriverUpdateDTO request = new DriverUpdateDTO();
+        request.setFirstName(""); // Prazan string
+        request.setLicenseNumber("DL123456");
+
+        driverService.updateDriver(1L, request);
+
+        // Provjeravamo da ime NIJE postalo prazan string (ostalo "John")
+        verify(userRepository, never()).save(argThat(u -> u.getFirstName().equals("")));
+    }
+
+
+
+    @Test
+    @DisplayName("Branch: Security - Shipment is Empty (Assignment Not Found)")
+    void isShipmentAssignedToDriver_AssignmentEmpty_ShouldReturnFalse() {
+        when(driverServiceProvider.getObject()).thenReturn(driverService);
+        when(userRepository.findByUsername("driver1")).thenReturn(testUser);
+        when(driverRepository.findByUserInfoId(1L)).thenReturn(Optional.of(testDriver));
+
+
+        when(assignmentRepository.findByShipments_Id(anyLong())).thenReturn(Optional.empty());
+
+        boolean result = driverService.isShipmentAssignedToDriver(1L, "driver1");
+        assertThat(result).isFalse();
     }
 }

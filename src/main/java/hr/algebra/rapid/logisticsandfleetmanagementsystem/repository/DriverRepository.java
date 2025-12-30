@@ -19,4 +19,6 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
     void deleteByUserInfo(UserInfo user);
 
     boolean existsByUserInfo(UserInfo user);
+
+    Optional<Driver> findByUserInfo(UserInfo user);
 }

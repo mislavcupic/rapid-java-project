@@ -109,7 +109,7 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Korisnik mora imati barem jednu ulogu!");
         }
 
-        // 1. Postavi uloge (tvoj postojeći dio)
+        // 1. Postavi uloge
         Set<UserRole> newRoles = roleNames.stream()
                 .map(roleName -> userRoleRepository.findByName(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException("Uloga", "ime", roleName)))
@@ -120,30 +120,35 @@ public class UserServiceImpl implements UserService {
         UserInfo updatedUser = userRepository.saveAndFlush(user);
 
         // 2. LOGIKA ZA VOZAČA (Sinkronizacija)
-        // Provjeri sadrži li lista stringova ulogu "ROLE_DRIVER"
+        // ROLE_DRIVER je konstanta koju koristiš u kodu
         if (roleNames.contains(ROLE_DRIVER)) {
-            // Provjeri postoji li već zapis u driver tablici za ovog usera
             if (!driverRepository.existsByUserInfo(user)) {
                 Driver newDriver = new Driver();
                 newDriver.setUserInfo(user);
 
-                // MORAŠ postaviti ove vrijednosti jer su NOT NULL u bazi
-                // Budući da admin nema ova polja na formi, stavljamo privremene podatke
-                newDriver.setLicenseNumber("TEMP-" + user.getUsername().toUpperCase());
+                // Postavljamo generirani broj licence
+                newDriver.setLicenseNumber("TEMP-" + user.getId());
 
-                // Koristimo LocalDateTime jer tvoj log kaže da baza to očekuje
-                newDriver.setLicenseExpirationDate(LocalDate.from(LocalDateTime.now().plusYears(10)));
-                newDriver.setPhoneNumber("N/A");
+                // Postavljamo datum (LocalDate) - osiguraj da Driver entitet koristi LocalDate
+                newDriver.setLicenseExpirationDate(LocalDate.now().plusYears(10));
+
+                // VAŽNO: Tvoj log kaže da "N/A" ne prolazi validaciju (min 9 znakova).
+                // Koristimo ili korisnikov broj ili dummy broj od 10 znamenki.
+                String validPhone = (newDriver.getPhoneNumber() != null && newDriver.getPhoneNumber().length() >= 9)
+                        ? newDriver.getPhoneNumber()
+                        : "000000000";
+                newDriver.setPhoneNumber(validPhone);
 
                 driverRepository.save(newDriver);
                 log.info("Admin dashboard: Kreiran Driver zapis za korisnika {}", user.getUsername());
             }
         } else {
             // Ako uloga ROLE_DRIVER više nije u listi, obriši ga iz tablice vozača
-            if (driverRepository.existsByUserInfo(user)) {
-                driverRepository.deleteByUserInfo(user);
+            // Osiguraj da tvoj repository ima metodu deleteByUserInfo ili koristi find pa delete
+            driverRepository.findByUserInfo(user).ifPresent(driver -> {
+                driverRepository.delete(driver);
                 log.info("Admin dashboard: Uklonjen Driver zapis za korisnika {}", user.getUsername());
-            }
+            });
         }
 
         return updatedUser;
@@ -158,6 +163,7 @@ public class UserServiceImpl implements UserService {
 //            throw new IllegalArgumentException("Korisnik mora imati barem jednu ulogu!");
 //        }
 //
+//        // 1. Postavi uloge (tvoj postojeći dio)
 //        Set<UserRole> newRoles = roleNames.stream()
 //                .map(roleName -> userRoleRepository.findByName(roleName)
 //                        .orElseThrow(() -> new ResourceNotFoundException("Uloga", "ime", roleName)))
@@ -165,15 +171,38 @@ public class UserServiceImpl implements UserService {
 //
 //        user.getRoles().clear();
 //        user.getRoles().addAll(newRoles);
-//
 //        UserInfo updatedUser = userRepository.saveAndFlush(user);
 //
-//        log.info("Uloge ažurirane za korisnika: {}. Nove uloge: {}",
-//                updatedUser.getUsername(),
-//                updatedUser.getRoles().stream().map(UserRole::getName).collect(Collectors.toSet()));
+//        // 2. LOGIKA ZA VOZAČA (Sinkronizacija)
+//        // Provjeri sadrži li lista stringova ulogu "ROLE_DRIVER"
+//        if (roleNames.contains(ROLE_DRIVER)) {
+//            // Provjeri postoji li već zapis u driver tablici za ovog usera
+//            if (!driverRepository.existsByUserInfo(user)) {
+//                Driver newDriver = new Driver();
+//                newDriver.setUserInfo(user);
+//
+//                // MORAŠ postaviti ove vrijednosti jer su NOT NULL u bazi
+//                // Budući da admin nema ova polja na formi, stavljamo privremene podatke
+//                newDriver.setLicenseNumber("TEMP-" + user.getUsername().toUpperCase());
+//
+//                // Koristimo LocalDateTime jer tvoj log kaže da baza to očekuje
+//                newDriver.setLicenseExpirationDate(LocalDate.from(LocalDateTime.now().plusYears(10)));
+//                newDriver.setPhoneNumber("N/A");
+//
+//                driverRepository.save(newDriver);
+//                log.info("Admin dashboard: Kreiran Driver zapis za korisnika {}", user.getUsername());
+//            }
+//        } else {
+//            // Ako uloga ROLE_DRIVER više nije u listi, obriši ga iz tablice vozača
+//            if (driverRepository.existsByUserInfo(user)) {
+//                driverRepository.deleteByUserInfo(user);
+//                log.info("Admin dashboard: Uklonjen Driver zapis za korisnika {}", user.getUsername());
+//            }
+//        }
 //
 //        return updatedUser;
 //    }
+
 
     @Override
     @Transactional

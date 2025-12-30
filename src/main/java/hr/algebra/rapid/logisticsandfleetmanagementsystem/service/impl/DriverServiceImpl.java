@@ -6,6 +6,7 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserInfo;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.UserRole;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverUpdateDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ConflictException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.AssignmentRepository;
@@ -13,7 +14,6 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepos
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRoleRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
-
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,39 +122,64 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional
-    public DriverResponseDTO updateDriver(Long id, DriverRequestDTO request) {
-
+    public DriverResponseDTO updateDriver(Long id, DriverUpdateDTO request) {
+        // 1. Nađi vozača
         Driver driver = driverRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver", "ID", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", id));
 
-        UserInfo userInfo = driver.getUserInfo();
-        if (userInfo != null) {
-            if (request.getFirstName() != null && !request.getFirstName().isEmpty()) {
-                userInfo.setFirstName(request.getFirstName());
-            }
-            if (request.getLastName() != null && !request.getLastName().isEmpty()) {
-                userInfo.setLastName(request.getLastName());
-            }
-            if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-                userInfo.setEmail(request.getEmail());
-            }
-
-            userRepository.save(userInfo);
+        // 2. Provjera licence (da ne pripada nekom drugom)
+        if (!driver.getLicenseNumber().equals(request.getLicenseNumber())) {
+            driverRepository.findByLicenseNumber(request.getLicenseNumber()).ifPresent(d -> {
+                throw new ConflictException("License number already exists");
+            });
         }
 
-        if (!driver.getLicenseNumber().equals(request.getLicenseNumber()) && driverRepository.findByLicenseNumber(request.getLicenseNumber()).isPresent()) {
-                throw new ConflictException("Driver profile with license number " + request.getLicenseNumber() + " already exists.");
-            }
+        // 3. Ažuriraj UserInfo (Ovdje se vrte tvoji testovi za "Partial Update")
+        UserInfo user = driver.getUserInfo();
+        if (request.getFirstName() != null && !request.getFirstName().isEmpty()) {
+            user.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null && !request.getLastName().isEmpty()) {
+            user.setLastName(request.getLastName());
+        }
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            user.setEmail(request.getEmail());
+        }
+        userRepository.save(user);
 
-
+        // 4. Ažuriraj Driver polja
         driver.setLicenseNumber(request.getLicenseNumber());
         driver.setLicenseExpirationDate(request.getLicenseExpirationDate());
         driver.setPhoneNumber(request.getPhoneNumber());
 
-        Driver updatedDriver = driverRepository.save(driver);
-        return mapToResponse(updatedDriver);
+        Driver savedDriver = driverRepository.save(driver);
+
+        // 5. Poziv map metode
+        return mapToResponseDTO(savedDriver);
     }
 
+    // Evo map metode koju si tražio:
+    private DriverResponseDTO mapToResponseDTO(Driver driver) {
+        DriverResponseDTO response = new DriverResponseDTO();
+        response.setId(driver.getId());
+
+        // Podaci iz UserInfo relacije
+        if (driver.getUserInfo() != null) {
+            response.setFirstName(driver.getUserInfo().getFirstName());
+            response.setLastName(driver.getUserInfo().getLastName());
+            response.setUsername(driver.getUserInfo().getUsername());
+            response.setEmail(driver.getUserInfo().getEmail());
+            // Custom polje ako ga imaš u DTO-u
+            response.setFullName(driver.getUserInfo().getFirstName() + " " + driver.getUserInfo().getLastName());
+        }
+
+        // Podaci iz Driver entiteta
+        response.setLicenseNumber(driver.getLicenseNumber());
+        response.setLicenseExpirationDate(driver.getLicenseExpirationDate());
+        response.setPhoneNumber(driver.getPhoneNumber());
+
+        return response;
+    }
     @Override
     @Transactional
     public void deleteDriver(Long id) {

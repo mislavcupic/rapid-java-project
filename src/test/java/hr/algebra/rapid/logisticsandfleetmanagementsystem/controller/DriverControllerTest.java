@@ -2,6 +2,7 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverUpdateDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -134,7 +135,7 @@ class DriverControllerTest {
         @Test
         @DisplayName("Should update driver")
         void updateDriver_ShouldReturnUpdated() throws Exception {
-            when(driverService.updateDriver(eq(1L), any(DriverRequestDTO.class)))
+            when(driverService.updateDriver(eq(1L), any(DriverUpdateDTO.class)))
                     .thenReturn(testDriverResponse);
 
             String json = """
@@ -150,7 +151,7 @@ class DriverControllerTest {
                             .content(json))
                     .andExpect(status().isOk());
 
-            verify(driverService).updateDriver(eq(1L), any(DriverRequestDTO.class));
+            verify(driverService).updateDriver(eq(1L), any(DriverUpdateDTO.class));
         }
     }
 

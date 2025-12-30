@@ -33,25 +33,28 @@ const customIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// Funkcija za lijepo formatiranje datuma/vremena za prikaz
+// ✅ ISPRAVLJENA FUNKCIJA - 3 KRITICNE GRESKE RIJEŠENE:
+// 1. toLocaleDateString() → toLocaleString() (za podršku hour/minute)
+// 2. t('general.locale') → 'hr-HR' (hardcoded locale - t() vraća literal string!)
+// 3. Uklonjen + 'h' suffix (toLocaleString već formatira vrijeme)
 const formatDisplayDateTime = (isoString, t) => {
     if (!isoString) return t('general.not_set') || 'Nije postavljeno';
     try {
         const date = new Date(isoString);
-        // Primjer formatiranja: 31.10.2025. u 18:30
-        return date.toLocaleDateString(t('general.locale') || 'hr-HR', {
+        // Primjer formatiranja: 31. 10. 2025. 18:30:00
+        return date.toLocaleString('hr-HR', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
-        }) + 'h';
-    }  catch (e) {
-    console.error('Greška pri formatiranju datuma:', e);
-    return t('general.invalid_date') || 'Neispravan datum';
-}
-}
+        });
+    } catch (e) {
+        console.error('Greška pri formatiranju datuma:', e);
+        return t('general.invalid_date') || 'Neispravan datum';
+    }
+};
 
 // Pomoćna komponenta za određivanje boje statusa
 const getStatusBadge = (status, t) => {

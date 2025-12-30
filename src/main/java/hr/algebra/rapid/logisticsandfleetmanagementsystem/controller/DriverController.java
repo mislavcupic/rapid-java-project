@@ -3,6 +3,7 @@ package hr.algebra.rapid.logisticsandfleetmanagementsystem.controller;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverRequestDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverResponseDTO;
+import hr.algebra.rapid.logisticsandfleetmanagementsystem.dto.DriverUpdateDTO;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.DriverService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -60,10 +61,20 @@ public class DriverController {
     // -----------------------------------------------------------------
 
     /** Ažurira postojeći Driver profil */
+//    @PutMapping("/{id}")
+//    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+//    public ResponseEntity<DriverResponseDTO> updateDriver(@PathVariable Long id,
+//                                                          @Valid @RequestBody DriverRequestDTO request) {
+//        DriverResponseDTO updatedDriver = driverService.updateDriver(id, request);
+//        return ResponseEntity.ok(updatedDriver);
+//    }
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
-    public ResponseEntity<DriverResponseDTO> updateDriver(@PathVariable Long id,
-                                                          @Valid @RequestBody DriverRequestDTO request) {
+    public ResponseEntity<DriverResponseDTO> updateDriver(
+            @PathVariable Long id,
+            @Valid @RequestBody DriverUpdateDTO request) { // <-- KLJUČNA IZMJENA: Koristimo DriverUpdateDTO
+
+        // Proslijeđujemo novi DTO u servis
         DriverResponseDTO updatedDriver = driverService.updateDriver(id, request);
         return ResponseEntity.ok(updatedDriver);
     }
