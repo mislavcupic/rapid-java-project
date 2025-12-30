@@ -131,6 +131,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         .requestMatchers(HttpMethod.DELETE, API_SHIPMENTS_ID).hasRole(ADMIN)
                         .requestMatchers(HttpMethod.DELETE, "/api/drivers/{id}").hasRole(ADMIN)
                         .requestMatchers(HttpMethod.DELETE, "/api/vehicles/**").hasRole(ADMIN)
+                                .requestMatchers(HttpMethod.DELETE, "/api/assignments/**").hasRole(ADMIN)
 
                         // Ostale Admin rute
                         .requestMatchers("/api/routes/**").hasRole(ADMIN)

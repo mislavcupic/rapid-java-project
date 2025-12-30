@@ -12,6 +12,8 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.AssignmentServ
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.ShipmentService;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.VehicleService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +34,8 @@ public class AssignmentServiceImpl implements AssignmentService {
     public static final String IN_PROGRESS = "IN_PROGRESS";
     public static final String COMPLETED = "COMPLETED";
     public static final String ASSIGNMENT = "Assignment";
-
+    @PersistenceContext
+    private EntityManager entityManager;
     private final AssignmentRepository assignmentRepository;
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
@@ -189,16 +192,35 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional
     public void deleteAssignment(Long id) {
+        // 1. Dohvati nalog
         Assignment assignment = assignmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT, "ID", id));
 
-        assignment.getShipments().forEach(s -> {
-            s.setAssignment(null);
-            s.setStatus(ShipmentStatus.PENDING);
-        });
-        shipmentRepository.saveAll(assignment.getShipments());
+        // 2. Raskidanje veze
+        if (assignment.getShipments() != null && !assignment.getShipments().isEmpty()) {
+            List<Shipment> shipments = new ArrayList<>(assignment.getShipments());
 
-        assignmentRepository.delete(assignment);
+            for (Shipment s : shipments) {
+                s.setAssignment(null); // Raskidamo vezu na djetetu
+                s.setStatus(ShipmentStatus.PENDING);
+            }
+
+            // 3. Spasi pošiljke i odmah isprazni listu u roditelju
+            shipmentRepository.saveAllAndFlush(shipments);
+            assignment.getShipments().clear();
+        }
+
+        // 4. KLJUČNI KORAK: Očisti Hibernate cache (L1 cache)
+        // Ovo prisiljava Hibernate da "zaboravi" stare objekte u memoriji
+        // i ponovno provjeri stanje u bazi.
+        entityManager.flush();
+        entityManager.clear(); // OVO RJEŠAVA TRANSIENT ERROR
+
+        // 5. Ponovno dohvati nalog u novom/čistom sessionu i obriši ga
+        Assignment proxyAssignment = assignmentRepository.getReferenceById(id);
+        assignmentRepository.delete(proxyAssignment);
+
+        logger.info("Nalog #{} uspješno obrisan nakon čišćenja sessiona.", id);
     }
 
     @Override
