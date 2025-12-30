@@ -25,7 +25,7 @@ import java.util.Arrays;
 @Service
 @RequiredArgsConstructor
 public class AssignmentServiceImpl implements AssignmentService {
-
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AssignmentServiceImpl.class);
     // Tvoji Assignment statusi (String u bazi)
     public static final String PENDING = "PENDING";
     public static final String SCHEDULED = "SCHEDULED";
@@ -245,18 +245,27 @@ public class AssignmentServiceImpl implements AssignmentService {
                 throw new ConflictException("Nalog ne pripada ovom vozaču.");
             }
 
-            // 2. DODAJ OVU LINIJU:
-            // Ako je status SCHEDULED (kao u tvom data.sql), ovo baca ConflictException i test prolazi
-            if (assignment.getStatus().equals( IN_PROGRESS)) {
-                throw new ConflictException("Nalog se ne može završiti jer nije u tijeku (IN_PROGRESS).");
+            // 2. Provjera je li ruta u tijeku (koristeći tvoje String varijable)
+            // Ako koristiš konstante, stavi npr. Assignment.IN_PROGRESS
+            if (!IN_PROGRESS.equals(assignment.getStatus())) {
+                throw new ConflictException("Ruta se ne može završiti jer nije u tijeku. Trenutni status: " + assignment.getStatus());
             }
 
-            // 3. Ostatak tvoje logike
+            // 3. KLJUČNA PROVJERA: Svi paketi moraju biti DELIVERED
+            // Koristimo .toString() ili direktnu usporedbu ako je ShipmentStatus enum
+            boolean allShipmentsDelivered = assignment.getShipments().stream()
+                    .allMatch(s -> "DELIVERED".equals(s.getStatus().toString()));
+
+            if (!allShipmentsDelivered) {
+                throw new ConflictException("Ne možete završiti rutu jer svi paketi nisu isporučeni!");
+            }
+
+            // 4. Finalizacija rute
             assignment.setStatus(COMPLETED);
             assignment.setEndTime(LocalDateTime.now());
 
-            assignment.getShipments().forEach(s -> s.setStatus(ShipmentStatus.DELIVERED));
-            shipmentRepository.saveAll(assignment.getShipments());
+            // 5. Spremanje (shipmentRepository.saveAll ovdje više nije nužan jer su već Delivered)
+            logger.info("Ruta {} uspješno završena. Svi paketi su isporučeni.", assignmentId);
 
             return mapToResponse(assignmentRepository.save(assignment));
         });
