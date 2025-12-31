@@ -17,7 +17,6 @@ createRoot(document.getElementById('root')).render(
                 <span className="text-info fs-3">Loading...</span>
             </div>
         }>
-            {/* 🎯 RIJEŠENJE: BrowserRouter mora omotati App */}
             <BrowserRouter>
                 <App />
             </BrowserRouter>

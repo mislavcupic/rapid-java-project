@@ -17,8 +17,7 @@ public interface ShipmentRepository extends JpaRepository<Shipment, Long> {
     List<Shipment> findByStatusAndActualDeliveryDateBefore(ShipmentStatus shipmentStatus, LocalDateTime cutoffDate);
     List<Shipment> findByRouteIsNull();
 
-    // NOVO: Za dispečera da vidi što još nije u kamionima
-    List<Shipment> findByAssignmentIsNull();
+
 
     boolean existsByTrackingNumber(@NotBlank(message = "Tracking number is required") String trackingNumber);
 

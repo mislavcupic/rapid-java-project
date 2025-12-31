@@ -67,14 +67,13 @@ export const completeDelivery = async (shipmentId, podData) => {
 // 7. PRIJAVA PROBLEMA S DOSTAVOM
 // Usklađeno s: reportIssue(Long shipmentId, Long driverId, IssueReportDTO issue)
 export const reportIssue = async (shipmentId, issueData) => {
-    const driverId = getCurrentDriverId();
+
     return apiClient(
         `${BASE_SHIPMENT_PATH}/${shipmentId}/report-issue`,
         {
-            method: 'POST',
+            method: 'PUT',
             body: JSON.stringify({
                 ...issueData,
-                driverId: driverId
             })
         }
     );

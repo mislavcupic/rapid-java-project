@@ -18,6 +18,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -541,24 +543,36 @@ class DriverServiceImplTest {
     @DisplayName("Branch: Update - Preskakanje null/empty polja u UserInfo")
     void updateDriver_PartialUserInfo_ShouldSkipNullFields() {
         // Given
+        testDriver.getUserInfo().setFirstName("John");
+        testDriver.getUserInfo().setLastName("Doe");
+        testDriver.getUserInfo().setEmail("john.doe@example.com");
+
+        // Mockiramo pronalaženje drivera
         when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
 
-        // Šaljemo prazna polja da vidimo preskaču li se 'if' uvjeti (linije 110, 113, 116)
+        // ✅ KLJUČNI FIX: Mockiramo i save metodu da ne vrati null
+        when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
+
+        // Pripremamo partial update
         DriverUpdateDTO partialRequest = new DriverUpdateDTO();
-        partialRequest.setFirstName(""); // Prazan string
+        partialRequest.setFirstName("");
         partialRequest.setLastName(null);
-        partialRequest.setEmail(null);
-        partialRequest.setLicenseNumber("DL123456"); // Isti kao trenutni
+        partialRequest.setLicenseNumber("NEW-DL-999");
 
         // When
         driverService.updateDriver(1L, partialRequest);
 
         // Then
-        // Provjeravamo da se UserInfo NIJE promijenio jer su uvjeti bili (request.getFirstName() != null && !request.getFirstName().isEmpty())
-        verify(userRepository).save(argThat(user ->
-                user.getFirstName().equals("John") &&
-                        user.getLastName().equals("Doe")
-        ));
+        // Provjera licence na samom objektu koji je bio u memoriji
+        assertEquals("NEW-DL-999", testDriver.getLicenseNumber());
+
+        // Provjera da je save pozvan s originalnim podacima (jer su novi bili null/empty)
+        ArgumentCaptor<UserInfo> userCaptor = ArgumentCaptor.forClass(UserInfo.class);
+        verify(userRepository).save(userCaptor.capture());
+
+        UserInfo savedUser = userCaptor.getValue();
+        assertEquals("John", savedUser.getFirstName());
+        assertEquals("Doe", savedUser.getLastName());
     }
     // ========================================================================
     // 🚀 TESTOVI ZA MAX COVERAGE (BRANCH COVERAGE +9%)
@@ -700,22 +714,32 @@ class DriverServiceImplTest {
     @Test
     @DisplayName("Branch: Update - UserInfo is null (Should skip user update)")
     void updateDriver_WhenUserInfoIsNull_ShouldSkipUserLogic() {
+        // Given
         Driver driverWithoutUser = new Driver();
         driverWithoutUser.setId(1L);
-        driverWithoutUser.setUserInfo(null);
+        driverWithoutUser.setUserInfo(null); // Namjerno null da testiramo granu
         driverWithoutUser.setLicenseNumber("OLD");
 
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driverWithoutUser));
+        // Vraćamo isti objekt da mapToResponseDTO ne pukne (kao u prošlim primjerima)
         when(driverRepository.save(any(Driver.class))).thenReturn(driverWithoutUser);
 
         DriverUpdateDTO request = new DriverUpdateDTO();
         request.setLicenseNumber("NEW");
         request.setPhoneNumber("123");
-        request.setLicenseExpirationDate(LocalDate.now());
+        // Postavljamo budući datum da izbjegnemo validaciju o kojoj smo pričali
+        request.setLicenseExpirationDate(LocalDate.now().plusYears(1));
 
+        // When
         driverService.updateDriver(1L, request);
 
-        verify(userRepository, never()).save(any());
+        // Then
+        // 1. Ključna provjera: Budući da je UserInfo bio null, userRepository.save se NIKADA ne smije pozvati
+        verify(userRepository, never()).save(any(UserInfo.class));
+
+        // 2. Provjera da se ostatak Driver logike ipak izvršio
+        assertEquals("NEW", driverWithoutUser.getLicenseNumber());
+        verify(driverRepository).save(driverWithoutUser);
     }
 
     @Test
@@ -857,16 +881,29 @@ class DriverServiceImplTest {
     @Test
     @DisplayName("Branch: Update - FirstName is Empty String")
     void updateDriver_FirstNameEmpty_ShouldNotUpdate() {
-        // Gađa !request.getFirstName().isEmpty() granu (false case)
+        // Given
+        testDriver.getUserInfo().setFirstName("John"); // Postavimo početno ime
         when(driverRepository.findById(1L)).thenReturn(Optional.of(testDriver));
+        // Dodajemo mock za save da izbjegnemo NullPointerException ako metoda vraća DTO
+        when(driverRepository.save(any(Driver.class))).thenReturn(testDriver);
 
         DriverUpdateDTO request = new DriverUpdateDTO();
-        request.setFirstName(""); // Prazan string
+        request.setFirstName(""); // Prazan string koji se treba ignorirati
         request.setLicenseNumber("DL123456");
 
+        // When
         driverService.updateDriver(1L, request);
 
-        // Provjeravamo da ime NIJE postalo prazan string (ostalo "John")
+        // Then
+        // 1. Hvatom što je zapravo poslano u bazu
+        ArgumentCaptor<UserInfo> userCaptor = ArgumentCaptor.forClass(UserInfo.class);
+        verify(userRepository).save(userCaptor.capture());
+
+        // 2. Ključna provjera: Ime mora ostati "John", ne smije postati ""
+        assertEquals("John", userCaptor.getValue().getFirstName(),
+                "Ime je trebalo ostati John jer je u requestu poslan prazan string.");
+
+        // 3. Dodatna sigurnost: Provjeravamo da nikada nije pozvan save s praznim imenom
         verify(userRepository, never()).save(argThat(u -> u.getFirstName().equals("")));
     }
 

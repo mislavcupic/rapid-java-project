@@ -10,12 +10,10 @@ import java.util.Optional;
 @Repository
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
-    List<Assignment> findByDriverId(Long driverId);
 
     List<Assignment> findByDriverIdAndStatusIn(Long driverId, List<String> statuses);
 
     Optional<Assignment> findByShipments_Id(Long shipmentId);
 
-    // ISPRAVLJENO: Mora vraćati boolean da bi Spring znao generirati upit
-    boolean existsByDriverId(Long driverId);
+
 }

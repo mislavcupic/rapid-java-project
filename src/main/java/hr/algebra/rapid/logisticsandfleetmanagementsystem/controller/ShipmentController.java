@@ -124,6 +124,8 @@ public class ShipmentController {
         return ResponseEntity.ok(updatedShipment);
     }
 
+
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('ROLE_DISPATCHER')")
     public ResponseEntity<String> updateStatusDirectly(@PathVariable Long id, @RequestParam ShipmentStatus status) {

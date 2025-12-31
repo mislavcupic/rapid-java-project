@@ -157,7 +157,8 @@
     "vehicle": "Vozilo",
     "route_plan": "Plan rute",
     "start_time": "Početak",
-    "end_time": "Završetak"
+    "end_time": "Završetak",
+    "completed_success": "Dostava uspješno završena!"
   },
 
   "status": {
@@ -275,5 +276,18 @@
     "license_number_required": "Broj licence je obavezan",
     "license_expiration_required": "Datum isteka licence je obavezan",
     "phone_required": "Telefonski broj je obavezan"
+  },
+  "issue": {
+    "report_title": "Prijavi problem",
+    "type": "Tip problema",
+    "description": "Opis",
+    "estimated_delay": "Procijenjeno kašnjenje",
+    "gps_error": "GPS lokacija je obavezna za ovu akciju"
+  },
+  "common": {
+    "deliver": "Koraci dostava",
+    "issue": "Problemi u dostavi",
+    "submit": "Potvrdi problem",
+    "cancel": "Odustani"
   }
 }

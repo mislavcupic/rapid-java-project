@@ -36,6 +36,7 @@ public class Assignment {
     private Vehicle vehicle;
 
     @OneToMany(mappedBy = "assignment", fetch = FetchType.LAZY)
+    //@OneToMany(mappedBy = "assignment", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Shipment> shipments;
 
     @Column(name = "start_time", nullable = false)

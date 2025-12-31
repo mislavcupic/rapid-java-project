@@ -138,7 +138,9 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponse completeDelivery(Long shipmentId, Long driverId, ProofOfDeliveryDTO pod) {
         Shipment shipment = shipmentRepository.findById(shipmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(SHIPMENT, "ID", shipmentId));
-
+        if (shipment.getStatus() != ShipmentStatus.IN_TRANSIT) {
+            throw new IllegalStateException("Cannot complete delivery for shipment in status: " + shipment.getStatus());
+        }
         shipment.setStatus(ShipmentStatus.DELIVERED);
         shipment.setActualDeliveryDate(LocalDateTime.now());
         return mapToResponse(shipmentRepository.save(shipment));
@@ -149,7 +151,9 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponse reportIssue(Long shipmentId, Long driverId, IssueReportDTO issue) {
         Shipment shipment = shipmentRepository.findById(shipmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(SHIPMENT, "ID", shipmentId));
-
+        if (shipment.getStatus() != ShipmentStatus.IN_TRANSIT) {
+            throw new IllegalStateException("Cannot report issue for shipment in status: " + shipment.getStatus());
+        }
         shipment.setStatus(ShipmentStatus.DELAYED);
         return mapToResponse(shipmentRepository.save(shipment));
     }

@@ -164,7 +164,8 @@
     "scheduled": "Programmé",
     "in_progress": "En cours",
     "completed": "Terminé",
-    "pending": "En attente"
+    "pending": "En attente",
+    "completed_success": "FR:Success delivery :)"
   },
 
   "drivers": {
@@ -275,5 +276,18 @@
     "license_number_required": "Le numéro de permis est requis",
     "license_expiration_required": "La date d'expiration du permis est requise",
     "phone_required": "Le numéro de téléphone est requis"
+  },
+  "issue": {
+    "report_title": "Signaler un problème",
+    "type": "Type de problème",
+    "description": "Description",
+    "estimated_delay": "Retard estimé",
+    "gps_error": "La localisation GPS est requise pour cette action"
+  },
+  "common": {
+    "deliver": "FR: Delivery steps",
+    "issue": "Signaler un problème",
+    "submit": "Signaler un problème",
+    "cancel": "Cancel FR"
   }
 }

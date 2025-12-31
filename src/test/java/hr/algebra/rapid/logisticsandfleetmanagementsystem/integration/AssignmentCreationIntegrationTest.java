@@ -124,20 +124,48 @@ class AssignmentCreationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Coverage 2: Završetak naloga (Rješenje za NPE)")
+    @DisplayName("Coverage 2: Završetak naloga")
     void testCompleteAssignmentSuccess() {
-        AssignmentResponseDTO res = assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 0));
+        // Given - Kreiraj assignment
+        AssignmentResponseDTO res = assignmentService.createAssignment(
+                createAssignmentRequest(
+                        savedDriver.getId(),
+                        savedVehicle.getId(),
+                        savedShipment.getId(),
+                        0
+                )
+        );
 
-        // RJEŠENJE ZA NPE: Moramo ručno dodati pošiljku u listu unutar objekta jer Hibernate u transakciji ne osvježi kolekciju
-        Assignment a = assignmentRepository.findById(res.getId()).get();
-        a.setShipments(new ArrayList<>(List.of(shipmentRepository.findById(savedShipment.getId()).get())));
-        assignmentRepository.saveAndFlush(a);
+        entityManager.flush();
+        entityManager.clear();
 
+        // When - Pokreni assignment
         assignmentService.startAssignment(res.getId(), savedDriver.getId());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // ⭐ KLJUČNO: Postavi shipment na DELIVERED prije complete!
+        Shipment shipment = shipmentRepository.findById(savedShipment.getId())
+                .orElseThrow();
+        shipment.setStatus(ShipmentStatus.DELIVERED);
+        shipmentRepository.save(shipment);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // When - Završi assignment (sada će proći jer je shipment DELIVERED)
         assignmentService.completeAssignment(res.getId(), savedDriver.getId());
 
-        Assignment updated = assignmentRepository.findById(res.getId()).orElseThrow();
-        assertEquals("COMPLETED", updated.getStatus());
+        entityManager.flush();
+        entityManager.clear();
+
+        // Then - Provjeri da je status COMPLETED
+        Assignment completed = assignmentRepository.findById(res.getId())
+                .orElseThrow();
+
+        assertEquals("COMPLETED", completed.getStatus());
+        assertNotNull(completed.getEndTime());
     }
     @Test
     @DisplayName("Coverage 3: Force update statusa pošiljke (Admin logic)")

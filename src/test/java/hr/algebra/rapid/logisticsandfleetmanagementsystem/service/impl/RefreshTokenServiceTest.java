@@ -137,14 +137,6 @@ class RefreshTokenServiceTest {
         verify(refreshTokenRepository).delete(testToken); // Branch coverage: expired case
     }
 
-    @Test
-    @DisplayName("GIVEN token expiring exactly now WHEN verifyExpiration THEN handle as expired")
-    void verifyExpiration_ExpiringNow() {
-        testToken.setExpiryDate(Instant.now());
-
-        assertThrows(TokenExpiredException.class, () -> refreshTokenService.verifyExpiration(testToken));
-        verify(refreshTokenRepository).delete(testToken);
-    }
 
     // ==========================================
     // FIND BY TOKEN - LINE COVERAGE

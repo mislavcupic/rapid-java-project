@@ -125,23 +125,56 @@ class ShipmentServiceImplTest {
         @Test
         @DisplayName("Complete Delivery: Postavljanje datuma isporuke")
         void completeDelivery_Success() {
+            // 1. Priprema pošiljke u ispravnom stanju
+            // Backend ne dopušta isporuku ako status nije IN_TRANSIT
+            shipment.setStatus(ShipmentStatus.IN_TRANSIT);
+
+            // 2. Mockanje repozitorija
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(shipmentRepository.save(any())).willReturn(shipment);
+            // Osiguravamo da save vrati modificirani objekt
+            given(shipmentRepository.save(any(Shipment.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-            shipmentService.completeDelivery(1L, 10L, new ProofOfDeliveryDTO());
+            // 3. Priprema DTO-a s potrebnim podacima
+            ProofOfDeliveryDTO pod = new ProofOfDeliveryDTO();
+            pod.setRecipientName("Ivan Horvat");
+            pod.setLatitude(45.815);
+            pod.setLongitude(15.9819);
+            // Ako tvoja metoda zahtijeva potpis ili napomenu, dodaj ih ovdje
 
+            // 4. Act
+            shipmentService.completeDelivery(1L, 10L, pod);
+
+            // 5. Assert
             assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELIVERED);
             assertThat(shipment.getActualDeliveryDate()).isNotNull();
+
+            // Bonus provjera: Je li datum isporuke postavljen na današnji dan?
+            assertThat(shipment.getActualDeliveryDate()).isAfter(java.time.LocalDateTime.now().minusMinutes(1));
         }
 
         @Test
         @DisplayName("Report Issue: Postavljanje statusa DELAYED")
         void reportIssue_Success() {
+            // 1. Priprema pošiljke u ispravnom početnom statusu
+            // Mora biti IN_TRANSIT da bi reportIssue prošao validaciju
+            shipment.setStatus(ShipmentStatus.IN_TRANSIT);
+
+            // 2. Mockanje repozitorija
             given(shipmentRepository.findById(1L)).willReturn(Optional.of(shipment));
-            given(shipmentRepository.save(any())).willReturn(shipment);
+            // Osiguravamo da save vrati pošiljku koju smo mu poslali
+            given(shipmentRepository.save(any(Shipment.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-            shipmentService.reportIssue(1L, 10L, new IssueReportDTO());
+            // 3. Priprema DTO objekta s podacima
+            IssueReportDTO issue = new IssueReportDTO();
+            issue.setIssueType("VEHICLE_ISSUE");
+            issue.setDescription("Kvar na kamionu");
+            issue.setEstimatedDelay("2 sata");
 
+            // 4. Act
+            shipmentService.reportIssue(1L, 10L, issue);
+
+            // 5. Assert
+            // Provjeravamo je li status promijenjen u DELAYED
             assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELAYED);
         }
     }

@@ -31,7 +31,7 @@ const Login = ({ onLoginSuccess }) => {
         return '';
     };
 
-    // Handle blur
+    // kad korisnik makne kursor
     const handleBlur = (field) => {
         setTouched({ ...touched, [field]: true });
 

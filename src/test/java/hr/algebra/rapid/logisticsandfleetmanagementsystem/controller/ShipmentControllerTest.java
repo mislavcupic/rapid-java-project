@@ -62,22 +62,21 @@ class ShipmentControllerTest {
     @Test void createShipment_Coverage() throws Exception {
         when(shipmentService.createShipment(any(ShipmentRequest.class))).thenReturn(res);
 
-        // FIX: Datum skraćen na minute (ISO_LOCAL_DATE_TIME kompatibilno)
         String validJson = """
-            {
-                "trackingNumber": "TRK-999",
-                "originAddress": "Start 1",
-                "destinationAddress": "End 2",
-                "weightKg": 50.0,
-                "expectedDeliveryDate": "2025-12-31T12:00"
-            }
-            """;
+        {
+            "trackingNumber": "TRK-999",
+            "originAddress": "Start 1",
+            "destinationAddress": "End 2",
+            "weightKg": 50.0,
+            "expectedDeliveryDate": "2026-12-31T12:00"
+        }
+        """; // Promijenio sam godinu u 2026. da budemo sigurni
 
         mockMvc.perform(post("/api/shipments")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(validJson)).andExpect(status().isCreated());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validJson))
+                .andExpect(status().isCreated());
     }
-
     @Test void updateShipment_Coverage() throws Exception {
         when(shipmentService.updateShipment(anyLong(), any(ShipmentRequest.class))).thenReturn(res);
 

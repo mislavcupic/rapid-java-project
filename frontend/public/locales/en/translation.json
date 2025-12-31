@@ -155,7 +155,8 @@
     "vehicle": "Vehicle",
     "route_plan": "Route Plan",
     "start_time": "Start Time",
-    "end_time": "End Time"
+    "end_time": "End Time",
+    "completed_success": "Delivery successfull"
   },
 
   "status": {
@@ -273,5 +274,18 @@
     "license_number_required": "License number is required",
     "license_expiration_required": "License expiration date is required",
     "phone_required": "Phone number is required"
+  },
+  "issue": {
+    "report_title": "Report an Issue",
+    "type": "Issue Type",
+    "description": "Description",
+    "estimated_delay": "Estimated Delay",
+    "gps_error": "GPS location is required for this action"
+  },
+  "common": {
+    "deliver": "Delivery steps",
+    "issue": "Delivery issues",
+    "submit": "Submit a problem",
+    "cancel": "Cancelation"
   }
 }
