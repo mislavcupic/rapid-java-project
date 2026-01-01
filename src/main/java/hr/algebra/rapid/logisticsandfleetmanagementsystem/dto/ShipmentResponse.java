@@ -3,7 +3,9 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
+import jdk.jshell.Snippet;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class ShipmentResponse {
 
     private Long id;
@@ -45,4 +48,6 @@ public class ShipmentResponse {
 
     // ✅ PROMJENA: Dodano polje routeId koje backend vraća
     private Long routeId;
+
+
 }

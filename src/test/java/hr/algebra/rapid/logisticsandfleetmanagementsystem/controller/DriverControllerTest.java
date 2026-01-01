@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -135,21 +136,39 @@ class DriverControllerTest {
         @Test
         @DisplayName("Should update driver")
         void updateDriver_ShouldReturnUpdated() throws Exception {
+            // ⭐ Kreiraj response s "Jane" umjesto "John"
+            DriverResponseDTO updatedResponse = DriverResponseDTO.builder()
+                    .id(1L)
+                    .firstName("Jane")  // ⭐ Isto kao u request-u
+                    .lastName("Smith")
+                    .email("jane.smith@example.com")
+                    .phoneNumber("+385991234567")
+                    .licenseNumber("HR12345678")
+                    .build();
+
             when(driverService.updateDriver(eq(1L), any(DriverUpdateDTO.class)))
-                    .thenReturn(testDriverResponse);
+                    .thenReturn(updatedResponse);  // ⭐ Koristi novi response
 
             String json = """
-                {
-                    "firstName": "Jane",
-                    "lastName": "Smith",
-                    "email": "jane.smith@example.com"
-                }
-                """;
+        {
+            "firstName": "Jane",
+            "lastName": "Smith",
+            "email": "jane.smith@example.com",
+            "phoneNumber": "+385991234567",
+            "licenseNumber": "HR12345678",
+            "licenseExpirationDate": "2026-12-31"
+        }
+        """;
 
             mockMvc.perform(put("/api/drivers/1")
+                            .with(user("admin").roles("ADMIN"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.firstName").value("Jane"))  // ⭐ Sad će proći
+                    .andExpect(jsonPath("$.lastName").value("Smith"))
+                    .andExpect(jsonPath("$.email").value("jane.smith@example.com"));
 
             verify(driverService).updateDriver(eq(1L), any(DriverUpdateDTO.class));
         }

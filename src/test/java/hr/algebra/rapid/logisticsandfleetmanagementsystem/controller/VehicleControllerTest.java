@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -106,24 +107,34 @@ class VehicleControllerTest {
         @Test
         @DisplayName("Should create vehicle")
         void createVehicle_ShouldReturnCreated() throws Exception {
-            when(vehicleService.createVehicle(any(VehicleRequest.class))).thenReturn(testVehicleResponse);
+            when(vehicleService.createVehicle(any(VehicleRequest.class)))
+                    .thenReturn(testVehicleResponse);
 
             String json = """
-                {
-                    "licensePlate": "ZG-1234-AB",
-                    "make": "Mercedes",
-                    "model": "Actros",
-                    "modelYear": 2020,
-                    "fuelType": "Diesel",
-                    "loadCapacityKg": 18000
-                }
-                """;
+            {
+                "licensePlate": "ZG-1234-AB",
+                "make": "Mercedes",
+                "model": "Actros",
+                "year": 2020,
+                "vehicleType": "TRUCK",
+                "currentMileageKm": 50000,
+                "loadCapacityKg": 18000.0,
+                "nextServiceMileageKm": 55000,
+                "fuelConsumptionLitersPer100Km": 28.5,
+                "fuelType": "DIESEL",
+                "vin": "WDB9630281L123456",
+                "status": "ACTIVE"
+            }
+            """;
 
             mockMvc.perform(post("/api/vehicles")
+                            .with(user("admin").roles("ADMIN"))  // ⭐ DODAJ Security bypass
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.id").value(1));
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.licensePlate").value("ZG-1234-AB"))
+                    .andExpect(jsonPath("$.make").value("Mercedes"));
 
             verify(vehicleService).createVehicle(any(VehicleRequest.class));
         }
@@ -140,17 +151,29 @@ class VehicleControllerTest {
                     .thenReturn(testVehicleResponse);
 
             String json = """
-                {
-                    "licensePlate": "ZG-1234-AB",
-                    "make": "Mercedes",
-                    "model": "Actros"
-                }
-                """;
+        {
+            "licensePlate": "ZG-1234-AB",
+            "make": "Mercedes",
+            "model": "Actros",
+            "year": 2023,
+            "vehicleType": "TRUCK",
+            "currentMileageKm": 50000,
+            "loadCapacityKg": 18000.0,
+            "nextServiceMileageKm": 55000,
+            "fuelConsumptionLitersPer100Km": 28.5,
+            "fuelType": "DIESEL",
+            "vin": "WDB9630281L123456",
+            "status": "ACTIVE"
+        }
+        """;
 
             mockMvc.perform(put("/api/vehicles/1")
+                            .with(user("admin").roles("ADMIN"))  // ⭐ Dodaj security bypass
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.licensePlate").value("ZG-1234-AB"));
 
             verify(vehicleService).updateVehicle(eq(1L), any(VehicleRequest.class));
         }

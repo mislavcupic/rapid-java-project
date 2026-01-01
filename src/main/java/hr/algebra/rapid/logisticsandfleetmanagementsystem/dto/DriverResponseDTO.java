@@ -1,10 +1,17 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.Driver;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DriverResponseDTO {
 
     private Long id;
