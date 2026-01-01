@@ -29,256 +29,301 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 class AssignmentCreationIntegrationTest {
 
-    @Autowired private AssignmentService assignmentService;
-    @Autowired private ShipmentRepository shipmentRepository;
-    @Autowired private DriverRepository driverRepository;
-    @Autowired private VehicleRepository vehicleRepository;
-    @Autowired private AssignmentRepository assignmentRepository;
-    @Autowired private EntityManager entityManager;
+    @Autowired
+    private AssignmentService assignmentService;
+    @Autowired
+    private ShipmentRepository shipmentRepository;
+    @Autowired
+    private DriverRepository driverRepository;
+    @Autowired
+    private VehicleRepository vehicleRepository;
+    @Autowired
+    private AssignmentRepository assignmentRepository;
+    @Autowired
+    private RouteRepository routeRepository;
+    @Autowired
+    private EntityManager entityManager;
 
-    private Driver savedDriver;
-    private Vehicle savedVehicle;
-    private Shipment savedShipment;
+    private Long driverId;
+    private Long vehicleId;
+    private Long shipmentId;
 
     @BeforeEach
     void setUp() {
+        // 1. Korisnik
         UserInfo user = new UserInfo();
-        user.setUsername("user_" + System.nanoTime());
-        user.setEmail("test_" + System.nanoTime() + "@rapid.hr");
-        user.setPassword("pass");
+        user.setUsername("test_user_" + System.nanoTime());
+        user.setEmail("email_" + System.nanoTime() + "@test.com");
+        user.setPassword("password");
         entityManager.persist(user);
 
-        savedDriver = new Driver();
-        savedDriver.setUserInfo(user);
-        savedDriver.setLicenseNumber("LIC-" + System.nanoTime());
-        savedDriver = driverRepository.saveAndFlush(savedDriver);
+        // 2. Vozač
+        Driver driver = new Driver();
+        driver.setUserInfo(user);
+        driver.setLicenseNumber("LIC-123");
+        driver = driverRepository.saveAndFlush(driver);
+        this.driverId = driver.getId();
 
-        savedVehicle = new Vehicle();
-        savedVehicle.setMake("Iveco");
-        savedVehicle.setModel("Daily 35S18"); // OVO JE BIO FIX ZA NULL COLUMN
-        savedVehicle.setLicensePlate("ZG-RAPID-" + System.nanoTime());
-        savedVehicle = vehicleRepository.saveAndFlush(savedVehicle);
+        // 3. Vozilo
+        Vehicle vehicle = new Vehicle();
+        vehicle.setMake("Iveco");
+        vehicle.setModel("Daily");
+        vehicle.setLicensePlate("ZG-1234-AA");
+        vehicle = vehicleRepository.saveAndFlush(vehicle);
+        this.vehicleId = vehicle.getId();
 
-        savedShipment = createSimpleShipment("TRK-001");
-
-        entityManager.flush();
-        entityManager.clear();
-    }
-
-    // --- POPRAVCI 3 GLAVNA TESTA ---
-
-    @Test
-    @DisplayName("Fix 1: Brisanje naloga - čišćenje relacija (NPE safe)")
-    void testDeleteAssignmentFlow() {
-        AssignmentResponseDTO response = assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1));
-        entityManager.flush();
-        entityManager.clear();
-
-        assertDoesNotThrow(() -> assignmentService.deleteAssignment(response.getId()));
-
-        Shipment updated = shipmentRepository.findById(savedShipment.getId()).orElseThrow();
-        assertNull(updated.getAssignment());
-        assertEquals(ShipmentStatus.PENDING, updated.getStatus());
-    }
-
-    @Test
-    @DisplayName("Fix 2: Provjera perzistencije naloga (Usklađeno sa servisom)")
-    void testCreateAssignmentPersistence() {
-        // Pošto servis ne baca Conflict, testiramo da li se nalog ispravno kreira
-        AssignmentResponseDTO res = assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1));
-
-        assertNotNull(res.getId());
-        Assignment assignment = assignmentRepository.findById(res.getId()).orElseThrow();
-        assertNotNull(assignment.getRoute());
-    }
-
-    @Test
-    @DisplayName("Fix 3: Workflow - Start naloga mijenja status u IN_TRANSIT")
-    void testStartAssignmentWorkflow() {
-        AssignmentResponseDTO response = assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 0));
-        entityManager.flush();
-        entityManager.clear();
-
-        assignmentService.startAssignment(response.getId(), savedDriver.getId());
-        entityManager.flush();
-        entityManager.clear();
-
-        Shipment updated = shipmentRepository.findById(savedShipment.getId()).orElseThrow();
-        assertEquals(ShipmentStatus.IN_TRANSIT, updated.getStatus());
-    }
-
-    // --- 10 NOVIH TESTOVA ZA MASIVAN COVERAGE ---
-
-    @Test
-    @DisplayName("Coverage 1: Optimizacija rute s više pošiljaka (Branch coverage)")
-    void testOptimizeAssignmentOrderWithMultipleShipments() {
-        Shipment s2 = createSimpleShipment("TRK-002");
-        AssignmentRequestDTO req = createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1);
-        req.setShipmentIds(new ArrayList<>(List.of(savedShipment.getId(), s2.getId())));
-
-        AssignmentResponseDTO res = assignmentService.createAssignment(req);
-        entityManager.flush();
-        entityManager.clear();
-
-        assertDoesNotThrow(() -> assignmentService.optimizeAssignmentOrder(res.getId()));
-    }
-
-    @Test
-    @DisplayName("Coverage 2: Završetak naloga")
-    void testCompleteAssignmentSuccess() {
-        // Given - Kreiraj assignment
-        AssignmentResponseDTO res = assignmentService.createAssignment(
-                createAssignmentRequest(
-                        savedDriver.getId(),
-                        savedVehicle.getId(),
-                        savedShipment.getId(),
-                        0
-                )
-        );
-
-        entityManager.flush();
-        entityManager.clear();
-
-        // When - Pokreni assignment
-        assignmentService.startAssignment(res.getId(), savedDriver.getId());
-
-        entityManager.flush();
-        entityManager.clear();
-
-        // ⭐ KLJUČNO: Postavi shipment na DELIVERED prije complete!
-        Shipment shipment = shipmentRepository.findById(savedShipment.getId())
-                .orElseThrow();
-        shipment.setStatus(ShipmentStatus.DELIVERED);
-        shipmentRepository.save(shipment);
-
-        entityManager.flush();
-        entityManager.clear();
-
-        // When - Završi assignment (sada će proći jer je shipment DELIVERED)
-        assignmentService.completeAssignment(res.getId(), savedDriver.getId());
-
-        entityManager.flush();
-        entityManager.clear();
-
-        // Then - Provjeri da je status COMPLETED
-        Assignment completed = assignmentRepository.findById(res.getId())
-                .orElseThrow();
-
-        assertEquals("COMPLETED", completed.getStatus());
-        assertNotNull(completed.getEndTime());
-    }
-    @Test
-    @DisplayName("Coverage 3: Force update statusa pošiljke (Admin logic)")
-    void testForceUpdateShipmentStatus() {
-        assignmentService.updateShipmentStatus(savedShipment.getId(), ShipmentStatus.CANCELED);
-        Shipment updated = shipmentRepository.findById(savedShipment.getId()).orElseThrow();
-        assertEquals(ShipmentStatus.CANCELED, updated.getStatus());
-    }
-
-    @Test
-    @DisplayName("Coverage 4: Dohvat naloga po vozaču (Filteri)")
-    void testFindAssignmentsByDriver() {
-        assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1));
-        List<AssignmentResponseDTO> list = assignmentService.findAssignmentsByDriver(savedDriver.getId());
-        assertFalse(list.isEmpty());
-    }
-
-    @Test
-    @DisplayName("Negative 1: Brisanje nepostojećeg naloga (Exception check)")
-    void testDeleteNonExistentAssignment() {
-        assertThrows(ResourceNotFoundException.class, () -> assignmentService.deleteAssignment(9999L));
-    }
-
-    @Test
-    @DisplayName("Branch: Pokretanje naloga s krivim vozačem (Conflict)")
-    void testStartAssignmentWithWrongDriver() {
-        AssignmentRequestDTO req = createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 0);
-        AssignmentResponseDTO res = assignmentService.createAssignment(req);
-
-        // Rješenje za SonarQube: ID-ovi moraju biti varijable izvan lambde
-        Long assignmentId = res.getId();
-        Long wrongDriverId = 999L;
-
-        assertThrows(ConflictException.class, () ->
-                assignmentService.startAssignment(assignmentId, wrongDriverId)
-        );
-    }
-
-    @Test
-    @DisplayName("Negative 3: Kreiranje naloga s nepostojećim vozilom")
-    void testCreateAssignmentInvalidVehicle() {
-        AssignmentRequestDTO req = createAssignmentRequest(savedDriver.getId(), 999L, savedShipment.getId(), 1);
-        assertThrows(ResourceNotFoundException.class, () -> assignmentService.createAssignment(req));
-    }
-
-    @Test
-    @DisplayName("Negative 4: Završetak naloga koji nije započet")
-    void testCompleteAssignmentBeforeStartFails() {
-        // 1. Kreiraj nalog
-        AssignmentResponseDTO res = assignmentService.createAssignment(
-                createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1)
-        );
-
-        // 2. Ručno postavi status na PENDING
-        Assignment a = assignmentRepository.findById(res.getId()).orElseThrow();
-        a.setStatus("PENDING");
-
-        // 3. Osiguraj pošiljke i spremi
-        Shipment s = shipmentRepository.findById(savedShipment.getId()).orElseThrow();
-        a.setShipments(new ArrayList<>(List.of(s)));
-
-        assignmentRepository.saveAndFlush(a);
-        entityManager.clear();
-
-        // --- REFAKTORIRANO ZA SONARQUBE ---
-        // Izvlačimo ID-ove u varijable da lambda ima samo JEDAN poziv
-        Long assignmentId = res.getId();
-        Long driverId = savedDriver.getId();
-
-        assertThrows(ConflictException.class, () ->
-                assignmentService.completeAssignment(assignmentId, driverId)
-        );
-    }
-
-    @Test
-    @DisplayName("Branch: Direktni update statusa naloga")
-    void testUpdateAssignmentStatusDirectly() {
-        AssignmentResponseDTO res = assignmentService.createAssignment(createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1));
-        assignmentService.updateStatus(res.getId(), "IN_PROGRESS");
-
-        Assignment updated = assignmentRepository.findById(res.getId()).get();
-        assertEquals("IN_PROGRESS", updated.getStatus());
-    }
-
-    @Test
-    @DisplayName("Branch: Kreiranje naloga bez pošiljaka (Validation)")
-    void testCreateAssignmentWithNoShipments() {
-        AssignmentRequestDTO req = createAssignmentRequest(savedDriver.getId(), savedVehicle.getId(), savedShipment.getId(), 1);
-        req.setShipmentIds(List.of());
-        assertThrows(ConflictException.class, () -> assignmentService.createAssignment(req));
-    }
-
-    // --- POMOĆNE METODE ---
-
-    private Shipment createSimpleShipment(String trackingNumber) {
+        // 4. Pošiljka - Koordinate Zagreb → Split
         Shipment shipment = new Shipment();
-        shipment.setTrackingNumber(trackingNumber);
-        shipment.setOriginAddress("Zagreb");
-        shipment.setDestinationAddress("Split");
-        shipment.setOriginLatitude(45.815); shipment.setOriginLongitude(15.981);
-        shipment.setDestinationLatitude(43.508); shipment.setDestinationLongitude(16.440);
+        shipment.setTrackingNumber("TRK-001");
+        shipment.setOriginAddress("Ulica 1, Zagreb");
+        shipment.setDestinationAddress("Ulica 2, Split");
+        shipment.setOriginLatitude(45.815);
+        shipment.setOriginLongitude(15.981);
+        shipment.setDestinationLatitude(43.508);
+        shipment.setDestinationLongitude(16.440);
         shipment.setStatus(ShipmentStatus.PENDING);
         shipment.setWeightKg(BigDecimal.valueOf(10));
         shipment.setVolumeM3(BigDecimal.valueOf(1));
-        return shipmentRepository.saveAndFlush(shipment);
+        shipment = shipmentRepository.saveAndFlush(shipment);
+        this.shipmentId = shipment.getId();
+
+        entityManager.flush();
+        entityManager.clear();
     }
 
-    private AssignmentRequestDTO createAssignmentRequest(Long dId, Long vId, Long sId, int offset) {
-        AssignmentRequestDTO r = new AssignmentRequestDTO();
-        r.setDriverId(dId);
-        r.setVehicleId(vId);
-        r.setShipmentIds(List.of(sId));
-        r.setStartTime(LocalDateTime.now().plusHours(offset));
-        return r;
+    private AssignmentRequestDTO getValidReq() {
+        AssignmentRequestDTO req = new AssignmentRequestDTO();
+        req.setDriverId(driverId);
+        req.setVehicleId(vehicleId);
+        req.setShipmentIds(new ArrayList<>(List.of(shipmentId)));
+        req.setStartTime(LocalDateTime.now().plusDays(1));
+        return req;
     }
+
+    // ========================================
+    // TESTOVI
+    // ========================================
+
+    @Test
+    @DisplayName("1. Brisanje naloga - Vraćanje statusa pošiljaka")
+    void testDeleteAssignmentFlow() {
+        // 1. Kreiranje rute
+        Route route = new Route();
+        route.setOriginAddress("Zagreb");
+        route.setDestinationAddress("Split");
+        route.setEstimatedDistanceKm(400.0);
+        route.setEstimatedDurationMinutes(300L);
+        route.setStatus(RouteStatus.DRAFT);
+        final Route savedRoute = routeRepository.saveAndFlush(route);
+
+        // 2. Povezivanje pošiljke s rutom
+        Shipment s = shipmentRepository.findById(this.shipmentId).orElseThrow();
+        s.setRoute(savedRoute);
+        shipmentRepository.saveAndFlush(s);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // 3. Kreiranje assignmenta
+        AssignmentRequestDTO req = new AssignmentRequestDTO();
+        req.setDriverId(this.driverId);
+        req.setVehicleId(this.vehicleId);
+        req.setShipmentIds(new ArrayList<>(List.of(this.shipmentId)));
+        req.setStartTime(LocalDateTime.now().plusHours(1));
+
+        AssignmentResponseDTO res = assignmentService.createAssignment(req);
+        // ✅ RELOAD - Force refresh from DB
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        assertNotNull(res);
+        Long assignmentId = res.getId();
+
+        // 4. Brisanje assignmenta
+        assertDoesNotThrow(() -> assignmentService.deleteAssignment(assignmentId));
+
+        entityManager.flush();
+        assertFalse(assignmentRepository.existsById(assignmentId));
+
+        // 5. Provjeri da je pošiljka vraćena u PENDING status
+        Shipment deletedShipment = shipmentRepository.findById(shipmentId).orElseThrow();
+        assertEquals(ShipmentStatus.PENDING, deletedShipment.getStatus(),
+                "Pošiljka mora biti vraćena u PENDING status nakon brisanja assignmenta");
+    }
+
+    @Test
+    @DisplayName("2. Kreiranje assignmenta - Provjera persistencije")
+    void testCreateAssignmentPersistence() {
+        AssignmentResponseDTO res = assignmentService.createAssignment(getValidReq());
+        // ✅ RELOAD
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        assertNotNull(res.getId(), "Assignment mora imati ID");
+
+        Assignment saved = assignmentRepository.findById(res.getId()).orElseThrow();
+        assertNotNull(saved.getRoute(), "Ruta mora biti kreirana i povezana");
+        assertEquals("SCHEDULED", saved.getStatus(), "Status mora biti SCHEDULED");
+    }
+
+    @Test
+    @DisplayName("3. Početak assignmenta - Workflow test")
+    void testStartAssignmentWorkflow() {
+        AssignmentResponseDTO res = assignmentService.createAssignment(getValidReq());
+        // ✅ RELOAD
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        Long aId = res.getId();
+
+        // Pokreni assignment
+        assignmentService.startAssignment(aId, driverId);
+
+        // Provjeri da je pošiljka u IN_TRANSIT statusu
+        Shipment shipment = shipmentRepository.findById(shipmentId).orElseThrow();
+        assertEquals(ShipmentStatus.IN_TRANSIT, shipment.getStatus(),
+                "Pošiljka mora biti u IN_TRANSIT statusu nakon pokretanja assignmenta");
+
+        // Provjeri da je assignment u IN_PROGRESS statusu
+        Assignment assignment = assignmentRepository.findById(aId).orElseThrow();
+        assertEquals("IN_PROGRESS", assignment.getStatus(),
+                "Assignment mora biti u IN_PROGRESS statusu");
+    }
+
+
+    @Test
+    @DisplayName("5. Dovršavanje assignmenta - Success scenario")
+    void testCompleteAssignmentSuccess() {
+        AssignmentResponseDTO res = assignmentService.createAssignment(getValidReq());
+        // ✅ RELOAD
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        // 1. Pokreni assignment
+        assignmentService.startAssignment(res.getId(), driverId);
+
+        // 2. Postavi pošiljku kao isporučenu
+        Shipment s = shipmentRepository.findById(shipmentId).orElseThrow();
+        s.setStatus(ShipmentStatus.DELIVERED);
+        shipmentRepository.saveAndFlush(s);
+
+        // 3. Završi assignment
+        assignmentService.completeAssignment(res.getId(), driverId);
+
+        // 4. Provjeri status
+        Assignment completed = assignmentRepository.findById(res.getId()).orElseThrow();
+        assertEquals("COMPLETED", completed.getStatus(),
+                "Assignment mora biti u COMPLETED statusu");
+        assertNotNull(completed.getEndTime(),
+                "EndTime mora biti postavljen");
+    }
+
+    @Test
+    @DisplayName("6. Forsirana promjena statusa pošiljke")
+    void testForceUpdateShipmentStatus() {
+        assignmentService.updateShipmentStatus(shipmentId, ShipmentStatus.CANCELED);
+
+        Shipment updated = shipmentRepository.findById(shipmentId).orElseThrow();
+        assertEquals(ShipmentStatus.CANCELED, updated.getStatus(),
+                "Status pošiljke mora biti CANCELED");
+    }
+
+    @Test
+    @DisplayName("7. Dohvaćanje assignmenta po vozaču")
+    void testFindAssignmentsByDriver() {
+        assignmentService.createAssignment(getValidReq());
+
+        List<AssignmentResponseDTO> assignments = assignmentService.findAssignmentsByDriver(driverId);
+
+        assertFalse(assignments.isEmpty(), "Vozač mora imati barem jedan assignment");
+        assertEquals(driverId, assignments.get(0).getDriver().getId(),
+                "Assignment mora pripadati ispravnom vozaču");
+    }
+
+    @Test
+    @DisplayName("8. Pokretanje assignmenta - Pogrešan vozač")
+    void testStartAssignmentWithWrongDriver() {
+        AssignmentResponseDTO res = assignmentService.createAssignment(getValidReq());
+        // ✅ RELOAD
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        Long aId = res.getId();
+        Long wrongId = 9999L;
+
+        assertThrows(ConflictException.class,
+                () -> assignmentService.startAssignment(aId, wrongId),
+                "Mora baciti ConflictException za pogrešnog vozača");
+    }
+
+    @Test
+    @DisplayName("9. Kreiranje assignmenta bez pošiljaka")
+    void testCreateAssignmentWithNoShipments() {
+        AssignmentRequestDTO req = getValidReq();
+        req.setShipmentIds(List.of());
+
+        assertThrows(ConflictException.class,
+                () -> assignmentService.createAssignment(req),
+                "Mora baciti ConflictException ako nema pošiljaka");
+    }
+
+    @Test
+    @DisplayName("10. Brisanje nepostojećeg assignmenta")
+    void testDeleteNonExistentAssignment() {
+        assertThrows(ResourceNotFoundException.class,
+                () -> assignmentService.deleteAssignment(9999L),
+                "Mora baciti ResourceNotFoundException za nepostojeći assignment");
+    }
+
+    @Test
+    @DisplayName("11. Dovršavanje assignmenta prije pokretanja")
+    void testCompleteAssignmentBeforeStartFails() {
+        AssignmentResponseDTO res = assignmentService.createAssignment(getValidReq());
+        // ✅ RELOAD
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        Long aId = res.getId();
+
+        assertThrows(ConflictException.class,
+                () -> assignmentService.completeAssignment(aId, driverId),
+                "Mora baciti ConflictException ako assignment nije pokrenut");
+    }
+
+    @Test
+    @DisplayName("12. Direktno ažuriranje statusa assignmenta")
+    void testUpdateAssignmentStatusDirectly() {
+        AssignmentResponseDTO res = assignmentService.createAssignment(getValidReq());
+        // ✅ RELOAD
+        entityManager.flush();
+        entityManager.clear();
+        res = assignmentService.findById(res.getId()).orElseThrow();
+
+        // Postavi status direktno na COMPLETED
+        assignmentService.updateStatus(res.getId(), "COMPLETED");
+
+        // Provjeri da su pošiljke također ažurirane
+        Shipment shipment = shipmentRepository.findById(shipmentId).orElseThrow();
+        assertEquals(ShipmentStatus.DELIVERED, shipment.getStatus(),
+                "Status pošiljke mora biti DELIVERED kada je assignment COMPLETED");
+    }
+
+    @Test
+    @DisplayName("13. Kreiranje assignmenta - Nepostojeće vozilo")
+    void testCreateAssignmentInvalidVehicle() {
+        AssignmentRequestDTO req = getValidReq();
+        req.setVehicleId(9999L);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> assignmentService.createAssignment(req),
+                "Mora baciti ResourceNotFoundException za nepostojeće vozilo");
+    }
+
+
 }

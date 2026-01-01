@@ -48,5 +48,5 @@ public class ShipmentResponse {
     // ✅ PROMJENA: Dodano polje routeId koje backend vraća
     private Long routeId;
 
-
+    private Integer deliverySequence;
 }
