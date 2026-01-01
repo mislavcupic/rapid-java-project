@@ -302,6 +302,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         List<Shipment> toOptimize = new ArrayList<>(assignment.getShipments());
         if (toOptimize.isEmpty()) return mapToResponse(assignment);
 
+        // 1. Krenimo od polazišta prve pošiljke (npr. tvoje skladište u Zagrebu)
         double currentLat = toOptimize.get(0).getOriginLatitude();
         double currentLon = toOptimize.get(0).getOriginLongitude();
 
@@ -309,6 +310,8 @@ public class AssignmentServiceImpl implements AssignmentService {
         while (!toOptimize.isEmpty()) {
             Shipment closest = null;
             double minDistance = Double.MAX_VALUE;
+
+            // 2. Tražimo pošiljku čija je DESTINACIJA najbliža trenutnoj lokaciji kamiona
             for (Shipment s : toOptimize) {
                 double dist = calculateHaversine(currentLat, currentLon, s.getDestinationLatitude(), s.getDestinationLongitude());
                 if (dist < minDistance) {
@@ -316,14 +319,24 @@ public class AssignmentServiceImpl implements AssignmentService {
                     closest = s;
                 }
             }
+
             if (closest != null) {
+                // 3. Postavljamo redoslijed i "selimo" kamion na tu destinaciju
                 closest.setDeliverySequence(sequence++);
-                toOptimize.remove(closest);
                 currentLat = closest.getDestinationLatitude();
                 currentLon = closest.getDestinationLongitude();
+
                 shipmentRepository.save(closest);
-            } else break;
+                toOptimize.remove(closest); // Mičemo je iz liste za pretragu
+            } else {
+                break;
+            }
         }
+
+        // Osvježavamo podatke iz baze da DTO povuče ispravan sequence
+        entityManager.flush();
+        entityManager.refresh(assignment);
+
         return mapToResponse(assignment);
     }
 
