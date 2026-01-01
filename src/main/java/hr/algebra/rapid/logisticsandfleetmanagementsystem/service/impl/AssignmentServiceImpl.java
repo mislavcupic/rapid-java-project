@@ -248,7 +248,6 @@ public class AssignmentServiceImpl implements AssignmentService {
     public AssignmentResponseDTO optimizeAssignmentOrder(Long assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT, "ID", assignmentId));
-       // List<Shipment> shipments = new ArrayList<>(assignment.getShipments());
         List<Shipment> shipments = shipmentRepository.findByAssignmentId(assignmentId);
         if (shipments.isEmpty()) return mapToResponse(assignment);
 
