@@ -56,18 +56,7 @@ public class DriverController {
         return new ResponseEntity<>(newDriver, HttpStatus.CREATED);
     }
 
-    // -----------------------------------------------------------------
-    // UPDATE (Ažuriranje)
-    // -----------------------------------------------------------------
 
-    /** Ažurira postojeći Driver profil */
-//    @PutMapping("/{id}")
-//    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
-//    public ResponseEntity<DriverResponseDTO> updateDriver(@PathVariable Long id,
-//                                                          @Valid @RequestBody DriverRequestDTO request) {
-//        DriverResponseDTO updatedDriver = driverService.updateDriver(id, request);
-//        return ResponseEntity.ok(updatedDriver);
-//    }
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<DriverResponseDTO> updateDriver(

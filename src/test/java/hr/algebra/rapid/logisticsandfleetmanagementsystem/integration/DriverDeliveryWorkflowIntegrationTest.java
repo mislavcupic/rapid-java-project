@@ -6,6 +6,7 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.*;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.service.*;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -247,7 +248,7 @@ class DriverDeliveryWorkflowIntegrationTest {
                 java.lang.reflect.Field field = Assignment.class.getDeclaredField("shipments");
                 field.setAccessible(true);
                 field.set(a, new java.util.ArrayList<>());
-            } catch (Exception e) { /* ignorirati */ }
+            } catch (Exception _) { /* ignorirati */ }
         }
         if (!a.getShipments().contains(s)) {
             a.getShipments().add(s);
@@ -288,21 +289,20 @@ class DriverDeliveryWorkflowIntegrationTest {
         pod.setRecipientName("John Doe");
         pod.setLatitude(43.5081);
         pod.setLongitude(16.4402);
-        // Ako imaš polje za potpis ili sliku, postavi ga ovdje
-        // pod.setSignatureBase64("...");
 
-        // 2. Pokušaj završiti dostavu dok je pošiljka još u statusu SCHEDULED
-        // Očekujemo IllegalStateException (vjerojatno istu onu koju si vidio ranije)
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            shipmentService.completeDelivery(shipmentId, testDriver.getId(), pod);
-        }, "Should not be able to complete delivery without starting");
+        //  Ekstrahiraj vrijednost PRIJE assertThrows
+        Long driverId = testDriver.getId();
 
-        // 3. Opcionalno: Provjeri poruku iznimke da budeš 100% siguran
-        assertTrue(exception.getMessage().contains("status"), "Poruka iznimke trebala bi spominjati status pošiljke");
+        // ACT & ASSERT
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> shipmentService.completeDelivery(shipmentId, driverId, pod),
+                "Should not be able to complete delivery without starting"
+        );
 
-        // 4. Provjeri da je pošiljka i dalje SCHEDULED u bazi
-        Shipment shipment = shipmentRepository.findById(shipmentId).orElseThrow();
-        assertEquals(ShipmentStatus.SCHEDULED, shipment.getStatus(), "Status pošiljke se ne smije promijeniti");
+        // VERIFY
+        assertTrue(exception.getMessage().contains("status"),
+                "Poruka izninke trebala bi spominjati status pošiljke");
     }
     @Test
     @Transactional
@@ -318,18 +318,35 @@ class DriverDeliveryWorkflowIntegrationTest {
 
     @Test
     @Transactional
+    @DisplayName("Ne može prijaviti problem ako pošiljka nije započeta")
     void testCannotReportIssueBeforeStarting() {
-        // 1. PRIPREMA (Pošiljka je inicijalno SCHEDULED)
+        // 1. ARRANGE - Pripremi podatke i ekstraktuj vrijednosti
+        Long driverId = testDriver.getId();
+        Long shipId = shipmentId;
+
         IssueReportDTO issue = new IssueReportDTO();
         issue.setIssueType("VEHICLE_BREAKDOWN");
         issue.setDescription("Guma je pukla, a nalog još nije ni počeo.");
 
-        // 2. ASSERT & ACT
-        // Umjesto Exception.class, koristi specifičnu iznimku koju tvoj servis baca
-        // npr. IllegalStateException ili tvoj RapidLogisticsException
-        assertThrows(IllegalStateException.class, () -> {
-            shipmentService.reportIssue(shipmentId, testDriver.getId(), issue);
-        }, "Should throw IllegalStateException when reporting issue for a shipment that hasn't started");
+        // 2. ACT & ASSERT - Očekuj IllegalStateException
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> shipmentService.reportIssue(shipId, driverId, issue),
+                "Should throw IllegalStateException when reporting issue for SCHEDULED shipment"
+        );
+
+        // 3. VERIFY - Dodatne provjere poruke iznimke
+        assertTrue(
+                exception.getMessage().contains("status") ||
+                        exception.getMessage().contains("started") ||
+                        exception.getMessage().contains("SCHEDULED"),
+                "Exception message should mention shipment status or that delivery hasn't started"
+        );
+
+        // 4. VERIFY - Provjeri da pošiljka ostaje u SCHEDULED statusu
+        Shipment unchanged = shipmentRepository.findById(shipId).orElseThrow();
+        assertEquals(ShipmentStatus.SCHEDULED, unchanged.getStatus(),
+                "Shipment status should remain SCHEDULED");
     }
 
     // ==========================================

@@ -99,6 +99,6 @@ class RouteServiceImplTest {
         // 3. ISPRAVAK STATUSA:
         // Tvoj produkcijski kod postavlja status 'CALCULATED', pa test mora to uvažiti
         // Provjeri koristiš li Enum (RouteStatus.CALCULATED) ili String "CALCULATED"
-        assertThat(result.getStatus().toString()).isEqualTo("CALCULATED");
+        assertThat(result.getStatus().toString()).hasToString("CALCULATED");
     }
 }

@@ -3,7 +3,6 @@
 package hr.algebra.rapid.logisticsandfleetmanagementsystem.dto;
 
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.domain.ShipmentStatus;
-import jdk.jshell.Snippet;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

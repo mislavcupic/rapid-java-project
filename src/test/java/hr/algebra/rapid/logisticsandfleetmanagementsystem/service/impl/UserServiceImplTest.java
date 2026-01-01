@@ -8,6 +8,7 @@ import hr.algebra.rapid.logisticsandfleetmanagementsystem.exceptions.ResourceNot
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.DriverRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRepository;
 import hr.algebra.rapid.logisticsandfleetmanagementsystem.repository.UserRoleRepository;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -88,7 +89,6 @@ class UserServiceImplTest {
 
             when(userRepository.findByUsername("existing")).thenReturn(testUser);
 
-            // ACT & ASSERT - Line 51: if (existsByUsername) → TRUE branch
             assertThrows(IllegalArgumentException.class,
                     () -> userService.registerUser(req),
                     "Korisničko ime već postoji!");
@@ -110,7 +110,6 @@ class UserServiceImplTest {
             when(userRepository.findByUsername("newuser")).thenReturn(null);
             when(userRepository.findAll()).thenReturn(List.of(testUser));
 
-            // ACT & ASSERT - Line 55: if (existsByEmail) → TRUE branch
             assertThrows(IllegalArgumentException.class,
                     () -> userService.registerUser(req),
                     "Email već postoji!");
@@ -169,7 +168,7 @@ class UserServiceImplTest {
 
             // ASSERT - Line 80-82: ternary operator FALSE branch
             verify(driverRepository).save(argThat(driver -> {
-                LocalDate expectedDate = LocalDate.now().plusYears(10);
+                LocalDate.now().plusYears(10);
                 return driver.getLicenseExpirationDate().isAfter(LocalDate.now().plusYears(9));
             }));
         }
@@ -220,22 +219,38 @@ class UserServiceImplTest {
             // ARRANGE
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
-            // ACT & ASSERT - Line 108: if (roleNames == null) → TRUE branch
             assertThrows(IllegalArgumentException.class,
                     () -> userService.updateUserRoles(1L, null),
                     "Korisnik mora imati barem jednu ulogu!");
         }
 
         @Test
+        @Transactional
         @DisplayName("Branch: roleNames.isEmpty() → TRUE (throws exception)")
         void updateUserRoles_EmptyRoles_ThrowsException() {
-            // ARRANGE
-            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+            // 1. ARRANGE - Pripremi mock podatke
+            Long userId = 1L;
+            List<String> emptyRoles = new ArrayList<>();
 
-            // ACT & ASSERT - Line 108: || roleNames.isEmpty() → TRUE branch
-            assertThrows(IllegalArgumentException.class,
-                    () -> userService.updateUserRoles(1L, new ArrayList<>()),
-                    "Korisnik mora imati barem jednu ulogu!");
+            when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+
+            // 2. ACT & ASSERT - Line 108: || roleNames.isEmpty() → TRUE branch
+            IllegalArgumentException exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> userService.updateUserRoles(userId, emptyRoles),
+                    "Should throw IllegalArgumentException when role list is empty"
+            );
+
+            // 3. VERIFY - Provjeri poruku iznimke
+            assertEquals(
+                    "Korisnik mora imati barem jednu ulogu!",
+                    exception.getMessage(),
+                    "Exception message should match expected validation message"
+            );
+
+            // 4. VERIFY - Provjeri da updateUserRoles NIJE pozvao save()
+            verify(userRepository, never()).save(any(UserInfo.class));
+            verify(userRoleRepository, never()).deleteById(userId);
         }
 
         @Test
@@ -252,8 +267,7 @@ class UserServiceImplTest {
             // ACT
             userService.updateUserRoles(1L, roles);
 
-            // ASSERT - Line 124: if (roleNames.contains) → TRUE
-            //         - Line 125: if (!driverRepository.existsByUserInfo) → TRUE
+
             verify(driverRepository).save(argThat(driver ->
                     driver.getUserInfo().equals(testUser) &&
                             driver.getLicenseNumber().equals("TEMP-1") &&
@@ -275,7 +289,6 @@ class UserServiceImplTest {
             // ACT
             userService.updateUserRoles(1L, roles);
 
-            // ASSERT - Line 125: if (!existsByUserInfo) → FALSE (skips creation)
             verify(driverRepository, never()).save(any());
         }
 
