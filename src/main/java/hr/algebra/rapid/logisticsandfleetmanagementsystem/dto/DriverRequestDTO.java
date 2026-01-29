@@ -25,7 +25,7 @@ public class DriverRequestDTO {
 
     // ✅ ISPRAVLJENO: Polje za Email (mora biti prisutno i validirano)
     @NotBlank(message = "E-mail je obavezan.")
-    @Email(message = "E-mail format nije ispravan.")
+    @Email(message = "E-mail format nije ispravan. Molimo unesite ponovno.")
     private String email;
 
     // --- POLJA ZA DRIVER PROFIL (Logistika) ---
