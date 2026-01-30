@@ -29,15 +29,18 @@ jobs:
     name: 1. Build & Push Images
     runs-on: self-hosted
     outputs:
-      tag: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.lowercase.outputs.repo }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Lowercase Repo Name
-        run: |
-          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        id: lowercase
+        run: | 
+          $repo = "${{ github.repository }}".ToLower()
+          echo "repo=$repo" >> $env:GITHUB_OUTPUT
+          echo "REPO_LOWER=$repo" >> $env:GITHUB_ENV
 
       - name: Log into Container Registry (GHCR)
         uses: docker/login-action@v3
@@ -62,10 +65,10 @@ jobs:
         with:
           context: ${{ env.BACKEND_CONTEXT }}
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.REPO_LOWER }}/backend:${{ steps.meta.outputs.version }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/backend:latest
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION_TAG=${{ steps.meta.outputs.version }}
+            VERSION_TAG=${{ steps.lowercase.outputs.repo }}
           file: ./Dockerfile
 
       - name: Build and Push Frontend Docker Image
@@ -73,7 +76,7 @@ jobs:
         with:
           context: ${{ env.FRONTEND_CONTEXT }}
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${{ steps.meta.outputs.version }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${{ steps.lowercase.outputs.repo }}
           labels: ${{ steps.meta.outputs.labels }}
           file: ./frontend/Dockerfile
 
