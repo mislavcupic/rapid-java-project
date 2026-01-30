@@ -20,7 +20,7 @@ permissions:
 
 env:
   DOCKER_REGISTRY: ghcr.io
-  GHCR_PATH: ${{ github.repository }}
+  GHCR_PATH: ${{ github.repository_owner }} # moj username je uppercase pa imam problem
   BACKEND_CONTEXT: .
   FRONTEND_CONTEXT: ./frontend
 
@@ -34,6 +34,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Lowercase Repo Name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
       - name: Log into Container Registry (GHCR)
         uses: docker/login-action@v3
@@ -58,7 +62,7 @@ jobs:
         with:
           context: ${{ env.BACKEND_CONTEXT }}
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend:${{ steps.meta.outputs.version }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.REPO_LOWER }}/backend:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION_TAG=${{ steps.meta.outputs.version }}
