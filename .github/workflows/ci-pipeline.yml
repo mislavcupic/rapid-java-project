@@ -6,8 +6,6 @@ on:
       - dev-2
   push:
     branches:
-      - develop
-      - main
       - dev-2
     paths-ignore:
       - '**.md'
