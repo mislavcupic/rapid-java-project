@@ -41,7 +41,7 @@ services:
     container_name: logistics-frontend
     restart: always
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
 ## Konekcija na Backend servis (koristi ime servisa 'backend')
       REACT_APP_API_URL: http://backend:8080
