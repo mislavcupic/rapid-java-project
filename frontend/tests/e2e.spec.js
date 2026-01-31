@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
 
 test.describe('End-to-End Test for Shipment CRUD (LO8)', () => {
 
