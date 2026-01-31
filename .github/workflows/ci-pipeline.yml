@@ -74,7 +74,7 @@ jobs:
         with:
           context: ${{ env.FRONTEND_CONTEXT }}
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend:${{ steps.lowercase.outputs.repo }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/frontend:latest
           labels: ${{ steps.meta.outputs.labels }}
           file: ./frontend/Dockerfile
 
