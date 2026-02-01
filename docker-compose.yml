@@ -25,7 +25,7 @@ services:
     environment:
 #      # Konekcija na DB servis (koristi ime servisa 'db')
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
-      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
 #      # Omogućava /actuator/prometheus endpoint za monitoring (LO9)
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus
