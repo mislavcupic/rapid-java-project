@@ -44,7 +44,7 @@ services:
       - "5173:80"
     environment:
 ## Konekcija na Backend servis (koristi ime servisa 'backend')
-      REACT_APP_API_URL: http://backend:8080
+      VITE_API_URL: http://backend:8080
     depends_on:
       - backend
 volumes:
