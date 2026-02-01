@@ -19,8 +19,6 @@ test.describe('End-to-End Test for Shipment CRUD (LO8)', () => {
     await page.fill('input[placeholder*="Enter password"]', 'password');
     await page.click('button[type="submit"]');
 
-        await page.click('text=Login');
-
         // Povećan timeout za čekanje na gumb 'Dodaj Novo'
         await page.click('text = Shipments');
         await expect(page.locator('text=Create Shipment')).toBeVisible({ timeout: 15000 });
