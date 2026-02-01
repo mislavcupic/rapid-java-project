@@ -75,6 +75,8 @@ jobs:
           context: ${{ env.FRONTEND_CONTEXT }}
           push: true
           tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/frontend:latest
+          build-args: |
+            VITE_API_URL=http://localhost:8080
           labels: ${{ steps.meta.outputs.labels }}
           file: ./frontend/Dockerfile
 
@@ -96,7 +98,7 @@ jobs:
         run: 
           export TAG=${{ needs.build_and_push.outputs.tag }} | docker compose up -d db backend frontend
         env:
-          DB_USER: ${{ secrets.CI_DB_USER }}
+          DB_USERNAME: ${{ secrets.CI_DB_USER }}
           DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
           DB_NAME: ${{ secrets.CI_DB_NAME }}
 
