@@ -60,4 +60,4 @@ jobs:
             podman compose up -d --force-recreate
           
             echo "Deployment dovršen."
-          '
+          
