@@ -27,6 +27,13 @@ jobs:
         run: |
           $repo = "${{ github.repository }}".ToLower()
           echo "repo=$repo" >> $env:GITHUB_OUTPUT
+          
+      - name: Log into Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy via Podman Compose
         env:
@@ -39,9 +46,6 @@ jobs:
 
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
-            # Prijava na GHCR
-            echo "${{ env.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          
             # EXPORT TAJNIH VARIJABLI
             export DB_USERNAME=${{ env.PROD_DB_USER }}
             export DB_PASSWORD=${{ env.PROD_DB_PASSWORD }}
