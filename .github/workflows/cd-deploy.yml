@@ -10,7 +10,7 @@ jobs:
   deploy:
     name: Deploy App
     # CILJANJE SELF-HOSTED RUNNERA:
-    runs-on: [self-hosted, linux, x64] # Korištenje generičkih oznaka je sigurnije
+    runs-on: self-hosted # Korištenje generičkih oznaka je sigurnije ? a gdje to piše? :)
 
     environment: Prototype
     permissions:
