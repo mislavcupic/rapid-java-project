@@ -21,11 +21,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Lowercase Repo Name #IZBRISI KAD PREDJES NA MISLAVA
+      - name: Lowercase Repo Name # ne treba u slucaju da je username ima lowercase
         id: lowercase
+        shell: pwsh
         run: |
-          repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repo=$repo_lower" >> $GITHUB_OUTPUT
+          $repo = "${{ github.repository }}".ToLower()
+          echo "repo=$repo" >> $env:GITHUB_OUTPUT
 
       - name: Deploy via Podman Compose
         env:
