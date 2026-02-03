@@ -23,7 +23,7 @@ jobs:
 
       - name: Lowercase Repo Name # ne treba u slucaju da je username ima lowercase
         id: lowercase
-        shell: pwsh
+        shell: powershell
         run: |
           $repo = "${{ github.repository }}".ToLower()
           echo "repo=$repo" >> $env:GITHUB_OUTPUT
