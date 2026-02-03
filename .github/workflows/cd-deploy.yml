@@ -35,7 +35,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy via Podman Compose
+      - name: Deploy via Docker Compose
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_TAG: latest
@@ -47,9 +47,9 @@ jobs:
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
             # EXPORT TAJNIH VARIJABLI
-            export DB_USERNAME=${{ env.PROD_DB_USER }}
-            export DB_PASSWORD=${{ env.PROD_DB_PASSWORD }}
-            export DB_NAME=${{ env.PROD_DB_NAME }}
+            $env:DB_USERNAME = "${{ secrets.PROD_DB_USER }}"
+            $env:DB_PASSWORD = "${{ secrets.PROD_DB_PASSWORD }}"
+            $env:DB_NAME = "${{ secrets.PROD_DB_NAME }}"
           
             # Ažuriranje image tagova
             $content = Get-Content docker-compose.yml
