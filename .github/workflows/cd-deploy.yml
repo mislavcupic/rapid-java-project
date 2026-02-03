@@ -4,8 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop
-      - main
+      - dev-2
 
 jobs:
   deploy:
@@ -22,10 +21,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Lowercase Repo Name #IZBRISI KAD PREDJES NA MISLAVA
+        id: lowercase
+        run: |
+          repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo=$repo_lower" >> $GITHUB_OUTPUT
+
       - name: Deploy via Podman Compose
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: latest
+          REPO_PATH: ${{ steps.lowercase.outputs.repo }}
           PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
           PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
           PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
@@ -38,13 +44,13 @@ jobs:
             echo ${{ env.GHCR_TOKEN }} | podman login ghcr.io -u $USER --password-stdin
           
             # EXPORT TAJNIH VARIJABLI
-            export DB_USER=${{ env.PROD_DB_USER }}
+            export DB_USERNAME=${{ env.PROD_DB_USER }}
             export DB_PASSWORD=${{ env.PROD_DB_PASSWORD }}
             export DB_NAME=${{ env.PROD_DB_NAME }}
           
             # Ažuriranje image tagova
-            sed -i "s|backend:.*|backend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
-            sed -i "s|frontend:.*|frontend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
+            sed -i 's|backend:.*|ghcr.io/${{ env.REPO_PATH }}/backend:${{ env.IMAGE_TAG }}|g' docker-compose.yml
+            sed -i 's|frontend:.*|ghcr.io/${{ env.REPO_PATH }}/frontend:${{ env.IMAGE_TAG }}|g' docker-compose.yml
           
             # Povlačenje i deployment
             echo "Povlačenje novih slika..."
