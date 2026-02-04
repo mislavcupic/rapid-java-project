@@ -4,53 +4,64 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop
-      - main
+      - dev-2
 
 jobs:
   deploy:
     name: Deploy App
     # CILJANJE SELF-HOSTED RUNNERA:
-    runs-on: [self-hosted, linux, x64] # Korištenje generičkih oznaka je sigurnije
+    runs-on: self-hosted # Korištenje generičkih oznaka je sigurnije ? a gdje to piše? :)
 
     environment: Prototype
-    permissions:
-      contents: read
-      packages: read
+   # permissions:
+    #  contents: read
+     # packages: read
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy via Podman Compose
+      - name: Lowercase Repo Name # ne treba u slucaju da je username ima lowercase . 
+        id: lowercase
+        shell: powershell
+        run: |
+          $repo = "${{ github.repository }}".ToLower()
+          echo "repo=$repo" >> $env:GITHUB_OUTPUT
+          
+      - name: Log into Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy via Docker Compose
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: latest
+          REPO_PATH: ${{ steps.lowercase.outputs.repo }}
           PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
           PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
           PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
 
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
-          sudo bash -c '
-          
-            # Prijava na GHCR
-            echo ${{ env.GHCR_TOKEN }} | podman login ghcr.io -u $USER --password-stdin
-          
             # EXPORT TAJNIH VARIJABLI
-            export DB_USER=${{ env.PROD_DB_USER }}
-            export DB_PASSWORD=${{ env.PROD_DB_PASSWORD }}
-            export DB_NAME=${{ env.PROD_DB_NAME }}
+            $env:DB_USERNAME = "${{ secrets.PROD_DB_USER }}"
+            $env:DB_PASSWORD = "${{ secrets.PROD_DB_PASSWORD }}"
+            $env:DB_NAME = "${{ secrets.PROD_DB_NAME }}"
           
             # Ažuriranje image tagova
-            sed -i "s|backend:.*|backend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
-            sed -i "s|frontend:.*|frontend:${{ env.IMAGE_TAG }}|g" docker-compose.yml
+            $content = Get-Content docker-compose.yml
+            $content = $content -replace 'backend:.*', "ghcr.io/${{ env.REPO_PATH }}/backend:${{ env.IMAGE_TAG }}"
+            $content = $content -replace 'frontend:.*', "ghcr.io/${{ env.REPO_PATH }}/frontend:${{ env.IMAGE_TAG }}"
+            $content | Set-Content docker-compose.yml
           
             # Povlačenje i deployment
             echo "Povlačenje novih slika..."
-            podman compose pull
-            echo "Pokretanje deploymenta s Podman Compose..."
-            podman compose up -d --force-recreate
+            docker compose pull
+            echo "Pokretanje deploymenta s Docker Compose..."
+            docker compose up -d --force-recreate
           
             echo "Deployment dovršen."
-          '
+          

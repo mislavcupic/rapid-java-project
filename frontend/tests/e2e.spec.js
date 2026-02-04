@@ -57,7 +57,7 @@ await expect(page.locator('text=forms.create_shipment_title')).toBeVisible({ tim
         // 4. PREGLED DETALJA
         await page.locator('text=Ilica 2, Zagreb').first().locator('..').locator('button:has-text("Details")').click();
 
-        await expect(page.locator('text=Details')).toBeVisible();
+        await expect(page.locator('text=Details').first()).toBeVisible();
         await expect(page.locator(`text=${origin}`)).toBeVisible();
         await expect(page.locator(`text=${destination}`)).toBeVisible();
 
