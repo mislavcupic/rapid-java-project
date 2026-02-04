@@ -39,23 +39,13 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE_TAG: latest
-          REPO_PATH: ${{ steps.lowercase.outputs.repo }}
+          REPO_LOWER: ${{ steps.lowercase.outputs.repo }}
           PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
           PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
           PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
 
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
-            # EXPORT TAJNIH VARIJABLI
-            $env:DB_USERNAME = "${{ secrets.PROD_DB_USER }}"
-            $env:DB_PASSWORD = "${{ secrets.PROD_DB_PASSWORD }}"
-            $env:DB_NAME = "${{ secrets.PROD_DB_NAME }}"
-          
-            # Ažuriranje image tagova
-            $content = Get-Content docker-compose.yml
-            $content = $content -replace 'backend:.*', "ghcr.io/${{ env.REPO_PATH }}/backend:${{ env.IMAGE_TAG }}"
-            $content = $content -replace 'frontend:.*', "ghcr.io/${{ env.REPO_PATH }}/frontend:${{ env.IMAGE_TAG }}"
-            $content | Set-Content docker-compose.yml
           
             # Povlačenje i deployment
             echo "Povlačenje novih slika..."
