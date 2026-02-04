@@ -46,6 +46,11 @@ jobs:
 
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
+            $env:DB_USERNAME = "${{ env.DB_USERNAME }}"
+            $env:DB_PASSWORD = "${{ env.DB_PASSWORD }}"
+            $env:DB_NAME = "${{ env.DB_NAME }}"
+            $env:REPO_LOWER = "${{ env.REPO_LOWER }}"
+            $env:IMAGE_TAG = "${{ env.IMAGE_TAG }}"
           
             # Povlačenje i deployment
             echo "Povlačenje novih slika..."
