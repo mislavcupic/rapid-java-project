@@ -98,7 +98,6 @@ jobs:
         run: 
           export TAG=${{ needs.build_and_push.outputs.tag }} | docker compose up -d db backend frontend
         env:
-          REPO_LOWER: ${{ steps.lowercase.outputs.repo }}
           DB_USERNAME: ${{ secrets.CI_DB_USER }}
           DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
           DB_NAME: ${{ secrets.CI_DB_NAME }}
