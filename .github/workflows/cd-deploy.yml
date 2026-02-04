@@ -46,9 +46,9 @@ jobs:
 
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
-            $env:DB_USERNAME = "${{ env.DB_USERNAME }}"
-            $env:DB_PASSWORD = "${{ env.DB_PASSWORD }}"
-            $env:DB_NAME = "${{ env.DB_NAME }}"
+            $env:DB_USERNAME = "${{ env.PROD_DB_USER }}"
+            $env:DB_PASSWORD = "${{ env.PROD_DB_PASSWORD }}"
+            $env:DB_NAME = "${{ env.PROD_DB_NAME }}"
             $env:REPO_LOWER = "${{ env.REPO_LOWER }}"
             $env:IMAGE_TAG = "${{ env.IMAGE_TAG }}"
           
