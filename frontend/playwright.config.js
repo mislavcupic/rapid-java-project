@@ -6,9 +6,6 @@ export default defineConfig({
   reporter: [['html', { outputFolder: 'playwright-report' }]], // Forces output to this folder
   use: {
     baseURL: 'http://localhost:5173',
-    trace: 'on',
-    screenshot: 'on',
-    video: 'on',
     viewport: { width: 1280, height: 720 },
   },
 });

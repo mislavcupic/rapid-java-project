@@ -17,7 +17,7 @@ services:
 #  # ==========================================================
   backend:
     # GHCR Putanja: mislavcupic/rapid-java-project/ime_slike:tag
-    image: ghcr.io/btn3/rapid-java-project/backend:latest
+    image: ghcr.io/${REPO_LOWER}/backend:${IMAGE_TAG:-latest}
     container_name: logistics-backend
     restart: always
     ports:
@@ -37,7 +37,7 @@ services:
 #  # ==========================================================
   frontend:
 ## GHCR Putanja: mislavcupic/rapid-java-project/ime_slike:tag
-    image: ghcr.io/btn3/rapid-java-project/frontend:latest
+    image: ghcr.io/${REPO_LOWER}/frontend:${IMAGE_TAG:-latest}
     container_name: logistics-frontend
     restart: always
     ports:
