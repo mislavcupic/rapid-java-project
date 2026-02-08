@@ -63,9 +63,7 @@ jobs:
         with:
           context: ${{ env.BACKEND_CONTEXT }}
           push: true
-          tags: |
-            # Ako je tag dostupan, koristi ga, ako nije koristi latest
-            ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/backend:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/backend:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION_TAG=${{ steps.lowercase.outputs.repo }}
@@ -76,9 +74,7 @@ jobs:
         with:
           context: ${{ env.FRONTEND_CONTEXT }}
           push: true
-          tags: |
-            # Ako je tag dostupan, koristi ga, ako nije koristi latest
-            ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/fronted:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/fronted:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
           build-args: |
             VITE_API_URL=http://localhost:8080
           labels: ${{ steps.meta.outputs.labels }}
