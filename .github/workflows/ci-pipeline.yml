@@ -103,6 +103,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
           DB_NAME: ${{ secrets.CI_DB_NAME }}
           IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+          REPO_LOWER: ${{ needs.build_and_push.outputs.tag }}
         run:
           docker compose up -d db backend frontend
 
