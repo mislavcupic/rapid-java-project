@@ -45,6 +45,9 @@ jobs:
           PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
           PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
           PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
+          GF_USER: ${{ secrets.GF_USER }}
+          GF_PASSWORD: ${{ secrets.GF_PASSWORD }}
+
 
         # CIJELI BLOK IZVRŠAVAMO KAO ROOT (ADMINISTRATOR) KAKO BISMO ZAOBIŠLI 'Permission Denied'
         run: |
@@ -53,6 +56,9 @@ jobs:
             $env:DB_NAME = "${{ env.PROD_DB_NAME }}"
             $env:REPO_LOWER = "${{ env.REPO_LOWER }}"
             $env:IMAGE_TAG = "${{ env.IMAGE_TAG }}"
+            $env:GF_USER = "${{ env.GF_USER }}"
+            $env:GF_PASSWORD = "${{ env.GF_PASSWORD }}"
+            
           
             # Povlačenje i deployment
             echo "Povlačenje novih slika..."
