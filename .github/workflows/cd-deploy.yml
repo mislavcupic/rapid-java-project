@@ -2,9 +2,11 @@
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev-2
+    inputs:
+      version:
+        description: 'Tag to deploy (e.g., v1.3 or latest)'
+        required: true
+        default: 'latest'
 
 jobs:
   deploy:
@@ -38,7 +40,7 @@ jobs:
       - name: Deploy via Docker Compose
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE_TAG: v1.2
+          IMAGE_TAG: ${{ github.event.inputs.version }}
           REPO_LOWER: ${{ steps.lowercase.outputs.repo }}
           PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
           PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
