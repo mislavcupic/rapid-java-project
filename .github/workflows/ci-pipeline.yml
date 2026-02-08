@@ -63,7 +63,9 @@ jobs:
         with:
           context: ${{ env.BACKEND_CONTEXT }}
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/backend:latest
+          tags: |
+            # Ako je tag dostupan, koristi ga, ako nije koristi latest
+            ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/backend:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION_TAG=${{ steps.lowercase.outputs.repo }}
@@ -74,7 +76,9 @@ jobs:
         with:
           context: ${{ env.FRONTEND_CONTEXT }}
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/frontend:latest
+          tags: |
+            # Ako je tag dostupan, koristi ga, ako nije koristi latest
+            ${{ env.DOCKER_REGISTRY }}/${{ steps.lowercase.outputs.repo }}/fronted:${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
           build-args: |
             VITE_API_URL=http://localhost:8080
           labels: ${{ steps.meta.outputs.labels }}
@@ -95,12 +99,13 @@ jobs:
 
       - name: Start Containers for Testing
         # POPRAVAK: Eksplicitno pokretanje samo db, backend i frontend servisa. Izbjegava Prometheus grešku.
-        run: 
-          export TAG=${{ needs.build_and_push.outputs.tag }} | docker compose up -d db backend frontend
         env:
           DB_USERNAME: ${{ secrets.CI_DB_USER }}
           DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
           DB_NAME: ${{ secrets.CI_DB_NAME }}
+          IMAGE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+        run:
+          docker compose up -d db backend frontend
 
       - name: Wait for Application to be Ready
         uses: jakejarvis/wait-action@master
