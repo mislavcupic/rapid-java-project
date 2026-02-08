@@ -57,11 +57,8 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/backend
             ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend
           tags: |
-            # This line captures the v1.0 tag if it exists
             type=ref,event=tag
-            # This keeps your 'latest' tag for the dev-2 branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev-2' }}
-            # This keeps the short SHA
             type=sha,format=short
 
       - name: Build and Push Backend Docker Image
