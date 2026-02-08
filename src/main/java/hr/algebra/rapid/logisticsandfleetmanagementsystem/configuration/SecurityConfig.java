@@ -64,7 +64,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         // A. JAVNO DOSTUPNE RUTE (PermitAll)
                         // ================================================================
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error").permitAll().requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/auth/login", "/auth/register", "/auth/refreshToken").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/welcome").permitAll()
