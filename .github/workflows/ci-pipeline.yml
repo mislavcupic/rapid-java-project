@@ -59,7 +59,7 @@ jobs:
             ${{ env.DOCKER_REGISTRY }}/${{ env.GHCR_PATH }}/frontend
           tags: |
             type=ref,event=tag
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev-2' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev-2' }} #tag će se uzeti iz posljednje verzije dev-2 brancha ili ako nije specificiran, onda latest
             type=sha,format=short
 
       - name: Build and Push Backend Docker Image
