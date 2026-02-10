@@ -11,10 +11,9 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-#  # ==========================================================
+#komentar
 #  # 2. BACKEND (Spring Boot)
-#  # ==========================================================
+
   backend:
     # GHCR Putanja: mislavcupic/rapid-java-project/ime_slike:tag
     image: ghcr.io/btn3/rapid-java-project/backend:${IMAGE_TAG:-latest}

@@ -27,7 +27,7 @@ i18n
             // Prioritet detekcije jezika
             order: ['cookie', 'localStorage', 'navigator'],
             caches: ['cookie'], // Pohrana trenutnog jezika u cookie
-            cookieName: 'i18next_lang', // Naziv cookie-a
+            cookieName: 'lang', // Naziv cookie-a
         },
 
         interpolation: {
