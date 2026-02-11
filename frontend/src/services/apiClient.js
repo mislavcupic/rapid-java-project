@@ -6,6 +6,8 @@ const API_BASE_URL = 'http://localhost:8080';
 const REFRESH_TOKEN_URL = `${API_BASE_URL}/auth/refreshToken`;
 
 /* tu ću namjerno stvoriti konflikt*/
+/* dodajem još nešto */
+
 const logoutUser = () => {
     console.error('Refresh token istekao ili opozvan. Automatska odjava.');
     localStorage.removeItem('accessToken');
