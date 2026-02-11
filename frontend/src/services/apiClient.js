@@ -5,10 +5,7 @@ const API_BASE_URL = 'http://localhost:8080';
 // Endpoint za osvježavanje tokena (mora biti isti kao u AuthController.java)
 const REFRESH_TOKEN_URL = `${API_BASE_URL}/auth/refreshToken`;
 
-/**
- * Pomaže kod navigacije i čišćenja podataka u slučaju da Refresh Token istekne.
- * @throws {Error} Uvijek baca grešku kako bi zaustavio daljnje izvršavanje.
- */
+/* tu ću namjerno stvoriti konflikt*/
 const logoutUser = () => {
     console.error('Refresh token istekao ili opozvan. Automatska odjava.');
     localStorage.removeItem('accessToken');
